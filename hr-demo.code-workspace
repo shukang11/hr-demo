@@ -1,0 +1,17 @@
+{
+  "folders": [
+    {
+      "name": "后端服务",
+      "path": "backend"
+    },
+    {
+      "name": "前端页面",
+      "path": "frontend"
+    },
+    {
+      "name": "root",
+      "path": "."
+    }
+  ],
+  "settings": {}
+}
