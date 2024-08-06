@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import SMALLINT, DateTime, ForeignKey, Integer, Sequence, String, select
 from sqlalchemy.orm import Mapped, joinedload, mapped_column, relationship
@@ -9,8 +9,11 @@ from core.utils import getmd5
 
 from ._base_model import DBBaseModel
 
+from .account_department_rel import DepartmentMapAccountInDB  # noqa: F401
+
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
+    from .department import DepartmentInDB
 
 
 class UserStatus(IntEnum):
@@ -86,6 +89,13 @@ class AccountInDB(DBBaseModel):
         "AccountTokenInDB", backref="account", uselist=False
     )
 
+    # 通过 `account_department_rel` 中间表来关联
+    departments: Mapped[List["DepartmentInDB"]] = relationship(
+        "DepartmentInDB",
+        secondary="account_department_rel",
+        back_populates="members",
+    )
+
     def __init__(
         self,
         phone: Optional[str] = None,
@@ -123,7 +133,7 @@ class AccountInDB(DBBaseModel):
         return result
 
     def __repr__(self):
-        return f"<User(id='{self.id}', username='{self.username}')>"
+        return f"<Account(id='{self.id}', username='{self.username}')>"
 
     def make_new_token(self, salt: str) -> str:
         raw = f"{self.id}{self.password}{salt}"
