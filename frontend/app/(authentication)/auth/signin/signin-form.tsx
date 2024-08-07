@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from "@/lib/utils";
-import { AccountInfo } from "@/types";
+import { AccountAndToken, AccountInfo } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { APIResponse, buildServerURL, parserServerResponse, serverAPI } from "@/lib/api";
 
 interface UserSignInFormProps extends React.HTMLAttributes<HTMLDivElement> {
     user?: AccountInfo;
@@ -76,20 +77,29 @@ export function SignInForm({ className, user }: UserSignInFormProps) {
     });
 
     const onHandleSubmitAction = async (values: z.infer<typeof FormSchema>) => {
-        // if (callbackUrl) {
-        //     router.push(callbackUrl);
-        // } else {
-        //     router.push(MAIN_APP.HOME);
-        // }
-        // console.log("values", values);
-        await signIn("credentials", {
-            id: "1",
-            email: values.email,
-            name: "John Smith",
-            token: "token",
-            callbackUrl: callbackUrl ?? MAIN_APP.DASHBOARD,
+        console.log(`values: ${JSON.stringify(values)}`);
+        try {
+            const path = buildServerURL("api/auth/login");
+            const resp = await serverAPI.post(path, {
+                json: {
+                    email: values.email,
+                    password: values.password
+                }
+            });
+            const data: APIResponse<AccountAndToken> = await parserServerResponse(resp);
+            console.log(`data: ${JSON.stringify(data)}`);
+        } catch (error) {
+            console.error(`error: ${error}`);
         }
-        )
+
+        // await signIn("credentials", {
+        //     id: "1",
+        //     email: values.email,
+        //     name: "John Smith",
+        //     token: "token",
+        //     callbackUrl: callbackUrl ?? MAIN_APP.DASHBOARD,
+        // }
+        // )
 
     };
     return (

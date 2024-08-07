@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from core.database._base_model import DBBaseModel
 from api.main import app
 from core.utils.settings import settings
+from core.database.account import AccountInDB
 
 
 @pytest.fixture
@@ -78,6 +79,28 @@ def session() -> Generator:
             )
 
             session = SessionLocal()
+
             yield session
 
     engine.dispose()
+
+
+@pytest.fixture
+def login_account(session) -> AccountInDB:
+    phone = "12345678901"
+    email = "login_account@email.com"
+    username = "login_account"
+    password_origin = "123456"
+    from core.controller.account import create_account, CreateAccountPayload
+
+    account = AccountInDB.find_by_username(session, username)
+    if not account:
+        reg_req = CreateAccountPayload(
+            username=username,
+            phone=phone,
+            email=email,
+            password=password_origin,
+        )
+        account = create_account(reg_req, session)
+        session.commit()
+    return account

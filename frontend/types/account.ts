@@ -6,13 +6,28 @@ export interface UserId {
   userId: string;
 }
 
+export enum AccountStatus {
+  // 正常
+  NORMAL = 0,
+  // 不可用
+  DISABLE = 1,
+}
+
 export interface AccountInfo {
-  userId: string;
-  username: string;
-  avatar?: string;
-  platform: string;
+  id: string;
+  username?: string;
   email: string;
-  role: Role;
-  membershipExpire?: number;
-  accessToken?: string;
+  phone?: string;
+
+  status: AccountStatus;
+
+  // avatar?: string;
+  // platform: string;
+  // membershipExpire?: number;
+  // accessToken?: string;
+}
+
+export interface AccountAndToken {
+  account: AccountInfo;
+  token: string;
 }

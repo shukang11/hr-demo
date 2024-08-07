@@ -4,16 +4,16 @@ from api.dependencies.auth import UserRequire
 from api.dependencies.session import Session
 from api.response import Response
 from core.controller.account import (
-    LoginResp,
-    LoginUser,
-    RegisterUser,
+    LoginAccountResp,
+    LoginAccountPayload,
+    CreateAccountPayload,
     UserSchema,
     login_user,
-    register_user,
+    create_account,
     user_count,
 )
 
-router = APIRouter(prefix="/user", tags=["个人信息接口"])
+router = APIRouter(prefix="/auth", tags=["个人信息接口"])
 
 
 @router.post(
@@ -22,10 +22,10 @@ router = APIRouter(prefix="/user", tags=["个人信息接口"])
     description="注册用户",
     response_model=Response[int],
 )
-async def _register_user(req: RegisterUser, session: Session) -> Response[int]:
+async def _register_user(req: CreateAccountPayload, session: Session) -> Response[int]:
     print(f"session: {session}")
     try:
-        user = register_user(create_user=req, session=session)
+        user = create_account(payload=req, session=session)
         return Response(data=user.id)
     except Exception as e:
         print(f"register failed: {e}")
@@ -36,13 +36,17 @@ async def _register_user(req: RegisterUser, session: Session) -> Response[int]:
     "/login",
     summary="登录",
     description="登录",
-    response_model=Response[LoginResp],
+    response_model=Response[LoginAccountResp],
 )
-async def _user_login(req: LoginUser, session: Session) -> Response[LoginResp]:
+async def _user_login(
+    req: LoginAccountPayload, session: Session
+) -> Response[LoginAccountResp]:
     user = login_user(login_user=req, session=session)
     if not user:
         return Response.from_error(message="login failed")
-    resp = LoginResp(token=user.token.token, user=UserSchema.model_validate(user))
+    resp = LoginAccountResp(
+        token=user.token.token, user=UserSchema.model_validate(user)
+    )
     return Response(data=resp)
 
 

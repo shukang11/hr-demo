@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import joinedload
 
-from core.database import AccountInDB, UserStatus
+from core.database import AccountInDB, UserStatus, AccountTokenInDB
 from core.utils.settings import settings
 from core.utils import getmd5
 
@@ -29,20 +29,24 @@ class UserSchema(BaseModel):
     status: Optional[UserStatus]
 
 
-class RegisterUser(BaseModel):
-    username: str = Field(..., min_length=4, max_length=64)
+class CreateAccountPayload(BaseModel):
+    username: Optional[str] = Field(..., min_length=4, max_length=64)
     phone: Optional[str] = Field(..., min_length=11, max_length=11)
     email: Optional[str] = Field(..., min_length=6, max_length=100)
     password: str = Field(..., min_length=6, max_length=32)
 
 
-def register_user(create_user: RegisterUser, session: Session) -> AccountInDB:
-    hashed_password = getmd5(create_user.password)
+def create_account(payload: CreateAccountPayload, session: Session) -> AccountInDB:
+    # 如果用户名 / 号码 / 邮箱 都不存在，则抛出异常
+    if not any([payload.username, payload.phone, payload.email]):
+        raise ValueError("用户名 / 号码 / 邮箱 不能同时为空")
+
+    hashed_password = getmd5(payload.password)
     # 是否已存在
     exsits_stmt = (
         select(AccountInDB)
         .options(joinedload(AccountInDB.token))
-        .where(AccountInDB.username == create_user.username)
+        .where(AccountInDB.username == payload.username)
     )
     is_exsits = session.scalar(exsits_stmt)
     if is_exsits:
@@ -50,31 +54,34 @@ def register_user(create_user: RegisterUser, session: Session) -> AccountInDB:
 
     # 创建用户
     user = AccountInDB(
-        phone=create_user.phone,
-        username=create_user.username,
-        email=create_user.email,
+        phone=payload.phone,
+        username=payload.username,
+        email=payload.email,
         password=hashed_password,
     )
+    # 创建新的token
+    new_token = user.make_new_token(settings.SECRET_KEY)
+    user.token = AccountTokenInDB(user_id=user.id, token=new_token)
     session.add(user)
     return user
 
 
-class LoginUser(BaseModel):
-    username: str = Field(..., min_length=4, max_length=64)
+class LoginAccountPayload(BaseModel):
+    email: str = Field(..., min_length=4, max_length=64)
     password: str = Field(..., min_length=6, max_length=32)
 
 
-class LoginResp(BaseModel):
+class LoginAccountResp(BaseModel):
     token: str
     user: UserSchema
 
 
-def login_user(login_user: LoginUser, session: Session) -> AccountInDB:
+def login_user(login_user: LoginAccountPayload, session: Session) -> AccountInDB:
     """
     验证用户，通过检查提供的登录凭据与数据库中的凭据进行比对。
 
     参数:
-        login_user (LoginUser): 用户的登录凭据。
+        login_user (LoginAccountPayload): 用户的登录凭据。
         session (Session): 数据库会话。
 
     返回:
@@ -88,7 +95,7 @@ def login_user(login_user: LoginUser, session: Session) -> AccountInDB:
         select(AccountInDB)
         .options(joinedload(AccountInDB.token))
         .where(
-            AccountInDB.username == login_user.username,
+            AccountInDB.email == login_user.email,
             AccountInDB.password == hashed_password,
         )
     )

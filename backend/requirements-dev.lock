@@ -22,18 +22,12 @@ certifi==2024.7.4
     # via httpx
 click==8.1.7
     # via uvicorn
-colorama==0.4.6
-    # via click
-    # via pytest
-    # via uvicorn
 ecdsa==0.19.0
     # via python-jose
 exceptiongroup==1.2.2
     # via anyio
     # via pytest
 fastapi==0.112.0
-greenlet==3.0.3
-    # via sqlalchemy
 h11==0.14.0
     # via httpcore
     # via uvicorn
@@ -95,6 +89,8 @@ typing-extensions==4.12.2
     # via sqlalchemy
     # via uvicorn
 uvicorn==0.30.5
+uvloop==0.19.0
+    # via uvicorn
 watchfiles==0.22.0
     # via uvicorn
 websockets==12.0

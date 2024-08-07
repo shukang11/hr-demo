@@ -1,7 +1,8 @@
 import ky from "ky";
+import { getCurrentUser } from "./session";
 
 const buildServerURL = (path: string): string => {
-  return `/${path}`;
+  return `http://127.0.0.1:8000/${path}`;
 };
 
 const serverAPI = ky.create({
@@ -10,13 +11,20 @@ const serverAPI = ky.create({
   },
   hooks: {
     beforeRequest: [
-      (request) => {
+      async (request) => {
         if (request.headers.get("Authorization")) {
           return;
         }
-        const token = localStorage.getItem("token");
-        if (token) {
-          request.headers.set("Authorization", `Bearer ${token}`);
+
+        try {
+          const user = await getCurrentUser();
+          // @ts-ignore
+          if (user && user.token) {
+            // @ts-ignore
+            request.headers.set("Authorization", `Bearer ${user.token}`);
+          }
+        } catch (error) {
+          console.error("Failed to get current user:", error);
         }
         console.log(`[Ky]: ${request.method} ${request.url}`);
       },

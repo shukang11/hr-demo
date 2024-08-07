@@ -126,6 +126,7 @@ class AccountInDB(DBBaseModel):
     def find_by_token(cls, session: "Session", token: str) -> Optional["AccountInDB"]:
         stmt = (
             select(cls)
+            .join(AccountTokenInDB, cls.id == AccountTokenInDB.account_id)
             .options(joinedload(cls.token))
             .where(AccountTokenInDB.token == token)
         )
