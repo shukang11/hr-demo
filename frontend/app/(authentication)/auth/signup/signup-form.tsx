@@ -2,17 +2,17 @@
 
 import { cn } from "@/lib/utils";
 import { AccountInfo } from "@/types";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { signIn } from "next-auth/react";
-import { AUTHENTICATION_APP, MAIN_APP } from "@/lib/routes";
+import { AUTHENTICATION_APP } from "@/lib/routes";
 
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { APIResponse, buildServerURL, parserServerResponse, serverAPI } from "@/lib/api";
 
 interface SignUpFormProps extends React.HTMLAttributes<HTMLDivElement> {
     user?: AccountInfo;
@@ -62,28 +62,34 @@ const LabelInputContainer = ({
 };
 
 
-export function SignUpForm({ className, user, ...props }: SignUpFormProps) {
+export function SignUpForm({ className }: SignUpFormProps) {
     const router = useRouter();
     // get query from url
-    const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get('callbackUrl');
 
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
         defaultValues: {
             email: "jsmith@example.com",
             password: "password",
+            passwordConfirm: "password",
         },
     });
 
-    const onHandleSubmitAction = (values: z.infer<typeof FormSchema>) => {
-        // console.log("values", values);
-        // signIn("credentials", {
-        //     email: values.email,
-        //     password: values.password,
-        //     callbackUrl: callbackUrl ?? MAIN_APP.DASHBOARD,
-        // }
-        // )
+    const onHandleSubmitAction = async (values: z.infer<typeof FormSchema>) => {
+
+        try {
+            const path = buildServerURL("api/auth/register");
+            const resp = await serverAPI.post(path, {
+                json: {
+                    email: values.email,
+                    password: values.password
+                }
+            });
+            const data: APIResponse<number> = await parserServerResponse(resp);
+            console.log(`data: ${JSON.stringify(data)}`);
+        } catch (e) {
+            console.log(`error: ${e}`);
+        }
     };
     return (
         <>

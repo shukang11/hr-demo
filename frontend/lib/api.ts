@@ -1,5 +1,4 @@
 import ky from "ky";
-import { getCurrentUser } from "./session";
 
 const buildServerURL = (path: string): string => {
   return `http://127.0.0.1:8000/${path}`;
@@ -16,16 +15,6 @@ const serverAPI = ky.create({
           return;
         }
 
-        try {
-          const user = await getCurrentUser();
-          // @ts-ignore
-          if (user && user.token) {
-            // @ts-ignore
-            request.headers.set("Authorization", `Bearer ${user.token}`);
-          }
-        } catch (error) {
-          console.error("Failed to get current user:", error);
-        }
         console.log(`[Ky]: ${request.method} ${request.url}`);
       },
     ],

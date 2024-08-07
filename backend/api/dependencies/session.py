@@ -19,7 +19,6 @@ def get_session() -> Generator[sessionmaker, None, None]:
         raise e
     finally:
         session.commit()
-        session.close()
 
 
 Session = Annotated[sessionmaker, Depends(get_session)]

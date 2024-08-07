@@ -10,11 +10,9 @@ if not env_file.exists():
 
 content = env_file.read_text(encoding="utf-8")
 
-print(f"env_file: {content}")
-
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
+    SQLALCHEMY_DATABASE_URL: str
     SECRET_KEY: str = "SECRET_KEY"
     ALGORITHM: str = "HS256"
     ECHO_SQL: bool = False

@@ -8,7 +8,7 @@ from core.utils.settings import settings
 logger = logging.getLogger(__name__)
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    settings.SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
     echo=settings.ECHO_SQL,
 )

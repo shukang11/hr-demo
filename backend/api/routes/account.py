@@ -29,7 +29,7 @@ async def _register_user(req: CreateAccountPayload, session: Session) -> Respons
         return Response(data=user.id)
     except Exception as e:
         print(f"register failed: {e}")
-        return Response.from_error("register failed")
+        return Response.from_error(f"{e}")
 
 
 @router.post(
@@ -41,13 +41,16 @@ async def _register_user(req: CreateAccountPayload, session: Session) -> Respons
 async def _user_login(
     req: LoginAccountPayload, session: Session
 ) -> Response[LoginAccountResp]:
-    user = login_user(login_user=req, session=session)
-    if not user:
-        return Response.from_error(message="login failed")
-    resp = LoginAccountResp(
-        token=user.token.token, user=UserSchema.model_validate(user)
-    )
-    return Response(data=resp)
+    try:
+        user = login_user(login_user=req, session=session)
+        if not user:
+            return Response.from_error(message="login failed")
+        resp = LoginAccountResp(
+            token=user.token.token, user=UserSchema.model_validate(user)
+        )
+        return Response(data=resp)
+    except Exception as e:
+        return Response.from_error(f"{e}")
 
 
 @router.post(

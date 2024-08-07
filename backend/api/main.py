@@ -21,10 +21,21 @@ def create_app() -> FastAPI:
     )
     from .routes import init_app as routes_init_app
 
-    # run migration
-    migrate_result = os.system("python -m alembic upgrade head")
-    if migrate_result != 0:
-        print("migrate failed")
+    # see how many versions, if zero, run db create all tables
+    migrate_count = os.system("python -m alembic history")
+    if migrate_count == 0:
+        print("migrate_count == 0")
+        from core.database._base_model import DBBaseModel
+
+        # create all tables
+        from core.database._session import engine
+
+        DBBaseModel.metadata.create_all(bind=engine)
+    else:
+        # run migration
+        migrate_result = os.system("python -m alembic upgrade head")
+        if migrate_result != 0:
+            print("migrate failed")
 
     routes_init_app(app=app)
 

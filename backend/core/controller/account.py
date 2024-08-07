@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import joinedload
 
@@ -30,9 +30,9 @@ class UserSchema(BaseModel):
 
 
 class CreateAccountPayload(BaseModel):
-    username: Optional[str] = Field(..., min_length=4, max_length=64)
-    phone: Optional[str] = Field(..., min_length=11, max_length=11)
-    email: Optional[str] = Field(..., min_length=6, max_length=100)
+    username: Optional[str] = Field(None, min_length=4, max_length=64)
+    phone: Optional[str] = Field(None, min_length=11, max_length=11)
+    email: Optional[str] = Field(None, min_length=6, max_length=100)
     password: str = Field(..., min_length=6, max_length=32)
 
 
@@ -46,7 +46,13 @@ def create_account(payload: CreateAccountPayload, session: Session) -> AccountIn
     exsits_stmt = (
         select(AccountInDB)
         .options(joinedload(AccountInDB.token))
-        .where(AccountInDB.username == payload.username)
+        .where(
+            or_(
+                AccountInDB.phone == payload.phone,
+                AccountInDB.username == payload.username,
+                AccountInDB.email == payload.email,
+            )
+        )
     )
     is_exsits = session.scalar(exsits_stmt)
     if is_exsits:

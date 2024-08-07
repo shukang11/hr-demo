@@ -26,7 +26,7 @@ async def ac() -> AsyncGenerator:
 
 @pytest.fixture(scope="session")
 def setup_db() -> Generator:
-    sync_url = copy(settings.DATABASE_URL)
+    sync_url = copy(settings.SQLALCHEMY_DATABASE_URL)
     engine = create_engine(sync_url)
     conn = engine.connect()
     try:
@@ -53,7 +53,7 @@ def setup_db() -> Generator:
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db(setup_db: Generator) -> Generator:
-    sync_url = copy(settings.DATABASE_URL)
+    sync_url = copy(settings.SQLALCHEMY_DATABASE_URL)
     engine = create_engine(sync_url)
 
     with engine.begin():
@@ -68,7 +68,7 @@ def setup_test_db(setup_db: Generator) -> Generator:
 @pytest.fixture
 def session() -> Generator:
     # https://github.com/sqlalchemy/sqlalchemy/issues/5811#issuecomment-756269881
-    engine = create_engine(settings.DATABASE_URL)
+    engine = create_engine(settings.SQLALCHEMY_DATABASE_URL)
     with engine.begin() as conn:
         with conn.begin_nested():
             SessionLocal = sessionmaker(
