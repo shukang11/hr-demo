@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { AUTHENTICATION_APP, MAIN_APP } from "@/lib/routes";
 
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -26,8 +26,12 @@ const FormSchema = z.object({
     }),
     password: z.string({
         required_error: "密码不能为空",
+    }).min(1, {
+        message: "密码不能为空"
     }).min(6, {
         message: "密码至少6位"
+    }).max(32, {
+        message: "密码最多32位"
     }),
 });
 
@@ -55,11 +59,12 @@ const LabelInputContainer = ({
 };
 
 
-export function SignInForm({ className, user, ...props }: UserSignInFormProps) {
+export function SignInForm({ className, user }: UserSignInFormProps) {
+
     const router = useRouter();
     // get query from url
     const searchParams = useSearchParams();
-    const errorMessage = searchParams.get('errorMessage');
+    const error = searchParams.get('error');
     const callbackUrl = searchParams.get('callbackUrl');
 
     const form = useForm<z.infer<typeof FormSchema>>({
@@ -70,25 +75,28 @@ export function SignInForm({ className, user, ...props }: UserSignInFormProps) {
         },
     });
 
-    const onHandleSubmitAction = (values: z.infer<typeof FormSchema>) => {
-        if (callbackUrl) {
-            router.push(callbackUrl);
-        } else {
-            router.push(MAIN_APP.HOME);
-        }
-        // console.log("values", values);
-        // signIn("credentials", {
-        //     email: values.email,
-        //     password: values.password,
-        //     callbackUrl: callbackUrl ?? MAIN_APP.START_INPUT,
+    const onHandleSubmitAction = async (values: z.infer<typeof FormSchema>) => {
+        // if (callbackUrl) {
+        //     router.push(callbackUrl);
+        // } else {
+        //     router.push(MAIN_APP.HOME);
         // }
-        // )
+        // console.log("values", values);
+        await signIn("credentials", {
+            id: "1",
+            email: values.email,
+            name: "John Smith",
+            token: "token",
+            callbackUrl: callbackUrl ?? MAIN_APP.DASHBOARD,
+        }
+        )
+
     };
     return (
         <>
             <Form {...form}>
+                {error && <p style={{ color: "red" }}>Error: {decodeURIComponent(error as string)}</p>}
                 <form className={className} onSubmit={form.handleSubmit(onHandleSubmitAction)}>
-
                     <FormField
                         control={form.control}
                         name="email"

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Architects_Daughter } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css";
 import { RootProviders } from "@/lib/providers/root-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { TailwindIndicator } from "@/components/layout/TailwindIndicator";
@@ -37,6 +37,7 @@ export default async function RootLayout({
                         <AdminPanelLayout>
                             {children}
                         </AdminPanelLayout>
+                        <Toaster />
                         <TailwindIndicator />
                     </RootProviders>
                 </div>

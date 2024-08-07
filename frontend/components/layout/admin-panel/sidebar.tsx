@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/layout/admin-panel/menu";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { SidebarToggle } from "@/components/layout/admin-panel/sidebar-toggle";
+import { siteConfig } from "@/lib/constant";
 
 export function Sidebar() {
     const sidebar = useStore(useSidebarToggle, (state) => state);
@@ -40,7 +41,7 @@ export function Sidebar() {
                                     : "translate-x-0 opacity-100"
                             )}
                         >
-                            Brand
+                            {siteConfig.title}
                         </h1>
                     </Link>
                 </Button>

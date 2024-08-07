@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Architects_Daughter } from "next/font/google";
 import "@/app/globals.css";
-import { getCurrentUser } from "@/lib/session";
-import { AccountInfo } from "@/types";
 import { RootProviders } from "@/lib/providers/root-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { TailwindIndicator } from "@/components/layout/TailwindIndicator";
@@ -31,7 +29,6 @@ export default async function RootLayout({
     children: React.ReactNode;
 }>) {
 
-    const user = (await getCurrentUser()) as AccountInfo;
     return (
         <html lang="en">
             <body className={`${inter.variable} ${architects_daughter.variable} font-inter antialiased tracking-tight`}>

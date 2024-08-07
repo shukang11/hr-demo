@@ -20,7 +20,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { MAIN_APP } from "@/lib/routes";
 
 export function UserNav() {
 
@@ -76,9 +77,13 @@ export function UserNav() {
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="hover:cursor-pointer" onClick={() => { }}>
+                <DropdownMenuItem className="hover:cursor-pointer" onClick={async () => {
+                    await signOut({
+                        callbackUrl: MAIN_APP.HOME
+                    })
+                }}>
                     <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
-                    Sign out
+                    登出
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

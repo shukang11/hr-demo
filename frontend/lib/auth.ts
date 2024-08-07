@@ -1,37 +1,54 @@
-import { AccountInfo } from "@/types";
-import { Account, NextAuthOptions, TokenSet } from "next-auth";
-import { JWT } from "next-auth/jwt";
-import EmailProvider from "next-auth/providers/email";
+import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.SECRET || "secret",
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
-
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
+        id: { label: "id", type: "text" },
+        token: { label: "token", type: "text" },
         email: { label: "email", type: "text" },
-        password: { label: "Password", type: "password" },
+        name: { label: "name", type: "text" },
       },
       async authorize(credentials, req) {
         console.log("Authorizing with credentials:", credentials);
         if (!credentials) {
           throw new Error("No credentials provided");
         }
-        const { email, password } = credentials;
+        const { id, token, email, name } = credentials;
         // call login API
-
-        return { id: "1", name: email, email: email };
+        // throw new Error("No credentials provided");
+        const user = { id, email, name, token };
+        console.log(`[lib/auth] [authorize]: ${JSON.stringify(user)}`);
+        return user;
       },
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      console.log(`[lib/auth] [session]: ${session}`);
-      console.log(`[lib/auth] [user]: ${user}`);
+    async jwt({ token, user, account, session }) {
+      console.log(`[lib/auth/jwt] [jwt]: ${JSON.stringify(token)}`);
+      console.log(`[lib/auth/jwt] [account]: ${JSON.stringify(account)}`);
+      console.log(`[lib/auth/jwt] [session]: ${JSON.stringify(session)}`);
+      console.log(`[lib/auth/jwt] [user]: ${JSON.stringify(user)}`);
+      if (account?.type === "credentials") {
+        // @ts-ignore
+        token.accessTokenValue = user.token;
+      }
+      return token;
+    },
+    async session({ session, user, token }) {
+      console.log(`[lib/auth] [session]: ${JSON.stringify(session)}`);
+      console.log(`[lib/auth] [user]: ${JSON.stringify(user)}`);
+      console.log(`[lib/auth] [token]: ${JSON.stringify(token)}`);
+      if (token.accessTokenValue) {
+        // @ts-ignore
+        session.user.accessTokenValue = token.accessTokenValue;
+      }
       return session;
     },
   },
