@@ -41,10 +41,10 @@ class DepartmentInDB(DBBaseModel):
         comment="company id",
     )
 
-    leader_id: Mapped[int] = mapped_column(
+    leader_id: Mapped[Optional[int]] = mapped_column(
         Integer,
         ForeignKey("account.id"),
-        nullable=False,
+        nullable=True,
         comment="部门负责人, 指向的是雇员",
     )
 

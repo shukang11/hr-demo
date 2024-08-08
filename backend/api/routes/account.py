@@ -6,12 +6,12 @@ from api.response import Response
 from core.controller.account import (
     LoginAccountResp,
     LoginAccountPayload,
-    CreateAccountPayload,
-    UserSchema,
-    login_user,
-    create_account,
-    user_count,
+    InsertAccountPayload,
+    AccountSchema,
+    AccountManager,
 )
+from core.utils import settings
+
 
 router = APIRouter(prefix="/auth", tags=["个人信息接口"])
 
@@ -22,13 +22,17 @@ router = APIRouter(prefix="/auth", tags=["个人信息接口"])
     description="注册用户",
     response_model=Response[int],
 )
-async def _register_user(req: CreateAccountPayload, session: Session) -> Response[int]:
-    print(f"session: {session}")
+async def _register_user(req: InsertAccountPayload, session: Session) -> Response[int]:
+    if not any([req.username, req.phone, req.email]):
+        return Response.from_error(message=" 邮箱 不能同时为空")
+    req.id = None
+    req.phone = None
+    req.username = None
     try:
-        user = create_account(payload=req, session=session)
+        manager = AccountManager(session=session)
+        user = manager.create_account(payload=req, settings=settings)
         return Response(data=user.id)
     except Exception as e:
-        print(f"register failed: {e}")
         return Response.from_error(f"{e}")
 
 
@@ -42,11 +46,12 @@ async def _user_login(
     req: LoginAccountPayload, session: Session
 ) -> Response[LoginAccountResp]:
     try:
-        user = login_user(login_user=req, session=session)
+        manager = AccountManager(session=session)
+        user = manager.login_account(payload=req, settings=settings)
         if not user:
             return Response.from_error(message="login failed")
         resp = LoginAccountResp(
-            token=user.token.token, user=UserSchema.model_validate(user)
+            token=user.token.token, user=AccountSchema.model_validate(user)
         )
         return Response(data=resp)
     except Exception as e:
@@ -57,12 +62,12 @@ async def _user_login(
     "/info",
     summary="用户信息",
     description="获得用户信息",
-    response_model=Response[UserSchema],
+    response_model=Response[AccountSchema],
 )
 async def customer_info(
     user: UserRequire,
-) -> Response[UserSchema]:
-    u = UserSchema.model_validate(user)
+) -> Response[AccountSchema]:
+    u = AccountSchema.model_validate(user)
     return Response(data=u)
 
 
@@ -72,15 +77,7 @@ async def customer_info(
     description="登出",
     response_model=Response[bool],
 )
-async def user_logout() -> Response[bool]:
+async def user_logout(user: UserRequire, session: Session) -> Response[bool]:
+    manager = AccountManager(session=session)
+    manager.logout_account(user)
     return Response(data=True)
-
-
-@router.get(
-    "/count",
-    summary="用户数量",
-    description="用户数量",
-)
-async def _user_count(session: Session) -> Response[int]:
-    count = user_count(session=session)
-    return Response(data=count)

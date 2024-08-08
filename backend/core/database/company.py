@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy import DateTime, ForeignKey, Integer, Sequence, String, TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -15,6 +15,20 @@ class CompanyStatus(Enum):
     INACTIVE = "INACTIVE"
     # 异常
     EXCEPTION = "EXCEPTION"
+
+
+class CompanyStatusType(TypeDecorator):
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        if isinstance(value, CompanyStatus):
+            return value.value
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return CompanyStatus(value)
+        return value
 
 
 class CompanyInDB(DBBaseModel):
@@ -31,6 +45,10 @@ class CompanyInDB(DBBaseModel):
         String(64), nullable=False, comment="company name"
     )
 
+    description: Mapped[str] = mapped_column(
+        String(255), nullable=True, comment="company description"
+    )
+
     admin_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("account.id"),
@@ -39,7 +57,10 @@ class CompanyInDB(DBBaseModel):
     )
 
     status: Mapped[CompanyStatus] = mapped_column(
-        String(64), nullable=False, default=CompanyStatus.ACTIVE, comment="公司 状态"
+        CompanyStatusType(),
+        nullable=False,
+        default=CompanyStatus.ACTIVE,
+        comment="公司 状态",
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -54,6 +75,6 @@ class CompanyInDB(DBBaseModel):
         comment="更新时间",
     )
 
-    def __init__(self, name: str, admin_id: int) -> None:
+    def __init__(self, /, admin_id: int, name: str, description: str = None) -> None:
         self.name = name
         self.admin_id = admin_id

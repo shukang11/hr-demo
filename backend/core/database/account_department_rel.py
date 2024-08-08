@@ -19,6 +19,13 @@ class DepartmentMapAccountInDB(DBBaseModel):
         comment="account_department_rel id",
     )
 
+    company_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("company.id"),
+        nullable=False,
+        comment="company id",
+    )
+
     department_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("department.id"),
@@ -52,7 +59,10 @@ class DepartmentMapAccountInDB(DBBaseModel):
         comment="更新时间",
     )
 
-    def __init__(self, department_id: int, account_id: int, job_id: int) -> None:
+    def __init__(
+        self, company_id: int, department_id: int, account_id: int, job_id: int
+    ) -> None:
+        self.company_id = company_id
         self.department_id = department_id
         self.account_id = account_id
         self.job_id = job_id

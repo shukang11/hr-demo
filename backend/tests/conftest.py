@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from core.database._base_model import DBBaseModel
 from api.main import app
 from core.utils.settings import settings
-from core.database.account import AccountInDB
+from core.database import AdministratorInDB, CompanyInDB, DepartmentInDB, CompanyJobInDB
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def setup_test_db(setup_db: Generator) -> Generator:
         DBBaseModel.metadata.drop_all(engine)
         DBBaseModel.metadata.create_all(engine)
         yield
-        DBBaseModel.metadata.drop_all(engine)
+        # DBBaseModel.metadata.drop_all(engine)
 
     engine.dispose()
 
@@ -86,21 +86,112 @@ def session() -> Generator:
 
 
 @pytest.fixture
-def login_account(session) -> AccountInDB:
+def secret_key() -> str:
+    return settings.SECRET_KEY
+
+
+@pytest.fixture
+def normal_company(session, login_administrator: AdministratorInDB) -> CompanyInDB:
+    name = "test_normal_company"
+    description = "test_normal_company_description"
+    from core.database import CompanyStatus
+    from core.controller.company import CompanyManager, InsertCompanyPayload
+
+    payload = InsertCompanyPayload(
+        name=name,
+        description=description,
+        status=CompanyStatus.ACTIVE,
+        admin_id=login_administrator.id,
+    )
+    controller = CompanyManager(session)
+
+    company = controller.create_company(payload=payload)
+    session.commit()
+    return company
+
+
+def normal_department_1(session, normal_company: CompanyInDB) -> DepartmentInDB:
+    name = "test_normal_department_1"
+    from core.controller.company import CompanyManager, InsertDepartmentPayload
+
+    payload = InsertDepartmentPayload(
+        name=name,
+        company_id=normal_company.id,
+    )
+    controller = CompanyManager(session)
+
+    department = controller.insert_department(payload=payload)
+    session.commit()
+    return department
+
+
+def normal_department_2(session, normal_company: CompanyInDB) -> DepartmentInDB:
+    name = "test_normal_department_2"
+    from core.controller.company import CompanyManager, InsertDepartmentPayload
+
+    payload = InsertDepartmentPayload(
+        name=name,
+        company_id=normal_company.id,
+    )
+    controller = CompanyManager(session)
+
+    department = controller.insert_department(payload=payload)
+    session.commit()
+    return department
+
+
+def job_hr_in_normal_company(session, normal_company: CompanyInDB) -> CompanyJobInDB:
+    name = "test_hr_job"
+    description = "test_hr_job_description"
+    from core.controller.company import CompanyManager, InsertCompanyJobPayload
+
+    payload = InsertCompanyJobPayload(
+        company_id=normal_company.id,
+        job_name=name,
+        description=description,
+    )
+    controller = CompanyManager(session)
+
+    job = controller.insert_company_job(payload=payload)
+    session.commit()
+    return job
+
+
+def job_cook_in_normal_company(session, normal_company: CompanyInDB) -> CompanyJobInDB:
+    name = "test_cook_job"
+    description = "test_cook_job_description"
+    from core.controller.company import CompanyManager, InsertCompanyJobPayload
+
+    payload = InsertCompanyJobPayload(
+        company_id=normal_company.id,
+        job_name=name,
+        description=description,
+    )
+    controller = CompanyManager(session)
+
+    job = controller.insert_company_job(payload=payload)
+    session.commit()
+    return job
+
+
+@pytest.fixture
+def login_administrator(session, secret_key) -> AdministratorInDB:
     phone = "12345678901"
     email = "login_account@email.com"
     username = "login_account"
     password_origin = "123456"
-    from core.controller.account import create_account, CreateAccountPayload
+    from core.controller.account import AccountManager, InsertAccountPayload
 
-    account = AccountInDB.find_by_username(session, username)
+    controller = AccountManager(session)
+
+    account = AdministratorInDB.find_by_username(session, username)
     if not account:
-        reg_req = CreateAccountPayload(
+        reg_req = InsertAccountPayload(
             username=username,
             phone=phone,
             email=email,
             password=password_origin,
         )
-        account = create_account(reg_req, session)
+        account = controller.insert_administrator(reg_req, secret_key)
         session.commit()
     return account

@@ -11,6 +11,26 @@ __all__ = ["create_app"]
 load_dotenv()
 
 
+def create_tables_if_dev():
+    from core.database._session import engine
+    from core.database._base_model import DBBaseModel
+    from core import database  # noqa: F401
+
+    try:
+        # 查看所有的表
+        from sqlalchemy import inspect
+
+        insp = inspect(engine)
+        print(insp.get_table_names())
+        meta = DBBaseModel.metadata
+        meta.drop_all(bind=engine)
+        meta.create_all(bind=engine)
+        print(f"meta: {meta}")
+        print("Tables created successfully on: ", os.getenv("SQLALCHEMY_DATABASE_URL"))
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+
+
 def create_app() -> FastAPI:
     app = FastAPI()
     app.add_middleware(
@@ -19,23 +39,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    create_tables_if_dev()
+
     from .routes import init_app as routes_init_app
-
-    # see how many versions, if zero, run db create all tables
-    migrate_count = os.system("python -m alembic history")
-    if migrate_count == 0:
-        print("migrate_count == 0")
-        from core.database._base_model import DBBaseModel
-
-        # create all tables
-        from core.database._session import engine
-
-        DBBaseModel.metadata.create_all(bind=engine)
-    else:
-        # run migration
-        migrate_result = os.system("python -m alembic upgrade head")
-        if migrate_result != 0:
-            print("migrate failed")
 
     routes_init_app(app=app)
 
