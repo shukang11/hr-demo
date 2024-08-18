@@ -1,0 +1,61 @@
+[
+  {
+    "id": "1",
+    "username": "user1",
+    "email": "user1@example.com",
+    "phone": "123-456-7890",
+    "employeeInfo": {
+      "accountId": "1",
+      "hireDate": "2020-01-01T00:00:00.000Z",
+      "terminationDate": null
+    },
+    "interviews": [
+      {
+        "id": "1",
+        "user_id": "1",
+        "interviewDate": "2020-02-01T00:00:00.000Z",
+        "remark": "Good communication skills"
+      }
+    ],
+    "department": {
+      "id": "1",
+      "name": "Engineering",
+      "parentId": null,
+      "remark": "Main department",
+      "children": []
+    },
+    "extra": {
+      "gender": "male"
+    }
+  },
+  {
+    "id": "2",
+    "username": "user2",
+    "email": "user2@example.com",
+    "phone": "098-765-4321",
+    "employeeInfo": {
+      "accountId": "2",
+      "hireDate": "2021-01-01T00:00:00.000Z",
+      "terminationDate": null
+    },
+    "interviews": [
+      {
+        "id": "2",
+        "user_id": "2",
+        "interviewDate": "2021-02-01T00:00:00.000Z",
+        "remark": "Excellent problem-solving skills"
+      }
+    ],
+    "department": {
+      "id": "2",
+      "name": "Marketing",
+      "parentId": null,
+      "remark": "Promotion and advertising",
+      "children": []
+    },
+    "extra": {
+      "gender": "female"
+    }
+  }
+]
+

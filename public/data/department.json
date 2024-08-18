@@ -1,0 +1,31 @@
+[
+  {
+    "id": "1",
+    "name": "工程部",
+    "parentId": null,
+    "remark": "主要部门",
+    "children": []
+  },
+  {
+    "id": "2",
+    "name": "市场部",
+    "parentId": null,
+    "remark": "推广和广告",
+    "children": []
+  },
+  {
+    "id": "3",
+    "name": "销售部",
+    "parentId": null,
+    "remark": "处理客户互动",
+    "children": []
+  },
+  {
+    "id": "4",
+    "name": "财务部",
+    "parentId": null,
+    "remark": "管理财务运营",
+    "children": []
+  }
+]
+
