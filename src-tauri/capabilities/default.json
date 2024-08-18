@@ -22,10 +22,14 @@
       "identifier": "fs:scope-appdata-recursive",
       "allow": [
         {
-          "path": "$APPDATA/config/**"
+          "path": "$APPDATA/**"
         }
       ],
-      "deny": ["$APPDATA/config/*.stronghold"]
-    }
+      "deny": ["$APPDATA/*.stronghold"]
+    },
+    "sql:default",
+    "sql:allow-load",
+    "sql:allow-execute",
+    "sql:allow-select"
   ]
 }

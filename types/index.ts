@@ -1,14 +1,3 @@
-export class ExtraSchema {
-  value: Record<string, any>;
-
-  schema?: object;
-
-  constructor({ value, schema }: ExtraSchema) {
-    this.value = value;
-    this.schema = schema;
-  }
-}
-
 /**
  * @enum {string}
  * @typedef {object} Gender
@@ -17,50 +6,88 @@ export class ExtraSchema {
  * @property {string} Unknown - 表示未知
  */
 export enum Gender {
-  Female = "female",
-  Male = "male",
-  Unknown = "unknown",
+  Female = "Female",
+  Male = "Male",
+  Unknown = "Unknown",
 }
 
-export class Account {
+export class Company {
+  id?: number;
+  name: string;
+  extra_value: any;
+  extra_schema_id?: number;
+
+  constructor({ id, name, extra_value, extra_schema_id }: Company) {
+    this.id = id;
+    this.name = name;
+    this.extra_value = extra_value;
+    this.extra_schema_id = extra_schema_id;
+  }
+}
+
+export class SchemaValue {
+  id?: number;
+  schema?: object;
+  value: object;
+
+  constructor({ id, schema, value }: SchemaValue) {
+    this.id = id;
+    this.schema = schema;
+    this.value = value;
+  }
+}
+
+export class Employee {
   id?: string;
-  username?: string;
-  email: string;
-  phone?: string;
-  employeeInfo?: EmployeeInfo;
+  username: string;
+  email?: string;
+  phone: string;
+  gender?: Gender;
+  birthday?: Date;
+  address?: string;
+  employeeInfo?: EmployeeHireInfo;
   interviews?: Interview[];
   department?: Department;
-  extra: Record<string, any>;
+  company?: Company;
+  extra?: SchemaValue;
 
   constructor({
     id,
     username,
     email,
     phone,
+    gender,
+    birthday,
+    address,
     employeeInfo,
     interviews,
     department,
+    company,
     extra,
-  }: Account) {
+  }: Employee) {
     this.id = id;
     this.username = username;
     this.email = email;
     this.phone = phone;
+    this.gender = gender || Gender.Unknown;
+    this.birthday = birthday;
+    this.address = address;
     this.employeeInfo = employeeInfo;
     this.interviews = interviews;
     this.department = department;
+    this.company = company;
     this.extra = extra;
   }
 }
 
 // 表示员工的入职和离职信息
-export class EmployeeInfo {
-  accountId: string;
+export class EmployeeHireInfo {
+  employeeId?: string;
   hireDate: Date;
   terminationDate?: Date;
 
-  constructor({ accountId, hireDate, terminationDate }: EmployeeInfo) {
-    this.accountId = accountId;
+  constructor({ employeeId, hireDate, terminationDate }: EmployeeHireInfo) {
+    this.employeeId = employeeId;
     this.hireDate = hireDate;
     this.terminationDate = terminationDate;
   }
@@ -85,15 +112,28 @@ export class Interview {
 export class Department {
   id?: string;
   name: string;
+  company?: Company;
   parentId?: string;
   remark?: string;
   children?: Department[];
+  leader?: Employee;
+  members?: Employee[];
 
-  constructor({ name, id, parentId, remark, children }: Department) {
+  constructor({
+    id,
+    name,
+    leader,
+    parentId,
+    remark,
+    children,
+    members,
+  }: Department) {
     this.name = name;
     this.id = id;
+    this.leader = leader;
     this.parentId = parentId;
     this.remark = remark;
     this.children = children;
+    this.members = members;
   }
 }

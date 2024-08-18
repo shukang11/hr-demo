@@ -1,12 +1,11 @@
 
+import Container from '@/app/company/container';
+
 export default function Page() {
 
     return (
         <>
-            H1
-
-            <br />
-
+            <Container />
         </>
     );
 }

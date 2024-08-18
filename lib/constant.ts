@@ -38,9 +38,9 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "",
       menus: [
         {
-          href: "/dashboard",
+          href: "/",
           label: "看板",
-          active: pathname.includes("/dashboard"),
+          active: pathname === "/",
           icon: Icons.layoutGrid,
           submenus: [],
         },
@@ -129,5 +129,5 @@ export function getMenuList(pathname: string): Group[] {
 }
 
 export const Service_APP = {
- setting_path: "./setting.dat"
-}
+  setting_path: "./setting.dat",
+};

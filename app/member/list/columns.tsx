@@ -3,14 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { MAIN_APP } from "@/lib/routes";
-import { Account } from "@/types";
+import { Employee } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { FC, useState } from "react";
 
 // 在文件顶部添加接口定义
 interface ActionProps {
-    account: Account;
+    account: Employee;
 }
 
 const Action: FC<ActionProps> = ({ account }) => {
@@ -37,7 +37,7 @@ const Action: FC<ActionProps> = ({ account }) => {
     )
 }
 
-export const columns: ColumnDef<Account>[] = [
+export const columns: ColumnDef<Employee>[] = [
     {
         accessorKey: "name",
         header: ({ column }) => (

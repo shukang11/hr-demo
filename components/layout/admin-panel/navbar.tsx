@@ -1,5 +1,5 @@
 
-import { UserNav } from "@/components/layout/admin-panel/user-nav";
+// import { UserNav } from "@/components/layout/admin-panel/user-nav";
 import { SheetMenu } from "@/components/layout/admin-panel/sheet-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -17,7 +17,7 @@ export function Navbar({ title }: NavbarProps) {
                 </div>
                 <div className="flex flex-1 items-center space-x-2 justify-end">
                     <ThemeToggle />
-                    <UserNav />
+                    {/* <UserNav /> */}
                 </div>
             </div>
         </header>
