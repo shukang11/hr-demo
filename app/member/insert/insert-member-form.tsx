@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getUUID } from "@/lib/helper";
 import { Employee } from "@/types";
+import { useDepartments } from "@/services/department";
 
 const InsertMemberFormSchema = z.object({
     uuid: z.string().optional(),
@@ -35,11 +36,12 @@ const InsertMemberFormSchema = z.object({
         message: "最多15位数",
     }).optional(),
     address: z.string().optional(),
+    department: z.number().optional(), // 添加部门字段
 });
 
 interface ContainerProps {
-    data?: Employee;
-    onSubmit: (data: z.infer<typeof InsertMemberFormSchema>) => void;
+    _data?: Employee;
+    onSubmit: (_data: z.infer<typeof InsertMemberFormSchema>) => void;
 }
 
 export default function InsertMemberForm({ onSubmit }: ContainerProps) {
@@ -55,6 +57,7 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
             gender: 'Unknown',
         }
     });
+    const { data: departmentList } = useDepartments();
 
     return (
         <>
@@ -107,12 +110,12 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                                 control={form.control}
                                 name="birthdate"
                                 render={({ field }) => (
-                                    <FormItem className="w-1/2 flex flex-col">
+                                    <FormItem className="w-1/2">
                                         <FormLabel>出生日期</FormLabel>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <FormControl>
-                                                    <Button variant="outline" className={cn("text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                    <Button variant="outline" className={cn("w-full text-left font-normal", !field.value && "text-muted-foreground")}>
                                                         {field.value ? format(field.value, "PPP") : <span>选择日期</span>}
                                                     </Button>
                                                 </FormControl>
@@ -169,8 +172,35 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                                 )}
                             />
                         </div>
+                        <div className="flex space-x-4">
+                            <FormField
+                                control={form.control}
+                                name="department"
+                                render={({ field }) => (
+                                    <FormItem className="w-1/2">
+                                        <FormLabel>部门</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={
+                                            field.value ? departmentList?.find(department => department.id === field.value)?.name : ""
+                                        }>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="选择部门" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {departmentList?.map(department => (
+                                                    <SelectItem key={department.id} value={department.id?.toString() || ''}>{department.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                     </CardSection>
-
+                    <div className="flex space-x-4">
+                        <Button type="submit">提交</Button>
+                    </div>
                 </form>
             </Form>
         </>

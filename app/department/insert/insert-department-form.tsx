@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Department } from '@/types';
+import { useDepartments } from '@/services/department';
 
 export const InsertDepartmentFormSchema = z.object({
   name: z.string().min(1, { message: "部门名称是必填的" }),
@@ -20,13 +21,21 @@ interface InsertDepartmentFormProps {
 }
 
 export default function InsertDepartmentForm({ department, onSubmit }: InsertDepartmentFormProps) {
+  const {data: departments} = useDepartments();
+
   const form = useForm<z.infer<typeof InsertDepartmentFormSchema>>({
-    resolver: zodResolver(InsertDepartmentFormSchema),
+    resolver: zodResolver(InsertDepartmentFormSchema.refine((data) => {
+      return !departments?.some(dep => dep.name === data.name);
+    }, {
+      message: "部门名称已存在",
+      path: ["name"]
+    })),
     defaultValues: {
       name: department?.name || "",
       remark: department?.remark || "",
     },
   });
+
 
 
   return (

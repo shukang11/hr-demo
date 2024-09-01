@@ -1,27 +1,13 @@
 'use client';
 
 import CompanyHeader from '@/app/company/header';
-import { dbGetAllCompanies, dbUpdateCompany } from '@/services/company';
+import { useCompany } from '@/lib/providers/company-provider';
 import { Company } from '@/types';
-import { useEffect, useState } from 'react';
 
 export default function Page() {
 
-    const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
-
-    useEffect(() => {
-        const loadCompany = async () => {
-            const companies = await dbGetAllCompanies();
-            if (companies.length === 0) {
-                console.log("公司列表为空");
-            } else {
-                // get first company
-                const company = companies[0];
-                setCurrentCompany(company);
-            }
-        }
-        loadCompany();
-    });
+    
+    const {currentCompany, changeCompany} = useCompany();
 
     const employeeCount = 100; // 假设公司在职员工人数为100
     const maleRatio = 0.6; // 假设男性比例为60%
@@ -33,8 +19,7 @@ export default function Page() {
         <>
             <CompanyHeader companyName={currentCompany?.name ?? ""} onEdit={(newName) => {
                 if (currentCompany) {
-                    dbUpdateCompany({ id: currentCompany.id, name: newName });
-                    setCurrentCompany({ ...currentCompany, name: newName });
+                    changeCompany({ ...currentCompany, name: newName });
                 }
             }} />
             <div className="mt-4">

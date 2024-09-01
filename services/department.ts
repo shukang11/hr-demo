@@ -1,5 +1,6 @@
 import { getDatabaseInstance } from "./db";
 import { Department } from "../types";
+import useSWR from "swr";
 
 export async function dbAddDepartment({
   id,
@@ -13,6 +14,8 @@ export async function dbAddDepartment({
     throw new Error(
       "Department ID should not be provided when adding department"
     );
+  } else if (company === undefined) {
+    throw new Error("Company information is required to add department");
   }
   if (leader && leader?.id === undefined) {
     throw new Error("Department leader ID is required to add department");
@@ -55,4 +58,26 @@ export async function dbUpdateDepartment({
   `,
     [name, parentId, company?.id, leader?.id, remark, id]
   );
+}
+
+export async function dbGetDepartments(): Promise<Department[]> {
+  const db = await getDatabaseInstance();
+  const departements = await db.select(`
+    SELECT * FROM department
+  `);
+  // @ts-ignore
+  return departements.map((row) => ({
+    id: row.id,
+    name: row.name,
+    parentId: row.parent_id,
+    company: row.company_id,
+    leader: row.leader_id,
+    remark: row.remark
+  }));
+}
+
+export const departmentsFetcher = () => dbGetDepartments()
+
+export const useDepartments = () => {
+  return useSWR('/get-departments', departmentsFetcher); // 更新路径
 }

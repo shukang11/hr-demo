@@ -2,6 +2,7 @@
 import React from 'react';
 import { ThemeProvider } from './theme-provider';
 import { SettingProvider } from './setting-provider';
+import { CompanyProvider } from './company-provider';
 
 export function RootProviders({
     children
@@ -12,7 +13,9 @@ export function RootProviders({
         <>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                 <SettingProvider>
-                    {children}
+                    <CompanyProvider>
+                        {children}
+                    </CompanyProvider>
                 </SettingProvider>
             </ThemeProvider>
         </>
