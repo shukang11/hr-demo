@@ -21,8 +21,9 @@ import { z } from "zod"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getUUID } from "@/lib/helper";
+import { Employee } from "@/types";
 
-const FormSchema = z.object({
+const InsertMemberFormSchema = z.object({
     uuid: z.string().optional(),
     username: z.string().optional(),
     birthdate: z.date().optional(),
@@ -37,12 +38,13 @@ const FormSchema = z.object({
 });
 
 interface ContainerProps {
-    onSubmit: (data: z.infer<typeof FormSchema>) => void;
+    data?: Employee;
+    onSubmit: (data: z.infer<typeof InsertMemberFormSchema>) => void;
 }
 
 export default function InsertMemberForm({ onSubmit }: ContainerProps) {
-    const form = useForm<z.infer<typeof FormSchema>>({
-        resolver: zodResolver(FormSchema),
+    const form = useForm<z.infer<typeof InsertMemberFormSchema>>({
+        resolver: zodResolver(InsertMemberFormSchema),
         defaultValues: {
             uuid: getUUID(),
             username: "",

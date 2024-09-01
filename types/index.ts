@@ -38,7 +38,7 @@ export class SchemaValue {
 }
 
 export class Employee {
-  id?: string;
+  id?: number;
   username: string;
   email?: string;
   phone: string;
