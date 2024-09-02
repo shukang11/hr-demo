@@ -37,6 +37,20 @@ export class SchemaValue {
   }
 }
 
+export class Position {
+  id?: number;
+  name: string;
+  company_id: number;
+  remark?: string;
+
+  constructor({ id, name, company_id, remark }: Position) {
+    this.id = id;
+    this.name = name;
+    this.company_id = company_id;
+    this.remark = remark;
+  }
+}
+
 export class Employee {
   id?: number;
   username: string;
@@ -49,6 +63,7 @@ export class Employee {
   interviews?: Interview[];
   department?: Department;
   company?: Company;
+  position?: Position;
   extra?: SchemaValue;
 
   constructor({
@@ -63,6 +78,7 @@ export class Employee {
     interviews,
     department,
     company,
+    position,
     extra,
   }: Employee) {
     this.id = id;
@@ -76,6 +92,7 @@ export class Employee {
     this.interviews = interviews;
     this.department = department;
     this.company = company;
+    this.position = position;
     this.extra = extra;
   }
 }

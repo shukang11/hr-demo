@@ -23,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { getUUID } from "@/lib/helper";
 import { Employee } from "@/types";
 import { useDepartments } from "@/services/department";
+import { usePositions } from "@/services/position";
 
 const InsertMemberFormSchema = z.object({
     uuid: z.string().optional(),
@@ -36,7 +37,8 @@ const InsertMemberFormSchema = z.object({
         message: "最多15位数",
     }).optional(),
     address: z.string().optional(),
-    department: z.number().optional(), // 添加部门字段
+    department_id: z.number().optional(), // 添加部门字段
+    position_id: z.number().optional(), // 职位字段
 });
 
 interface ContainerProps {
@@ -58,6 +60,7 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
         }
     });
     const { data: departmentList } = useDepartments();
+    const {data: positionList} = usePositions();
 
     return (
         <>
@@ -175,13 +178,11 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                         <div className="flex space-x-4">
                             <FormField
                                 control={form.control}
-                                name="department"
+                                name="department_id"
                                 render={({ field }) => (
                                     <FormItem className="w-1/2">
                                         <FormLabel>部门</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={
-                                            field.value ? departmentList?.find(department => department.id === field.value)?.name : ""
-                                        }>
+                                        <Select onValueChange={val => field.onChange(Number(val))} defaultValue={field.value?.toString()}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="选择部门" />
@@ -193,6 +194,29 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="position_id"
+                                render={({ field }) => (
+                                    <FormItem className="w-1/2">
+                                        <FormLabel>职位</FormLabel>
+                                        <Select onValueChange={val => field.onChange(Number(val))} defaultValue={field.value?.toString()}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="选择职位" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {positionList?.map(position => (
+                                                    <SelectItem key={position.id} value={position.id?.toString() || ''}>{position.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
