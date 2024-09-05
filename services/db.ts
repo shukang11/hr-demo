@@ -9,4 +9,10 @@ export async function getDatabaseInstance(): Promise<Database> {
   return default_db;
 }
 
-
+export async function clearAllTables(): Promise<void> {
+  const db = await getDatabaseInstance();
+  const tables = await db.select<{ name: string }[]>(`SELECT name FROM sqlite_master WHERE type='table'`);
+  for (const table of tables) {
+    await db.execute(`DELETE FROM ${table.name}`);
+  }
+}

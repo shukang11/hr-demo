@@ -4,71 +4,100 @@ import useSWR from "swr";
 
 export async function dbAddEmployee(employee: Employee): Promise<void> {
   const db = await getDatabaseInstance();
-  await db.execute(
-    `
-    INSERT INTO employee (
-      name, email, phone, gender, birthdate, address, extra_value, extra_schema_id
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-  `,
-    [
-      employee.username || "",
-      employee.email,
-      employee.phone || "",
-      employee.gender || "Unknown",
-      employee.birthday ? employee.birthday.toISOString().split("T")[0] : null,
-      employee.address,
-      JSON.stringify(employee.extra?.value || {}),
-      employee.extra?.id,
-    ]
-  );
+  let result;
+  
 
-  if (employee.department && employee.company && employee) {
-    await db.execute(
+  if (employee.id) {
+    // 如果存在 id，则为 update
+    result = await db.execute(
       `
-    INSERT INTO employee_position (
-      employee_id, company_id, department_id, position_id
-    ) VALUES ($1, $2, $3, $4)
-    `,
+      UPDATE employee SET 
+        name = $1, 
+        email = $2, 
+        phone = $3, 
+        gender = $4, 
+        birthdate = $5, 
+        address = $6, 
+        extra_value = $7, 
+        extra_schema_id = $8 
+      WHERE id = $9
+      `,
       [
+        employee.username || "",
+        employee.email,
+        employee.phone || "",
+        employee.gender || "Unknown",
+        employee.birthday ? employee.birthday.toISOString().split("T")[0] : null,
+        employee.address,
+        JSON.stringify(employee.extra?.value || {}),
+        employee.extra?.id,
         employee.id,
-        employee.company.id,
-        employee.department.id,
-        employee.position?.id,
+      ]
+    );
+  } else {
+    // 否则为 insert
+    result = await db.execute(
+      `
+      INSERT INTO employee (
+        name, email, phone, gender, birthdate, address, extra_value, extra_schema_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `,
+      [
+        employee.username || "",
+        employee.email,
+        employee.phone || "",
+        employee.gender || "Unknown",
+        employee.birthday ? employee.birthday.toISOString().split("T")[0] : null,
+        employee.address,
+        JSON.stringify(employee.extra?.value || {}),
+        employee.extra?.id,
       ]
     );
   }
-}
 
-export async function dbUpdateEmployee(employee: Employee): Promise<void> {
-  if (employee.id === undefined) {
-    throw new Error("Employee ID is required to update employee");
+  console.log(`after operation: `, result);
+
+  if (employee.department) {
+    // 更新 employee_position 表
+    console.log(`查询现有员工:`, employee.id || result.lastInsertId);
+    const existingEmployee = await db.select(`
+      SELECT id FROM employee_position WHERE employee_id = $1
+    `, [employee.id || result.lastInsertId]);
+
+    console.log(`现有员工查询结果:`, existingEmployee);
+    const hasExsitsEmployeePosition = existingEmployee && existingEmployee.length > 0;
+    if (hasExsitsEmployeePosition) {
+      console.log(`更新员工职位信息:`, employee.id || result.lastInsertId);
+      await db.execute(
+        `
+        UPDATE employee_position SET
+          company_id = $1,
+          position_id = $2
+        WHERE employee_id = $3 AND department_id = $4
+        `,
+        [
+          employee.company?.id || employee.department.company,
+          employee.position?.id,
+          employee.id || result.lastInsertId,
+          employee.department.id,
+        ]
+      );
+    } else {
+      await db.execute(
+        `
+        INSERT INTO employee_position (
+          employee_id, company_id, department_id, position_id
+        ) VALUES ($1, $2, $3, $4)
+        `,
+        [
+          employee.id || result.lastInsertId,
+          employee.company?.id || employee.department.company,
+          employee.department.id,
+          employee.position?.id,
+        ]
+      );
+    }
   }
-  const db = await getDatabaseInstance();
-  await db.execute(
-    `
-    UPDATE employee SET 
-      name = $1, 
-      email = $2, 
-      phone = $3, 
-      gender = $4, 
-      birthdate = $5, 
-      address = $6, 
-      extra_value = $7, 
-      extra_schema_id = $8 
-    WHERE id = $9
-  `,
-    [
-      employee.username || "",
-      employee.email,
-      employee.phone || "",
-      employee.gender || "Unknown",
-      employee.birthday ? employee.birthday.toISOString().split("T")[0] : null,
-      employee.address,
-      JSON.stringify(employee.extra?.value || {}),
-      employee.extra?.id,
-      employee.id,
-    ]
-  );
 }
 
 export async function dbGetEmployees(): Promise<Employee[]> {

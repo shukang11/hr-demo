@@ -57,3 +57,16 @@ export async function dbGetAllCompanies(): Promise<Company[]> {
     extra_schema_id: company.extra_schema_id,
   }));
 }
+
+export async function dbRemoveCompany(id: number): Promise<void> {
+  if (id === undefined) {
+    throw new Error("Company ID is required to remove company");
+  }
+  const db = await getDatabaseInstance();
+  await db.execute(
+    `
+    DELETE FROM company WHERE id = $1
+  `,
+    [id]
+  );
+}

@@ -21,9 +21,11 @@ import { z } from "zod"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getUUID } from "@/lib/helper";
-import { Employee } from "@/types";
+import {  Employee } from "@/types";
 import { useDepartments } from "@/services/department";
 import { usePositions } from "@/services/position";
+import { useCompany } from "@/lib/providers/company-provider";
+import { useEmployees } from "@/services/employ";
 
 const InsertMemberFormSchema = z.object({
     uuid: z.string().optional(),
@@ -37,22 +39,23 @@ const InsertMemberFormSchema = z.object({
         message: "最多15位数",
     }).optional(),
     address: z.string().optional(),
-    department: z.object({
-        id: z.number(),
-        name: z.string(),
-    }).optional(),
-    position: z.object({
-        id: z.number(),
-        name: z.string(),
-    }).optional(),
+    departmentId: z.string().optional(),
+    positionId: z.string().optional(),
+
 });
 
 interface ContainerProps {
-    _data?: Employee;
-    onSubmit: (_data: z.infer<typeof InsertMemberFormSchema>) => void;
+    data?: Employee;
+    onSubmit: (_data: Employee) => void;
 }
 
-export default function InsertMemberForm({ onSubmit }: ContainerProps) {
+export default function InsertMemberForm({ data, onSubmit }: ContainerProps) {
+    const isInsert = data === undefined;
+    const { currentCompany } = useCompany();
+    const { data: employeeList } = useEmployees();
+    const { data: departmentList } = useDepartments();
+    const { data: positionList } = usePositions();
+    
     const form = useForm<z.infer<typeof InsertMemberFormSchema>>({
         resolver: zodResolver(InsertMemberFormSchema),
         defaultValues: {
@@ -65,23 +68,61 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
             gender: 'Unknown',
         }
     });
-    const { data: departmentList } = useDepartments();
-    const { data: positionList } = usePositions();
 
-    const handleSubmit = (data: z.infer<typeof InsertMemberFormSchema>) => {
-        const department = departmentList?.find(dep => dep.id === data.department?.id);
-        const position = positionList?.find(pos => pos.id === data.position?.id);
-        onSubmit({
-            ...data,
-            department: department ? { id: Number(department.id), name: department.name } : undefined,
-            position: position ? { id: Number(position.id), name: position.name } : undefined,
-        });
-    };
+    const submitAction = async (data: z.infer<typeof InsertMemberFormSchema>) => {
+        // 
+        const employee: Employee = {
+            uuid: data.uuid,
+            username: data.username ?? "",
+            birthdate: data.birthdate ?? new Date(),
+            // @ts-ignore
+            gender: data.gender ?? "Unknown",
+            email: data.email ?? "",
+            phone: data.phone ?? "",
+            address: data.address ?? "",
+            company: currentCompany ?? undefined,
+            department: departmentList?.find(d => d.id?.toString() === data.departmentId),
+            position: positionList?.find(p => p.id?.toString() === data.positionId),
+        };
+
+        if (isInsert) {
+            const emailExists = employeeList?.some(e => e.email === employee.email);
+            const phoneExists = employeeList?.some(e => e.phone === employee.phone);
+            const usernameExists = employeeList?.some(e => e.username === employee.username);
+
+            if (employee.username && usernameExists) {
+                form.setError("username", {
+                    type: "manual",
+                    message: "姓名已存在",
+                });
+                return;
+            }
+            
+            if (employee.email && emailExists) {
+                form.setError("email", {
+                    type: "manual",
+                    message: "邮箱已存在",
+                });
+                return;
+            }
+
+            if (employee.phone && phoneExists) {
+                form.setError("phone", {
+                    type: "manual",
+                    message: "手机号已存在",
+                });
+                return;
+            }
+
+        }
+
+        onSubmit(employee);
+    }
 
     return (
         <>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(submitAction)} className="space-y-8">
                     <CardSection title="基础信息">
                         <div className="flex space-x-4">
                             <FormField
@@ -194,11 +235,11 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                         <div className="flex space-x-4">
                             <FormField
                                 control={form.control}
-                                name="department"
+                                name="departmentId"
                                 render={({ field }) => (
                                     <FormItem className="w-1/2">
                                         <FormLabel>部门</FormLabel>
-                                        <Select onValueChange={val => field.onChange({ id: val, name: departmentList?.find(dep => dep.id === val)?.name || '' })} defaultValue={field.value?.id?.toString()}>
+                                        <Select onValueChange={val => field.onChange(val)} defaultValue={field.value?.toString()}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="选择部门" />
@@ -216,11 +257,11 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                             />
                             <FormField
                                 control={form.control}
-                                name="position"
+                                name="positionId"
                                 render={({ field }) => (
                                     <FormItem className="w-1/2">
                                         <FormLabel>职位</FormLabel>
-                                        <Select onValueChange={val => field.onChange({ id: Number(val), name: positionList?.find(pos => pos.id === Number(val))?.name || '' })} defaultValue={field.value?.id?.toString()}>
+                                        <Select onValueChange={val => field.onChange(val)} defaultValue={field.value?.toString()}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="选择职位" />

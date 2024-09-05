@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 
 export default function Container() {
     const router = useRouter();
+    
     // @ts-ignore
     const handleSubmit = async (data) => {
         console.log(`insert member data: ${JSON.stringify(data)}`);

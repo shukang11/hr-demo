@@ -8,12 +8,16 @@ import { BaseDirectory } from '@tauri-apps/plugin-fs';
 import { useSetting } from '@/lib/providers/setting-provider';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { clearAllTables } from '@/services/db';
+import { useToast } from '@/components/ui/use-toast';
+
 
 const SettingsPage: React.FC = () => {
     const { setting, updateSetting } = useSetting();
     const [dataSourceUrl, setDataSourceUrl] = useState(setting.dataSourceUrl ?? "");
     const [defaultExportUrl, setDefaultExportUrl] = useState(setting.defaultExportUrl ?? "");
     const [backupUrl, setBackupUrl] = useState(setting.backupUrl ?? "");
+    const {toast} = useToast();
 
     const handleSave = () => {
         console.log('数据源地址:', dataSourceUrl);
@@ -38,6 +42,12 @@ const SettingsPage: React.FC = () => {
             // user selected a single directory
         }
     };
+
+    const resetData = async () => {
+        await clearAllTables();
+        // toast 
+        toast({title: "重置成功"})
+    }
 
     return (
         <div className="container mx-auto p-4">
@@ -86,8 +96,33 @@ const SettingsPage: React.FC = () => {
                             <Button onClick={() => selectFolder(setBackupUrl)} className="ml-2">导入</Button>
                         </div>
                     </div>
+
+                    
                 </CardContent>
-                <CardFooter>
+                
+            </Card>
+
+            <Card className='mt-4'>
+                <CardHeader>
+                    <CardTitle>数据管理</CardTitle>
+                    <CardDescription>管理您的数据</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <Label htmlFor="resetData">重置数据</Label>
+                        <div className="flex">
+                            <Button onClick={resetData} className="ml-2">重置</Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+
+            <Card className='mt-4'>
+            <CardHeader>
+                    <CardDescription></CardDescription>
+                </CardHeader>
+            <CardFooter>
                     <Button onClick={handleSave} className="w-full">保存</Button>
                 </CardFooter>
             </Card>
