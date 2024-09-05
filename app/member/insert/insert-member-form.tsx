@@ -37,8 +37,14 @@ const InsertMemberFormSchema = z.object({
         message: "最多15位数",
     }).optional(),
     address: z.string().optional(),
-    department_id: z.number().optional(), // 添加部门字段
-    position_id: z.number().optional(), // 职位字段
+    department: z.object({
+        id: z.number(),
+        name: z.string(),
+    }).optional(),
+    position: z.object({
+        id: z.number(),
+        name: z.string(),
+    }).optional(),
 });
 
 interface ContainerProps {
@@ -60,12 +66,22 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
         }
     });
     const { data: departmentList } = useDepartments();
-    const {data: positionList} = usePositions();
+    const { data: positionList } = usePositions();
+
+    const handleSubmit = (data: z.infer<typeof InsertMemberFormSchema>) => {
+        const department = departmentList?.find(dep => dep.id === data.department?.id);
+        const position = positionList?.find(pos => pos.id === data.position?.id);
+        onSubmit({
+            ...data,
+            department: department ? { id: Number(department.id), name: department.name } : undefined,
+            position: position ? { id: Number(position.id), name: position.name } : undefined,
+        });
+    };
 
     return (
         <>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
                     <CardSection title="基础信息">
                         <div className="flex space-x-4">
                             <FormField
@@ -178,11 +194,11 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                         <div className="flex space-x-4">
                             <FormField
                                 control={form.control}
-                                name="department_id"
+                                name="department"
                                 render={({ field }) => (
                                     <FormItem className="w-1/2">
                                         <FormLabel>部门</FormLabel>
-                                        <Select onValueChange={val => field.onChange(Number(val))} defaultValue={field.value?.toString()}>
+                                        <Select onValueChange={val => field.onChange({ id: val, name: departmentList?.find(dep => dep.id === val)?.name || '' })} defaultValue={field.value?.id?.toString()}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="选择部门" />
@@ -200,11 +216,11 @@ export default function InsertMemberForm({ onSubmit }: ContainerProps) {
                             />
                             <FormField
                                 control={form.control}
-                                name="position_id"
+                                name="position"
                                 render={({ field }) => (
                                     <FormItem className="w-1/2">
                                         <FormLabel>职位</FormLabel>
-                                        <Select onValueChange={val => field.onChange(Number(val))} defaultValue={field.value?.toString()}>
+                                        <Select onValueChange={val => field.onChange({ id: Number(val), name: positionList?.find(pos => pos.id === Number(val))?.name || '' })} defaultValue={field.value?.id?.toString()}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="选择职位" />

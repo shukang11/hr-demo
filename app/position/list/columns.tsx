@@ -3,17 +3,17 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { MAIN_APP } from "@/lib/routes";
-import { Employee } from "@/types";
+import { Employee, Position } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { FC, useState } from "react";
 
 // 在文件顶部添加接口定义
 interface ActionProps {
-    account: Employee;
+    position: Position;
 }
 
-const Action: FC<ActionProps> = ({ account }) => {
+const Action: FC<ActionProps> = ({ position }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const openDialog = () => {
@@ -37,12 +37,12 @@ const Action: FC<ActionProps> = ({ account }) => {
     )
 }
 
-export const columns: ColumnDef<Employee>[] = [
+export const columns: ColumnDef<Position>[] = [
     {
         accessorKey: "name",
         header: ({ column }) => (
             <div className="flex items-center">
-                <span>姓名</span>
+                <span>职位名称</span>
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -52,22 +52,23 @@ export const columns: ColumnDef<Employee>[] = [
             </div>
         ),
         cell: ({ row }) => {
-            const account = row.original;
+            const position = row.original;
             return (
-                <Label onClick={() => alert(`点击了${account.username}`)}>
-                    {account.username}
+                <Label onClick={() => alert(`点击了${position.name}`)}>
+                    {position.name}
                 </Label>
             )
         },
         enableSorting: true,
         enableHiding: true,
-    }, {
-        accessorKey: "code",
+    },
+    {
+        accessorKey: "company_id",
         enableSorting: true,
         enableHiding: true,
         header: ({ column }) => (
             <div className="flex items-center">
-                <span>部门</span>
+                <span>公司ID</span>
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -77,22 +78,21 @@ export const columns: ColumnDef<Employee>[] = [
             </div>
         ),
         cell: ({ row }) => {
-            const account = row.original;
-            const department = account.department;
+            const position = row.original;
             return (
                 <div className="flex items-center">
-                    <span>{department?.name}</span>
+                    <span>{position.company_id}</span>
                 </div>
             )
         }
     },
     {
-        accessorKey: "joinDate",
+        accessorKey: "remark",
         enableSorting: true,
         enableHiding: true,
         header: ({ column }) => (
             <div className="flex items-center">
-                <span>入职时间</span>
+                <span>备注</span>
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -102,16 +102,10 @@ export const columns: ColumnDef<Employee>[] = [
             </div>
         ),
         cell: ({ row }) => {
-            const account = row.original;
-            const inhire = account.employeeInfo;
-            let display = "";
-            if (inhire) {
-                const joinDate = inhire.hireDate;
-                display += new Date(joinDate).toLocaleDateString();
-            }
+            const position = row.original;
             return (
                 <div className="flex items-center">
-                    <span>{display}</span>
+                    <span>{position.remark}</span>
                 </div>
             )
         }
@@ -122,8 +116,7 @@ export const columns: ColumnDef<Employee>[] = [
         enableHiding: false,
         header: "操作",
         cell: ({ row }) => (
-            <Action account={row.original} />
-
+            <Action position={row.original} />
         )
     }
 ]

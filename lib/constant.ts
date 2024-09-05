@@ -1,6 +1,6 @@
 import { Icons } from "@/components/icons";
 import { LucideIcon } from "lucide-react";
-import { DEPARTMENT_APP, MEMBER_APP, QUERY_APP, SETTING_ROOT } from "./routes";
+import { DEPARTMENT_APP, MEMBER_APP, QUERY_APP, SETTING_ROOT, POSITION_APP } from "./routes";
 
 export const siteConfig = {
   title: "人员管理",
@@ -90,6 +90,19 @@ export function getMenuList(pathname: string): Group[] {
               href: DEPARTMENT_APP.root,
               label: "部门列表",
               active: pathname.includes(DEPARTMENT_APP.root),
+            },
+          ],
+        },
+        {
+          href: "",
+          label: "公司职位",
+          active: pathname.includes(POSITION_APP.root),
+          icon: Icons.squarePen,
+          submenus: [
+            {
+              href: POSITION_APP.root,
+              label: "职位列表",
+              active: pathname.includes(POSITION_APP.root),
             },
           ],
         },

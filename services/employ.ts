@@ -22,21 +22,21 @@ export async function dbAddEmployee(employee: Employee): Promise<void> {
     ]
   );
 
-if (employee.department && employee.company && employee) {
-  await db.execute(
-    `
+  if (employee.department && employee.company && employee) {
+    await db.execute(
+      `
     INSERT INTO employee_position (
       employee_id, company_id, department_id, position_id
     ) VALUES ($1, $2, $3, $4)
     `,
-    [
-      employee.id,
-      employee.company.id,
-      employee.department.id,
-      employee.position?.id,
-    ]
-  );
-}
+      [
+        employee.id,
+        employee.company.id,
+        employee.department.id,
+        employee.position?.id,
+      ]
+    );
+  }
 }
 
 export async function dbUpdateEmployee(employee: Employee): Promise<void> {
@@ -74,15 +74,18 @@ export async function dbUpdateEmployee(employee: Employee): Promise<void> {
 export async function dbGetEmployees(): Promise<Employee[]> {
   const db = await getDatabaseInstance();
   const employees = await db.select(`
-    SELECT e.*, ep.department_id, d.name as department_name 
+    SELECT e.*, ep.*, d.name as department_name, c.name as company_name, p.name as position_name
     FROM employee e
     LEFT JOIN employee_position ep ON e.id = ep.employee_id
     LEFT JOIN department d ON ep.department_id = d.id
+    LEFT JOIN company c ON ep.company_id = c.id
+    LEFT JOIN position p ON ep.position_id = p.id
   `);
+  console.log(`employees`, employees);
   // @ts-ignore
   return employees.map((row: any) => ({
     id: row.id,
-    name: row.name,
+    username: row.name,
     email: row.email,
     phone: row.phone,
     gender: row.gender,

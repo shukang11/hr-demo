@@ -24,12 +24,19 @@ export const QUERY_APP = {
   member: path(QUERY_ROOT, "/employee"),
 };
 
+const POSITION_ROOT = "/position";
+
+export const POSITION_APP = {
+  root: POSITION_ROOT,
+  insert: path(POSITION_ROOT, "/insert"),
+};
+
 export const MAIN_APP = {
   HOME: "/",
   member: MEMBER_APP,
   department: DEPARTMENT_APP,
   query: QUERY_APP,
-
+  position: POSITION_APP,
 };
 
 // 设置页面
