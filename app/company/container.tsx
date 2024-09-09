@@ -2,18 +2,26 @@
 
 import CompanyHeader from '@/app/company/header';
 import { useCompany } from '@/lib/providers/company-provider';
-import { Company } from '@/types';
+import { Company, Employee } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEmployees } from '@/services/employ';
+import { useDepartments } from '@/services/department';
+import { usePositions } from '@/services/position';
+import { useEffect, useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function Page() {
+    const { currentCompany, changeCompany } = useCompany();
+    const { data: employeeList, error: employeeError } = useEmployees();
+    const { data: departmentList, error: departmentError } = useDepartments();
+    const { data: positionList, error: positionError } = usePositions();
+    const currentDate = new Date();
+    // active employee
 
-    
-    const {currentCompany, changeCompany} = useCompany();
-
-    const employeeCount = 100; // 假设公司在职员工人数为100
-    const maleRatio = 0.6; // 假设男性比例为60%
-    const femaleRatio = 0.4; // 假设女性比例为40%
-    const birthdayCount = 5; // 假设本月生日人数为5
-    const todoCount = 10; // 假设待办事项为10
+    var activeEmployeeList = [];
+    if (employeeList) {
+        activeEmployeeList = employeeList?.filter((e) => new Employee(e).isActive(currentDate));
+    }
 
     return (
         <>
@@ -22,12 +30,65 @@ export default function Page() {
                     changeCompany({ ...currentCompany, name: newName });
                 }
             }} />
-            <div className="mt-4">
-                <p>在职员工人数: {employeeCount}</p>
-                <p>男性比例: {maleRatio * 100}%</p>
-                <p>女性比例: {femaleRatio * 100}%</p>
-                <p>本月生日人数: {birthdayCount}</p>
-                <p>待办事项: {todoCount}</p>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>职位员工数量</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {positionList && (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>职位名称</TableHead>
+                                        <TableHead>在职员工数量</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {positionList.map((position) => {
+                                        const positionEmployees = employeeList?.filter((employee) => employee.position?.id === position.id);
+                                        const activePositionEmployees = positionEmployees?.filter((employee) => new Employee(employee).isActive(currentDate));
+                                        return (
+                                            <TableRow key={position.id}>
+                                                <TableCell>{position.name}</TableCell>
+                                                <TableCell>{activePositionEmployees?.length || 0}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>部门员工数量</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {departmentList && (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>部门名称</TableHead>
+                                        <TableHead>在职员工数量</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {departmentList.map((department) => {
+                                        const departmentEmployees = employeeList?.filter((employee) => employee.department?.id === department.id);
+                                        const activeDepartmentEmployees = departmentEmployees?.filter((employee) => new Employee(employee).isActive(currentDate));
+                                        return (
+                                            <TableRow key={department.id}>
+                                                <TableCell>{department.name}</TableCell>
+                                                <TableCell>{activeDepartmentEmployees?.length || 0}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

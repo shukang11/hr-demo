@@ -63,12 +63,12 @@ export const columns: ColumnDef<Position>[] = [
         enableHiding: true,
     },
     {
-        accessorKey: "company_id",
+        accessorKey: "company",
         enableSorting: true,
         enableHiding: true,
         header: ({ column }) => (
             <div className="flex items-center">
-                <span>公司ID</span>
+                <span>公司</span>
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -81,7 +81,7 @@ export const columns: ColumnDef<Position>[] = [
             const position = row.original;
             return (
                 <div className="flex items-center">
-                    <span>{position.company_id}</span>
+                    <span>{position.company.name}</span>
                 </div>
             )
         }

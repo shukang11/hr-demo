@@ -22,6 +22,7 @@ const QUERY_ROOT = "/query";
 export const QUERY_APP = {
   root: QUERY_ROOT,
   member: path(QUERY_ROOT, "/employee"),
+  retention: path(QUERY_ROOT, "/retention"),
 };
 
 const POSITION_ROOT = "/position";

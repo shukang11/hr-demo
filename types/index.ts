@@ -40,13 +40,13 @@ export class SchemaValue {
 export class Position {
   id?: number;
   name: string;
-  company_id: number;
+  company: Company;
   remark?: string;
 
-  constructor({ id, name, company_id, remark }: Position) {
+  constructor({ id, name, company, remark }: Position) {
     this.id = id;
     this.name = name;
-    this.company_id = company_id;
+    this.company = company;
     this.remark = remark;
   }
 }
@@ -95,6 +95,15 @@ export class Employee {
     this.position = position;
     this.extra = extra;
   }
+
+  isActive(date: Date): boolean {
+    if (!this.employeeInfo) return false;
+    if (!this.employeeInfo.hireDate) return false;
+    const { terminationDate, hireDate } = this.employeeInfo;
+    if (hireDate > date) return false;
+    return !terminationDate || terminationDate > date;
+  }
+
 }
 
 // 表示员工的入职和离职信息

@@ -122,6 +122,11 @@ export function getMenuList(pathname: string): Group[] {
               label: "成员查询",
               active: pathname.includes(QUERY_APP.member),
             },
+            {
+              href: QUERY_APP.retention,
+              label: "留存情况",
+              active: pathname.includes(QUERY_APP.retention),
+            },
           ],
         },
       ],

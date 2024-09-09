@@ -21,7 +21,7 @@ import { z } from "zod"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getUUID } from "@/lib/helper";
-import {  Employee } from "@/types";
+import { Employee } from "@/types";
 import { useDepartments } from "@/services/department";
 import { usePositions } from "@/services/position";
 import { useCompany } from "@/lib/providers/company-provider";
@@ -55,7 +55,7 @@ export default function InsertMemberForm({ data, onSubmit }: ContainerProps) {
     const { data: employeeList } = useEmployees();
     const { data: departmentList } = useDepartments();
     const { data: positionList } = usePositions();
-    
+
     const form = useForm<z.infer<typeof InsertMemberFormSchema>>({
         resolver: zodResolver(InsertMemberFormSchema),
         defaultValues: {
@@ -97,7 +97,7 @@ export default function InsertMemberForm({ data, onSubmit }: ContainerProps) {
                 });
                 return;
             }
-            
+
             if (employee.email && emailExists) {
                 form.setError("email", {
                     type: "manual",

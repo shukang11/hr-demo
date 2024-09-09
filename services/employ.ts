@@ -5,7 +5,6 @@ import useSWR from "swr";
 export async function dbAddEmployee(employee: Employee): Promise<void> {
   const db = await getDatabaseInstance();
   let result;
-  
 
   if (employee.id) {
     // 如果存在 id，则为 update
@@ -19,8 +18,10 @@ export async function dbAddEmployee(employee: Employee): Promise<void> {
         birthdate = $5, 
         address = $6, 
         extra_value = $7, 
-        extra_schema_id = $8 
-      WHERE id = $9
+        extra_schema_id = $8,
+        hire_date = $9,
+        termination_date = $10
+      WHERE id = $11
       `,
       [
         employee.username || "",
@@ -31,6 +32,8 @@ export async function dbAddEmployee(employee: Employee): Promise<void> {
         employee.address,
         JSON.stringify(employee.extra?.value || {}),
         employee.extra?.id,
+        employee.employeeInfo?.hireDate ? employee.employeeInfo.hireDate.toISOString().split("T")[0] : null,
+        employee.employeeInfo?.terminationDate ? employee.employeeInfo.terminationDate.toISOString().split("T")[0] : null,
         employee.id,
       ]
     );
@@ -39,8 +42,8 @@ export async function dbAddEmployee(employee: Employee): Promise<void> {
     result = await db.execute(
       `
       INSERT INTO employee (
-        name, email, phone, gender, birthdate, address, extra_value, extra_schema_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        name, email, phone, gender, birthdate, address, extra_value, extra_schema_id, hire_date, termination_date
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       `,
       [
         employee.username || "",
@@ -51,6 +54,8 @@ export async function dbAddEmployee(employee: Employee): Promise<void> {
         employee.address,
         JSON.stringify(employee.extra?.value || {}),
         employee.extra?.id,
+        employee.employeeInfo?.hireDate ? employee.employeeInfo.hireDate.toISOString().split("T")[0] : null,
+        employee.employeeInfo?.terminationDate ? employee.employeeInfo.terminationDate.toISOString().split("T")[0] : null,
       ]
     );
   }
@@ -60,7 +65,7 @@ export async function dbAddEmployee(employee: Employee): Promise<void> {
   if (employee.department) {
     // 更新 employee_position 表
     console.log(`查询现有员工:`, employee.id || result.lastInsertId);
-    const existingEmployee = await db.select(`
+    const existingEmployee: any[] = await db.select(`
       SELECT id FROM employee_position WHERE employee_id = $1
     `, [employee.id || result.lastInsertId]);
 
@@ -103,7 +108,8 @@ export async function dbAddEmployee(employee: Employee): Promise<void> {
 export async function dbGetEmployees(): Promise<Employee[]> {
   const db = await getDatabaseInstance();
   const employees = await db.select(`
-    SELECT e.*, ep.*, d.name as department_name, c.name as company_name, p.name as position_name
+    SELECT e.*, ep.*, d.name as department_name, c.name as company_name, p.name as position_name,
+           e.hire_date, e.termination_date
     FROM employee e
     LEFT JOIN employee_position ep ON e.id = ep.employee_id
     LEFT JOIN department d ON ep.department_id = d.id
@@ -128,6 +134,10 @@ export async function dbGetEmployees(): Promise<Employee[]> {
       id: row.department_id,
       name: row.department_name,
     } : null,
+    employeeInfo: {
+      hireDate: row.hire_date ? new Date(row.hire_date) : null,
+      terminationDate: row.termination_date ? new Date(row.termination_date) : null,
+    },
   }));
 }
 
