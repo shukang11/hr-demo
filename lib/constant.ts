@@ -68,43 +68,25 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "公司管理",
       menus: [
         {
-          href: "",
-          label: "公司成员",
+          href: MEMBER_APP.root,
+          label: "人员列表",
           active: pathname.includes(MEMBER_APP.root),
           icon: Icons.squarePen,
-          submenus: [
-            {
-              href: MEMBER_APP.root,
-              label: "人员列表",
-              active: pathname.includes(MEMBER_APP.root),
-            },
-          ],
+          submenus: [],
         },
         {
-          href: "",
-          label: "公司部门",
+          href: DEPARTMENT_APP.root,
+          label: "部门列表",
           active: pathname.includes(DEPARTMENT_APP.root),
           icon: Icons.squarePen,
-          submenus: [
-            {
-              href: DEPARTMENT_APP.root,
-              label: "部门列表",
-              active: pathname.includes(DEPARTMENT_APP.root),
-            },
-          ],
+          submenus: [],
         },
         {
-          href: "",
-          label: "公司职位",
+          href: POSITION_APP.root,
+          label: "职位列表",
           active: pathname.includes(POSITION_APP.root),
           icon: Icons.squarePen,
-          submenus: [
-            {
-              href: POSITION_APP.root,
-              label: "职位列表",
-              active: pathname.includes(POSITION_APP.root),
-            },
-          ],
+          submenus: [],
         },
       ],
     },
@@ -137,7 +119,7 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: SETTING_ROOT,
           label: "设置",
-          active: pathname.includes(QUERY_APP.root),
+          active: pathname.includes(SETTING_ROOT),
           icon: Icons.squarePen,
           submenus: [],
         },

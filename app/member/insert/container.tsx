@@ -3,12 +3,16 @@
 import InsertMemberForm from "./insert-member-form";
 import { dbAddEmployee } from "@/services/employ";
 import { useRouter } from "next/navigation";
+import Breadcrumb, { BreadcrumbItem } from "@/components/ui/breadcrumb";
+import { MAIN_APP } from "@/lib/routes";
 
-// interface ContainerProps { }
+const BreadCrumbItems: BreadcrumbItem[] = [
+    { href: MAIN_APP.member.root, label: "成员列表" }
+];
 
 export default function Container() {
     const router = useRouter();
-    
+
     // @ts-ignore
     const handleSubmit = async (data) => {
         console.log(`insert member data: ${JSON.stringify(data)}`);
@@ -24,6 +28,7 @@ export default function Container() {
 
     return (
         <>
+            <Breadcrumb items={BreadCrumbItems} />
             <InsertMemberForm onSubmit={handleSubmit} />
         </>
     )

@@ -8,6 +8,7 @@ import { Menu } from "@/components/layout/admin-panel/menu";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { SidebarToggle } from "@/components/layout/admin-panel/sidebar-toggle";
 import { siteConfig } from "@/lib/constant";
+import { MAIN_APP } from "@/lib/routes";
 
 export function Sidebar() {
     const sidebar = useStore(useSidebarToggle, (state) => state);
@@ -31,7 +32,7 @@ export function Sidebar() {
                     variant="link"
                     asChild
                 >
-                    <Link href="/dashboard" className="flex items-center gap-2">
+                    <Link href={MAIN_APP.HOME} className="flex items-center gap-2">
                         <PanelsTopLeft className="w-6 h-6 mr-1" />
                         <h1
                             className={cn(

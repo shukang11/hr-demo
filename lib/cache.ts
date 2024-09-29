@@ -1,5 +1,3 @@
-import { getTimestamp } from "./time";
-
 // get data from cache
 export const cacheGet = (key: string): string | null => {
   let valueWithExpires = localStorage.getItem(key);
@@ -45,3 +43,6 @@ export const cacheRemove = (key: string) => {
 export const cacheClear = () => {
   localStorage.clear();
 };
+function getTimestamp(): number {
+  return Math.floor(Date.now() / 1000);
+}

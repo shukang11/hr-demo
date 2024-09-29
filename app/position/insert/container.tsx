@@ -3,8 +3,12 @@
 import InsertPositionForm from "./insert-position-form";
 import { dbAddPosition } from "@/services/position";
 import { useRouter } from "next/navigation";
+import Breadcrumb, { BreadcrumbItem } from "@/components/ui/breadcrumb";
+import { MAIN_APP } from "@/lib/routes";
 
-// interface ContainerProps { }
+const BreadCrumbItems: BreadcrumbItem[] = [
+    { href: MAIN_APP.position.root, label: "职位列表" }
+];
 
 export default function Container() {
     const router = useRouter();
@@ -20,6 +24,7 @@ export default function Container() {
 
     return (
         <>
+            <Breadcrumb items={BreadCrumbItems} />
             <InsertPositionForm onSubmit={handleSubmit} />
         </>
     )

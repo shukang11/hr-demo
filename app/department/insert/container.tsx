@@ -5,9 +5,12 @@ import InsertDepartmentForm, { InsertDepartmentFormSchema } from "./insert-depar
 import { dbAddDepartment } from "@/services/department";
 import { useCompany } from "@/lib/providers/company-provider";
 import { useRouter } from "next/navigation";
+import Breadcrumb, { BreadcrumbItem } from "@/components/ui/breadcrumb";
+import { MAIN_APP } from "@/lib/routes";
 
-interface ContainerProps {
-}
+const BreadCrumbItems: BreadcrumbItem[] = [
+    { href: MAIN_APP.department.root, label: "部门列表" }
+];
 
 export default function Container() {
     const { currentCompany } = useCompany();
@@ -27,6 +30,7 @@ export default function Container() {
     }
     return (
         <>
+            <Breadcrumb items={BreadCrumbItems} />
             <InsertDepartmentForm department={undefined} onSubmit={(data) => { onSubmitAction(data) }} />
         </>
     )

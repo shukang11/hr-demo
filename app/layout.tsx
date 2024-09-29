@@ -11,24 +11,24 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
 
-  return (
-      <html lang="en">
-          <body className="font-inter antialiased tracking-tight">
-              <div className="flex flex-col min-h-screen overflow-hidden">
-                  <RootProviders>
-                      <AdminPanelLayout>
-                          {children}
-                      </AdminPanelLayout>
-                      <Toaster />
-                      <TailwindIndicator />
-                  </RootProviders>
-              </div>
-          </body>
-      </html>
-  );
+    return (
+        <html lang="en">
+            <body className="font-inter antialiased tracking-tight">
+                <div className="flex flex-col min-h-screen overflow-hidden">
+                    <RootProviders>
+                        <AdminPanelLayout>
+                            {children}
+                        </AdminPanelLayout>
+                        <Toaster />
+                        <TailwindIndicator />
+                    </RootProviders>
+                </div>
+            </body>
+        </html>
+    );
 }
