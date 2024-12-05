@@ -1,0 +1,31 @@
+[package]
+name = "lib-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+async-trait = "0.1.83"
+axum = { version = "0.7.9", features = ["tracing"] }
+axum-extra = { version = "0.9.6", features = ["typed-header"] }
+chrono = { workspace = true }
+hyper = { version = "1.5.1", features = ["full"] }
+lib-schema = { version = "0.1.0", path = "../lib-schema" }
+lib-utils = { version = "0.0.0", path = "../lib-utils" }
+md5 = { workspace = true }
+rand = "0.8.5"
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["sqlite"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tower = "0.5.1"
+tower-http = "0.6.2"
+tracing = { workspace = true }
+tracing-appender = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+futures = "0.3"
+
+[[example]]
+name = "run_api"
+path = "examples/run_api.rs"
