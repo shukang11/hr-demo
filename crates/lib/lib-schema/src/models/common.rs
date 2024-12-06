@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use utoipa::ToSchema;
 
 /// 基础模型特征
 pub trait Model {
@@ -10,10 +11,13 @@ pub trait Model {
 }
 
 /// 通用的模型字段
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct BaseFields {
+    /// 唯一标识符
     pub id: Uuid,
+    /// 创建时间
     pub created_at: DateTime<Utc>,
+    /// 更新时间
     pub updated_at: DateTime<Utc>,
 }
 

@@ -1,11 +1,17 @@
 use axum::{routing::get, Router};
 
-
-// 健康检查处理函数
-async fn health_check() -> &'static str {
+#[utoipa::path(
+    get,
+    path = "/health",
+    tag = "health",
+    responses(
+        (status = 200, description = "健康检查成功", body = String)
+    )
+)]
+pub async fn health_check() -> &'static str {
     "OK"
-} 
+}
 
-pub(crate) fn build_routes() -> axum::Router {
-    Router::new().route("/health", get(health_check))
+pub(crate) fn build_routes() -> Router {
+    Router::new().route("/", get(health_check))
 }

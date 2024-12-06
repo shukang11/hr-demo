@@ -10,6 +10,9 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 
+# OpenAPI
+utoipa = { version = "5", features = ["uuid", "chrono"] }
+
 # 数据库相关
 sqlx = { workspace = true, features = ["postgres", "uuid", "chrono"] }
 

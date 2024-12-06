@@ -11,6 +11,7 @@ use sqlx::sqlite::SqlitePool;
 
 use crate::{middlewares, AppState, Config};
 use crate::routes;
+use crate::docs;
 
 pub struct Server;
 
@@ -28,7 +29,8 @@ impl Server {
         });
 
         // 创建路由
-        let router = routes::create_router();
+        let router = routes::create_router()
+            .merge(docs::create_swagger_routes());
 
         let router = router
             .layer(middlewares::logger::LoggerLayer);
@@ -38,7 +40,7 @@ impl Server {
         tracing::info!("将开始在: {:?} 创建服务", config.addr());
         let listener = TcpListener::bind(config.addr()).await?;
         
-        tracing::info!("服务器启动成功");
+        tracing::info!("服务器启动成功，Swagger UI 可在 /swagger-ui 访问");
         axum::serve(listener, app.into_make_service())
             .await
             .map_err(|e| e.into())
