@@ -5,19 +5,19 @@ use utoipa::ToSchema;
 
 use super::Model;
 
-/// 部门模型
+/// 员工职位关联模型
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct Department {
-    /// 部门唯一标识符
+pub struct EmployeePosition {
+    /// 唯一标识符
     pub id: Uuid,
-    /// 部门名称
-    pub name: String,
-    /// 父部门ID
-    pub parent_id: Option<Uuid>,
-    /// 所属公司ID
+    /// 员工ID
+    pub employee_id: Uuid,
+    /// 公司ID
     pub company_id: Uuid,
-    /// 部门负责人ID
-    pub leader_id: Option<Uuid>,
+    /// 部门ID
+    pub department_id: Uuid,
+    /// 职位ID
+    pub position_id: Uuid,
     /// 备注
     pub remark: Option<String>,
     /// 创建时间
@@ -26,7 +26,7 @@ pub struct Department {
     pub updated_at: DateTime<Utc>,
 }
 
-impl Model for Department {
+impl Model for EmployeePosition {
     fn id(&self) -> Uuid {
         self.id
     }
@@ -40,30 +40,28 @@ impl Model for Department {
     }
 }
 
-/// 创建部门的请求数据
+/// 创建员工职位关联的请求数据
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct CreateDepartment {
-    /// 部门名称
-    pub name: String,
-    /// 父部门ID
-    pub parent_id: Option<Uuid>,
-    /// 所属公司ID
+pub struct CreateEmployeePosition {
+    /// 员工ID
+    pub employee_id: Uuid,
+    /// 公司ID
     pub company_id: Uuid,
-    /// 部门负责人ID
-    pub leader_id: Option<Uuid>,
+    /// 部门ID
+    pub department_id: Uuid,
+    /// 职位ID
+    pub position_id: Uuid,
     /// 备注
     pub remark: Option<String>,
 }
 
-/// 更新部门的请求数据
+/// 更新员工职位关联的请求数据
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateDepartment {
-    /// 部门名称
-    pub name: Option<String>,
-    /// 父部门ID
-    pub parent_id: Option<Uuid>,
-    /// 部门负责人ID
-    pub leader_id: Option<Uuid>,
+pub struct UpdateEmployeePosition {
+    /// 部门ID
+    pub department_id: Option<Uuid>,
+    /// 职位ID
+    pub position_id: Option<Uuid>,
     /// 备注
     pub remark: Option<String>,
-}
+} 
