@@ -9,18 +9,19 @@ use tracing_subscriber::{
 };
 use sqlx::sqlite::SqlitePool;
 
-use crate::{middlewares, AppState, Config};
+use crate::{middlewares, AppState};
+use lib_utils::Settings;
 use crate::routes;
 use crate::docs;
 
 pub struct Server;
 
 impl Server {
-    pub async fn run(&self, config: Config) -> Result<(), Box<dyn Error>> {
+    pub async fn run(&self, config: Settings) -> Result<(), Box<dyn std::error::Error>> {
         self.setup_logging(&config)?;
 
         // 初始化数据库连接
-        let pool = SqlitePool::connect(config.database_url()).await?;
+        let pool = Arc::new(SqlitePool::connect(&config.database_url()).await?);
 
         // 创建应用状态
         let state = Arc::new(AppState {
@@ -46,7 +47,7 @@ impl Server {
             .map_err(|e| e.into())
     }
 
-    fn setup_logging(&self, config: &Config) -> Result<(), Box<dyn Error>> {
+    fn setup_logging(&self, config: &Settings) -> Result<(), Box<dyn Error>> {
         let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             EnvFilter::builder()
                 .with_default_directive(LevelFilter::INFO.into())
@@ -62,7 +63,7 @@ impl Server {
         // 输出到文件中
         let log_file_path = format!("{}.log", chrono::Local::now().format("%Y-%m-%d"));
         let file_appender = rolling::never(
-            config.log_dir().unwrap_or("logs"),
+            config.log_dir().expect("log_dir 未设置"),
             log_file_path,
         );
         let (non_blocking_appender, _guard) = non_blocking(file_appender);

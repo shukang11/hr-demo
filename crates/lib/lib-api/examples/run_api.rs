@@ -1,18 +1,12 @@
-use lib_api::{Server, Config};
+use lib_api::Server;
+use lib_utils::Settings;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 创建配置
-    let config = Config::default()
-        .with_database_url("sqlite:data.sqlite")
-        .with_addr("127.0.0.1:3000");
-    
+async fn main() {
+    // 初始化配置
+    let config = Settings::init().unwrap().to_owned();
     // 创建服务器实例
     let server = Server;
-    
-    // 运行服务器
-    println!("正在启动服务器...");
-    server.run(config).await?;
-    
-    Ok(())
-}
+    // 启动服务器
+    server.run(config).await.unwrap();
+} 

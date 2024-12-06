@@ -2156,6 +2156,7 @@ dependencies = [
  "chrono",
  "futures",
  "hyper",
+ "lib-core",
  "lib-schema",
  "lib-utils",
  "md5",
@@ -2178,6 +2179,14 @@ dependencies = [
 [[package]]
 name = "lib-core"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "lib-schema",
+ "sqlx",
+ "thiserror 2.0.4",
+ "uuid",
+]
 
 [[package]]
 name = "lib-schema"

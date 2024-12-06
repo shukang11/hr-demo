@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
+chrono = { workspace = true }
+uuid = { workspace = true }
+anyhow = { workspace = true }
+sqlx = { workspace = true, features = ["sqlite"] }
+thiserror = { workspace = true }
+
+lib-schema = { version = "0.1.0", path = "../lib-schema" }

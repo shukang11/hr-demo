@@ -10,8 +10,6 @@ axum = { version = "0.7.9", features = ["tracing"] }
 axum-extra = { version = "0.9.6", features = ["typed-header"] }
 chrono = { workspace = true }
 hyper = { version = "1.5.1", features = ["full"] }
-lib-schema = { version = "0.1.0", path = "../lib-schema" }
-lib-utils = { version = "0.0.0", path = "../lib-utils" }
 md5 = { workspace = true }
 rand = "0.8.5"
 serde = { workspace = true }
@@ -28,6 +26,11 @@ futures = "0.3"
 utoipa = { version = "5", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "8", features = ["axum"] }
 uuid = { workspace = true }
+
+
+lib-schema = { version = "0.1.0", path = "../lib-schema" }
+lib-core = { version = "0.1.0", path = "../lib-core" }
+lib-utils = { version = "0.0.0", path = "../lib-utils" }
 
 [[example]]
 name = "run_api"

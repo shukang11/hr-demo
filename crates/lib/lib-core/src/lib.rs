@@ -1,3 +1,8 @@
+pub mod db;
+pub mod services;
+
+pub use db::DBPool;
+
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
 }
