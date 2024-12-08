@@ -16,5 +16,11 @@ utoipa = { version = "5", features = ["uuid", "chrono"] }
 # 数据库相关
 sqlx = { workspace = true, features = ["postgres", "uuid", "chrono"] }
 
+# 添加 sea-orm
+sea-orm = { workspace = true, features = ["macros", "with-chrono", "with-uuid"] }
+
+# 添加 lib-entity
+lib-entity = { path = "../lib-entity" }
+
 [lints]
 workspace = true

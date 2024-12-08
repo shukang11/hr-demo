@@ -1,9 +1,10 @@
 use chrono::{DateTime, Utc};
+use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use super::Model;
+use sea_orm::FromQueryResult;
 
 /// 员工职位关联模型
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -24,20 +25,6 @@ pub struct EmployeePosition {
     pub created_at: DateTime<Utc>,
     /// 更新时间
     pub updated_at: DateTime<Utc>,
-}
-
-impl Model for EmployeePosition {
-    fn id(&self) -> Uuid {
-        self.id
-    }
-
-    fn created_at(&self) -> DateTime<Utc> {
-        self.created_at
-    }
-
-    fn updated_at(&self) -> DateTime<Utc> {
-        self.updated_at
-    }
 }
 
 /// 创建员工职位关联的请求数据
@@ -64,4 +51,4 @@ pub struct UpdateEmployeePosition {
     pub position_id: Option<Uuid>,
     /// 备注
     pub remark: Option<String>,
-} 
+}

@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
+use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use utoipa::ToSchema;
-
-use super::Model;
+use sea_orm::FromQueryResult;
 
 /// 职位模型
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -20,20 +20,6 @@ pub struct Position {
     pub created_at: DateTime<Utc>,
     /// 更新时间
     pub updated_at: DateTime<Utc>,
-}
-
-impl Model for Position {
-    fn id(&self) -> Uuid {
-        self.id
-    }
-
-    fn created_at(&self) -> DateTime<Utc> {
-        self.created_at
-    }
-
-    fn updated_at(&self) -> DateTime<Utc> {
-        self.updated_at
-    }
 }
 
 /// 创建职位的请求数据
@@ -54,4 +40,20 @@ pub struct UpdatePosition {
     pub name: Option<String>,
     /// 备注
     pub remark: Option<String>,
-} 
+}
+
+impl FromQueryResult for Position {
+    fn from_query_result(
+        res: &QueryResult,
+        pre: &str,
+    ) -> Result<Self, DbErr> {
+        Ok(Self {
+            id: Uuid::from_u128(res.try_get::<i32>(pre, "id")? as u128),
+            name: res.try_get(pre, "name")?,
+            company_id: Uuid::from_u128(res.try_get::<i32>(pre, "company_id")? as u128),
+            remark: res.try_get(pre, "remark").unwrap_or(None),
+            created_at: res.try_get(pre, "created_at")?,
+            updated_at: res.try_get(pre, "updated_at")?,
+        })
+    }
+}

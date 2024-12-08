@@ -1,9 +1,6 @@
 use std::net::SocketAddr;
-use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-static CONFIG: OnceCell<Settings> = OnceCell::new();
 
 #[derive(Error, Debug)]
 pub enum ConfigError {
@@ -31,21 +28,6 @@ impl Default for Settings {
 }
 
 impl Settings {
-    pub fn init() -> Result<&'static Settings, ConfigError> {
-        let config = config::Config::builder()
-            .add_source(config::File::with_name("config/default"))
-            .add_source(config::Environment::with_prefix("APP"))
-            .build()?
-            .try_deserialize()?;
-
-        CONFIG.set(config).unwrap();
-        Ok(CONFIG.get().unwrap())
-    }
-
-    pub fn get() -> Result<&'static Settings, ConfigError> {
-        CONFIG.get().ok_or(ConfigError::NotInitialized)
-    }
-
     pub fn with_addr(mut self, addr: impl AsRef<str>) -> Self {
         self.addr = addr.as_ref().parse().expect("Invalid address format");
         self

@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
+use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use super::Model;
+use sea_orm::FromQueryResult;
 
 /// JSON Schema模型
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -19,20 +20,6 @@ pub struct JsonSchema {
     pub created_at: DateTime<Utc>,
     /// 更新时间
     pub updated_at: DateTime<Utc>,
-}
-
-impl Model for JsonSchema {
-    fn id(&self) -> Uuid {
-        self.id
-    }
-
-    fn created_at(&self) -> DateTime<Utc> {
-        self.created_at
-    }
-
-    fn updated_at(&self) -> DateTime<Utc> {
-        self.updated_at
-    }
 }
 
 /// 创建JSON Schema的请求数据
@@ -51,4 +38,25 @@ pub struct UpdateJsonSchema {
     pub name: Option<String>,
     /// Schema定义（JSON）
     pub schema: Option<Value>,
-} 
+}
+
+impl FromQueryResult for JsonSchema {
+    fn from_query_result(
+        res: &QueryResult,
+        pre: &str,
+    ) -> Result<Self, DbErr> {
+        let schema: Value = if let Ok(json_str) = res.try_get::<String>(pre, "schema") {
+            serde_json::from_str(&json_str).map_err(|e| DbErr::Custom(format!("JSON parse error: {}", e)))?
+        } else {
+            Value::Null
+        };
+
+        Ok(Self {
+            id: Uuid::from_u128(res.try_get::<i32>(pre, "id")? as u128),
+            name: res.try_get(pre, "name")?,
+            schema,
+            created_at: res.try_get(pre, "created_at")?,
+            updated_at: res.try_get(pre, "updated_at")?,
+        })
+    }
+}

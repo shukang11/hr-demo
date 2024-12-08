@@ -4,11 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-
 chrono = { workspace = true }
 uuid = { workspace = true }
 anyhow = { workspace = true }
-sqlx = { workspace = true, features = ["sqlite"] }
 thiserror = { workspace = true }
+sea-orm = { workspace = true }
+tracing = { workspace = true }
 
 lib-schema = { version = "0.1.0", path = "../lib-schema" }
+lib-entity = { version = "0.1.0", path = "../lib-entity" }
+
+[dev-dependencies]
+migration = { path = "../../migration" }
+tokio = { version = "1", features = ["full", "test-util", "macros"] }
+pretty_assertions = "1.4"

@@ -5,7 +5,15 @@ unused = "allow"
 [workspace]
 
 resolver = "2"
-members = ["crates/lib/lib-api", "crates/lib/lib-core", "crates/lib/lib-schema", "crates/lib/lib-utils", "src-tauri"]
+members = [
+    "crates/migration",
+    "crates/lib/lib-api", 
+    "crates/lib/lib-core", 
+    "crates/lib/lib-entity", 
+    "crates/lib/lib-schema", 
+    "crates/lib/lib-utils", 
+    "src-tauri"
+]
 
 
 [profile.release]
@@ -35,5 +43,15 @@ tracing-subscriber = { version = "0.3" }
 
 uuid = { version = "^1" }
 md5 = { version = "0.7" }
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls"] }
+
+# 数据库
+sea-orm = { version = "1", features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-chrono",
+    "with-uuid",
+] }
+sea-query = { version = "0.32", features = ["with-chrono", "with-uuid"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite"] }
 

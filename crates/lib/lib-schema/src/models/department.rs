@@ -1,9 +1,10 @@
 use chrono::{DateTime, Utc};
+use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use utoipa::ToSchema;
 
-use super::Model;
+use sea_orm::FromQueryResult;
 
 /// 部门模型
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -26,20 +27,6 @@ pub struct Department {
     pub updated_at: DateTime<Utc>,
 }
 
-impl Model for Department {
-    fn id(&self) -> Uuid {
-        self.id
-    }
-
-    fn created_at(&self) -> DateTime<Utc> {
-        self.created_at
-    }
-
-    fn updated_at(&self) -> DateTime<Utc> {
-        self.updated_at
-    }
-}
-
 /// 创建部门的请求数据
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CreateDepartment {
@@ -55,7 +42,7 @@ pub struct CreateDepartment {
     pub remark: Option<String>,
 }
 
-/// 更新部门的请求数据
+/// 更��部门的请求数据
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct UpdateDepartment {
     /// 部门名称
@@ -66,4 +53,26 @@ pub struct UpdateDepartment {
     pub leader_id: Option<Uuid>,
     /// 备注
     pub remark: Option<String>,
+}
+
+impl FromQueryResult for Department {
+    fn from_query_result(
+        res: &QueryResult,
+        pre: &str,
+    ) -> Result<Self, DbErr> {
+        Ok(Self {
+            id: Uuid::from_u128(res.try_get::<i32>(pre, "id")? as u128),
+            name: res.try_get(pre, "name")?,
+            parent_id: res.try_get::<i32>(pre, "parent_id")
+                .ok()
+                .map(|id| Uuid::from_u128(id as u128)),
+            company_id: Uuid::from_u128(res.try_get::<i32>(pre, "company_id")? as u128),
+            leader_id: res.try_get::<i32>(pre, "leader_id")
+                .ok()
+                .map(|id| Uuid::from_u128(id as u128)),
+            remark: res.try_get(pre, "remark").unwrap_or(None),
+            created_at: res.try_get(pre, "created_at")?,
+            updated_at: res.try_get(pre, "updated_at")?,
+        })
+    }
 }

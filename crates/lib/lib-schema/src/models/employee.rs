@@ -1,19 +1,20 @@
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 use utoipa::ToSchema;
+use sea_orm::prelude::*;
 
-use super::Model;
+use sea_orm::FromQueryResult;
 
 /// 性别枚举
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum Gender {
-    #[serde(rename = "Male")]
+    /// 男性
     Male,
-    #[serde(rename = "Female")]
+    /// 女性
     Female,
-    #[serde(rename = "Unknown")]
+    /// 未知
     Unknown,
 }
 
@@ -29,7 +30,7 @@ pub struct Employee {
     /// 电话号码
     pub phone: Option<String>,
     /// 出生日期
-    pub birthdate: Option<NaiveDate>,
+    pub birthdate: Option<DateTime<Utc>>,
     /// 地址
     pub address: Option<String>,
     /// 性别
@@ -44,20 +45,6 @@ pub struct Employee {
     pub updated_at: DateTime<Utc>,
 }
 
-impl Model for Employee {
-    fn id(&self) -> Uuid {
-        self.id
-    }
-
-    fn created_at(&self) -> DateTime<Utc> {
-        self.created_at
-    }
-
-    fn updated_at(&self) -> DateTime<Utc> {
-        self.updated_at
-    }
-}
-
 /// 创建员工的请求数据
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CreateEmployee {
@@ -68,7 +55,7 @@ pub struct CreateEmployee {
     /// 电话号码
     pub phone: Option<String>,
     /// 出生日期
-    pub birthdate: Option<NaiveDate>,
+    pub birthdate: Option<DateTime<Utc>>,
     /// 地址
     pub address: Option<String>,
     /// 性别
@@ -89,7 +76,7 @@ pub struct UpdateEmployee {
     /// 电话号码
     pub phone: Option<String>,
     /// 出生日期
-    pub birthdate: Option<NaiveDate>,
+    pub birthdate: Option<DateTime<Utc>>,
     /// 地址
     pub address: Option<String>,
     /// 性别
@@ -98,4 +85,37 @@ pub struct UpdateEmployee {
     pub extra_value: Option<Value>,
     /// 额外字段模式ID
     pub extra_schema_id: Option<Uuid>,
-} 
+}
+
+impl FromQueryResult for Employee {
+    fn from_query_result(
+        res: &QueryResult,
+        pre: &str,
+    ) -> Result<Self, DbErr> {
+        let extra_value: Option<Value> = if let Ok(json_str) = res.try_get::<String>(pre, "extra_value") {
+            serde_json::from_str(&json_str).unwrap_or(None)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            id: Uuid::from_u128(res.try_get::<i32>(pre, "id")? as u128),
+            name: res.try_get(pre, "name")?,
+            email: res.try_get(pre, "email").unwrap_or(None),
+            phone: res.try_get(pre, "phone").unwrap_or(None),
+            birthdate: res.try_get(pre, "birthdate").unwrap_or(None),
+            address: res.try_get(pre, "address").unwrap_or(None),
+            gender: match res.try_get::<String>(pre, "gender")?.as_str() {
+                "Male" => Gender::Male,
+                "Female" => Gender::Female,
+                _ => Gender::Unknown,
+            },
+            extra_value,
+            extra_schema_id: res.try_get::<i32>(pre, "extra_schema_id")
+                .ok()
+                .map(|id| Uuid::from_u128(id as u128)),
+            created_at: res.try_get(pre, "created_at")?,
+            updated_at: res.try_get(pre, "updated_at")?,
+        })
+    }
+}

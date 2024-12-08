@@ -7,7 +7,6 @@ use tracing_appender::{non_blocking, rolling};
 use tracing_subscriber::{
     filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt, Registry,
 };
-use sqlx::sqlite::SqlitePool;
 
 use crate::{middlewares, AppState};
 use lib_utils::Settings;
@@ -21,7 +20,7 @@ impl Server {
         self.setup_logging(&config)?;
 
         // 初始化数据库连接
-        let pool = Arc::new(SqlitePool::connect(&config.database_url()).await?);
+        let pool = lib_core::get_db_conn(config.database_url().to_string()).await;
 
         // 创建应用状态
         let state = Arc::new(AppState {
@@ -41,7 +40,7 @@ impl Server {
         tracing::info!("将开始在: {:?} 创建服务", config.addr());
         let listener = TcpListener::bind(config.addr()).await?;
         
-        tracing::info!("服务器启动成功，Swagger UI 可在 /swagger-ui 访问");
+        tracing::info!("服务器启动成功，Swagger UI 可在 /dcos 访问");
         axum::serve(listener, app.into_make_service())
             .await
             .map_err(|e| e.into())
@@ -60,24 +59,23 @@ impl Server {
             .pretty()
             .with_writer(std::io::stderr);
 
-        // 输出到文件中
-        let log_file_path = format!("{}.log", chrono::Local::now().format("%Y-%m-%d"));
-        let file_appender = rolling::never(
-            config.log_dir().expect("log_dir 未设置"),
-            log_file_path,
-        );
-        let (non_blocking_appender, _guard) = non_blocking(file_appender);
-        let file_layer = fmt::layer()
-            .with_ansi(false)
-            .with_writer(non_blocking_appender)
-            .with_span_events(fmt::format::FmtSpan::CLOSE);
-
-        // 注册
-        Registry::default()
+        let subscriber = Registry::default()
             .with(env_filter)
-            .with(formatting_layer)
-            .with(file_layer)
-            .init();
+            .with(formatting_layer);
+
+        // 只在配置了日志目录时添加文件日志
+        if let Some(log_dir) = config.log_dir() {
+            let log_file_path = format!("{}.log", chrono::Local::now().format("%Y-%m-%d"));
+            let file_appender = rolling::never(log_dir, log_file_path);
+            let (non_blocking_appender, _guard) = non_blocking(file_appender);
+            let file_layer = fmt::layer()
+                .with_ansi(false)
+                .with_writer(non_blocking_appender)
+                .with_span_events(fmt::format::FmtSpan::CLOSE);
+            subscriber.with(file_layer).try_init()?;
+        } else {
+            subscriber.try_init()?;
+        }
 
         Ok(())
     }

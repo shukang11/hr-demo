@@ -10,14 +10,14 @@ pub use lib_utils::Settings;
 pub use error::{ApiError, ApiResult};
 pub use server::Server;
 pub use docs::ApiDoc;
-pub use lib_core::DBPool;
+pub use lib_core::DBConnection;
 use axum::Router;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(Debug)]
 pub struct AppState {
-    pub pool: DBPool,
+    pub pool: DBConnection,
     pub setting: Settings,
 }
 
