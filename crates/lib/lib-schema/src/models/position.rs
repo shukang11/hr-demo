@@ -22,22 +22,15 @@ pub struct Position {
     pub updated_at: DateTime<Utc>,
 }
 
-/// 创建职位的请求数据
+/// 职位数据模型，用于创建和更新
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct CreatePosition {
+pub struct InsertPosition {
+    /// 职位唯一标识符（更新时使用）
+    pub id: Option<Uuid>,
     /// 职位名称
     pub name: String,
     /// 所属公司ID
     pub company_id: Uuid,
-    /// 备注
-    pub remark: Option<String>,
-}
-
-/// 更新职位的请求数据
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdatePosition {
-    /// 职位名称
-    pub name: Option<String>,
     /// 备注
     pub remark: Option<String>,
 }

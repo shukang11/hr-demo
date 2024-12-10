@@ -7,7 +7,6 @@ use utoipa::ToSchema;
 
 use sea_orm::FromQueryResult;
 
-
 /// 公司模型
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Company {
@@ -25,22 +24,13 @@ pub struct Company {
     pub updated_at: DateTime<Utc>,
 }
 
-/// 创建公司的请求数据
+/// 公司数据模型，用于创建和更新
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct CreateCompany {
+pub struct InsertCompany {
+    /// 公司唯一标识符（更新时使用）
+    pub id: Option<Uuid>,
     /// 公司名称
     pub name: String,
-    /// 额外字段值（JSON）
-    pub extra_value: Option<Value>,
-    /// 额外字段模式ID
-    pub extra_schema_id: Option<Uuid>,
-}
-
-/// 更新公司的请求数据
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateCompany {
-    /// 公司名称
-    pub name: Option<String>,
     /// 额外字段值（JSON）
     pub extra_value: Option<Value>,
     /// 额外字段模式ID

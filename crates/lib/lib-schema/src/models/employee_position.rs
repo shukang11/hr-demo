@@ -27,9 +27,11 @@ pub struct EmployeePosition {
     pub updated_at: DateTime<Utc>,
 }
 
-/// 创建员工职位关联的请求数据
+/// 员工职位关联数据模型，用于创建和更新
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct CreateEmployeePosition {
+pub struct InsertEmployeePosition {
+    /// 唯一标识符（更新时使用）
+    pub id: Option<Uuid>,
     /// 员工ID
     pub employee_id: Uuid,
     /// 公司ID
@@ -42,13 +44,20 @@ pub struct CreateEmployeePosition {
     pub remark: Option<String>,
 }
 
-/// 更新员工职位关联的请求数据
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateEmployeePosition {
-    /// 部门ID
-    pub department_id: Option<Uuid>,
-    /// 职位ID
-    pub position_id: Option<Uuid>,
-    /// 备注
-    pub remark: Option<String>,
+impl FromQueryResult for EmployeePosition {
+    fn from_query_result(
+        res: &QueryResult,
+        pre: &str,
+    ) -> Result<Self, DbErr> {
+        Ok(Self {
+            id: Uuid::from_u128(res.try_get::<i32>(pre, "id")? as u128),
+            employee_id: Uuid::from_u128(res.try_get::<i32>(pre, "employee_id")? as u128),
+            company_id: Uuid::from_u128(res.try_get::<i32>(pre, "company_id")? as u128),
+            department_id: Uuid::from_u128(res.try_get::<i32>(pre, "department_id")? as u128),
+            position_id: Uuid::from_u128(res.try_get::<i32>(pre, "position_id")? as u128),
+            remark: res.try_get(pre, "remark").unwrap_or(None),
+            created_at: res.try_get(pre, "created_at")?,
+            updated_at: res.try_get(pre, "updated_at")?,
+        })
+    }
 }

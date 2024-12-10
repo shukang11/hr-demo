@@ -4,6 +4,7 @@ use serde_json::Value;
 use uuid::Uuid;
 use utoipa::ToSchema;
 use sea_orm::prelude::*;
+use lib_entity::entities::employee::Gender as DbGender;
 
 use sea_orm::FromQueryResult;
 
@@ -16,6 +17,26 @@ pub enum Gender {
     Female,
     /// 未知
     Unknown,
+}
+
+impl From<Gender> for DbGender {
+    fn from(gender: Gender) -> Self {
+        match gender {
+            Gender::Male => DbGender::Male,
+            Gender::Female => DbGender::Female,
+            Gender::Unknown => DbGender::Unknown,
+        }
+    }
+}
+
+impl From<DbGender> for Gender {
+    fn from(gender: DbGender) -> Self {
+        match gender {
+            DbGender::Male => Gender::Male,
+            DbGender::Female => Gender::Female,
+            DbGender::Unknown => Gender::Unknown,
+        }
+    }
 }
 
 /// 员工模型
@@ -45,9 +66,11 @@ pub struct Employee {
     pub updated_at: DateTime<Utc>,
 }
 
-/// 创建员工的请求数据
+/// 员工数据模型，用于创建和更新
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct CreateEmployee {
+pub struct InsertEmployee {
+    /// 员工唯一标识符（更新时使用）
+    pub id: Option<Uuid>,
     /// 员工姓名
     pub name: String,
     /// 电子邮箱
@@ -66,27 +89,6 @@ pub struct CreateEmployee {
     pub extra_schema_id: Option<Uuid>,
 }
 
-/// 更新员工的请求数据
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateEmployee {
-    /// 员工姓名
-    pub name: Option<String>,
-    /// 电子邮箱
-    pub email: Option<String>,
-    /// 电话号码
-    pub phone: Option<String>,
-    /// 出生日期
-    pub birthdate: Option<DateTime<Utc>>,
-    /// 地址
-    pub address: Option<String>,
-    /// 性别
-    pub gender: Option<Gender>,
-    /// 额外字段值（JSON）
-    pub extra_value: Option<Value>,
-    /// 额外字段模式ID
-    pub extra_schema_id: Option<Uuid>,
-}
-
 impl FromQueryResult for Employee {
     fn from_query_result(
         res: &QueryResult,
@@ -98,6 +100,12 @@ impl FromQueryResult for Employee {
             None
         };
 
+        let db_gender = match res.try_get::<String>(pre, "gender")?.as_str() {
+            "Male" => DbGender::Male,
+            "Female" => DbGender::Female,
+            _ => DbGender::Unknown,
+        };
+
         Ok(Self {
             id: Uuid::from_u128(res.try_get::<i32>(pre, "id")? as u128),
             name: res.try_get(pre, "name")?,
@@ -105,11 +113,7 @@ impl FromQueryResult for Employee {
             phone: res.try_get(pre, "phone").unwrap_or(None),
             birthdate: res.try_get(pre, "birthdate").unwrap_or(None),
             address: res.try_get(pre, "address").unwrap_or(None),
-            gender: match res.try_get::<String>(pre, "gender")?.as_str() {
-                "Male" => Gender::Male,
-                "Female" => Gender::Female,
-                _ => Gender::Unknown,
-            },
+            gender: db_gender.into(),
             extra_value,
             extra_schema_id: res.try_get::<i32>(pre, "extra_schema_id")
                 .ok()

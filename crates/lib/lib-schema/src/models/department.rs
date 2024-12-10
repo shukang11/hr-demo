@@ -27,28 +27,17 @@ pub struct Department {
     pub updated_at: DateTime<Utc>,
 }
 
-/// 创建部门的请求数据
+/// 部门数据模型，用于创建和更新
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct CreateDepartment {
+pub struct InsertDepartment {
+    /// 部门唯一标识符（更新时使用）
+    pub id: Option<Uuid>,
     /// 部门名称
     pub name: String,
     /// 父部门ID
     pub parent_id: Option<Uuid>,
     /// 所属公司ID
     pub company_id: Uuid,
-    /// 部门负责人ID
-    pub leader_id: Option<Uuid>,
-    /// 备注
-    pub remark: Option<String>,
-}
-
-/// 更��部门的请求数据
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct UpdateDepartment {
-    /// 部门名称
-    pub name: Option<String>,
-    /// 父部门ID
-    pub parent_id: Option<Uuid>,
     /// 部门负责人ID
     pub leader_id: Option<Uuid>,
     /// 备注
