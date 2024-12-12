@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Tuple
-import time
 
+from sqlalchemy.orm import Session
 from extensions.ext_database import db
 from libs.helper import getmd5
 from models.account import AccountInDB, AccountTokenInDB
@@ -11,9 +11,14 @@ from sqlalchemy.orm import joinedload
 
 
 class AccountService:
-    @staticmethod
-    def find_account_by_id(id: int) -> Optional[AccountInDB]:
-        session = db.session
+
+    session: Session
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def find_account_by_id(self, id: int) -> Optional[AccountInDB]:
+        session = self.session
         stmt = (
             select(AccountInDB)
             .options(joinedload(AccountInDB.token))
@@ -22,16 +27,14 @@ class AccountService:
         user = session.execute(stmt).scalar_one_or_none()
         return user
 
-    @staticmethod
-    def is_account_exists(username: str) -> bool:
-        session = db.session
+    def is_account_exists(self, username: str) -> bool:
+        session = self.session
         stmt = select(AccountInDB).where(AccountInDB.username == username)
         user = session.execute(stmt).scalar_one_or_none()
         return user is not None
 
-    @staticmethod
-    def find_account_by_token(token: str) -> Optional[AccountInDB]:
-        session = db.session
+    def find_account_by_token(self, token: str) -> Optional[AccountInDB]:
+        session = self.session
         stmt = (
             select(AccountInDB)
             .options(joinedload(AccountInDB.token))
@@ -40,8 +43,7 @@ class AccountService:
         user = session.execute(stmt).scalar_one_or_none()
         return user
 
-    @staticmethod
-    def find_account_by_login(username: str, password: str) -> Optional[AccountInDB]:
+    def find_account_by_login(self, username: str, password: str) -> Optional[AccountInDB]:
         """根据用户名和密码查找账户
         
         Args:
@@ -52,7 +54,7 @@ class AccountService:
             Optional[AccountInDB]: 找到的账户对象或None
         """
         hashed_password = getmd5(password)
-        session = db.session
+        session = self.session
         stmt = (
             select(AccountInDB)
             .options(joinedload(AccountInDB.token))
@@ -64,15 +66,14 @@ class AccountService:
         user = session.execute(stmt).scalar_one_or_none()
         return user
 
-    @staticmethod
-    def create_account_token(user_id: int, token: str) -> AccountTokenInDB:
+    def create_account_token(self, user_id: int, token: str) -> AccountTokenInDB:
         user_token = AccountTokenInDB(account_id=user_id, token=token)
-        db.session.add(user_token)
-        db.session.flush()
+        session = self.session
+        session.add(user_token)
+        session.flush()
         return user_token
 
-    @staticmethod
-    def get_account_token(account: AccountInDB, salt: str) -> str:
+    def get_account_token(self, account: AccountInDB, salt: str) -> str:
         """获取账户的令牌，如不存在则创建新令牌
         
         Args:
@@ -84,14 +85,15 @@ class AccountService:
         """
         if account.token:
             return account.token.token
+        session = self.session
         new_token = account.make_new_token_value(salt=salt)
         account_token = AccountTokenInDB(account_id=account.id, token=new_token)
-        db.session.add(account_token)
-        db.session.flush()
+        session.add(account_token)
+        session.flush()
         return new_token
 
-    @staticmethod
     def create_account_if_counld(
+        self,
         username: str,
         password: str,
         email: Optional[str] = None,
@@ -106,13 +108,12 @@ class AccountService:
 
         password_hashed = getmd5(password)
         account.password = password_hashed
-
-        db.session.add(account)
-        db.session.flush()
+        session = self.session
+        session.add(account)
+        session.flush()
         return account
 
-    @staticmethod
-    def update_account_token(account: AccountInDB, salt: str) -> str:
+    def update_account_token(self, account: AccountInDB, salt: str) -> str:
         """更新账户的令牌
         
         Args:
@@ -127,12 +128,11 @@ class AccountService:
             account.token.token = new_token
         else:
             token = AccountTokenInDB(account=account, token=new_token)
-            db.session.add(token)
-        db.session.flush()
+            self.session.add(token)
+        self.session.flush()
         return new_token
 
-    @staticmethod
-    def process_login(login_data: LoginRequest) -> Tuple[Optional[LoginResponse], Optional[str], int]:
+    def process_login(self, login_data: LoginRequest) -> Tuple[Optional[LoginResponse], Optional[str], int]:
         """处理登录请求
         
         Args:
@@ -145,7 +145,7 @@ class AccountService:
             - int: HTTP状态码
         """
         # 查找并验证用户
-        user = AccountService.find_account_by_login(login_data.username, login_data.password)
+        user = self.find_account_by_login(login_data.username, login_data.password)
         if not user:
             return None, "用户名或密码错误", 401
 
@@ -154,7 +154,7 @@ class AccountService:
             return None, "账户已被禁用", 403
 
         # 更新令牌和登录时间
-        token_value = AccountService.update_account_token(user, "login")
+        token_value = self.update_account_token(user, "login")
         user.last_login_at = datetime.now()
         db.session.commit()
 

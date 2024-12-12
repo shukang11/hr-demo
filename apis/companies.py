@@ -1,5 +1,6 @@
 from typing import Tuple
-from flask import Blueprint, request, Response
+from flask import Blueprint, Response
+from flask_pydantic import validate 
 from flask_login import login_required, current_user
 from extensions.ext_database import db
 from managers.company_manager import CompanyService
@@ -11,7 +12,8 @@ bp = Blueprint('companies', __name__, url_prefix='/api/companies')
 
 @bp.route('', methods=['POST'])
 @login_required
-def create_company() -> Tuple[Response, int]:
+@validate()
+def create_company(body: CompanyCreate) -> Tuple[Response, int]:
     """创建新公司接口
     
     处理创建新公司的请求，需要用户登录
@@ -21,7 +23,7 @@ def create_company() -> Tuple[Response, int]:
     """
     try:
         # 验证请求数据
-        company_data = CompanyCreate(**request.get_json())
+        company_data = body
     except ValueError:
         return make_api_response(
             ResponseSchema[CompanyInResponse].from_error(
@@ -32,7 +34,6 @@ def create_company() -> Tuple[Response, int]:
 
     # 创建公司服务实例
     company_service = CompanyService(current_user, db.session)
-    
     # 处理公司创建
     company, error_message = company_service.create_company(company_data)
     
@@ -47,7 +48,7 @@ def create_company() -> Tuple[Response, int]:
     # 返回成功响应
     return make_api_response(
         ResponseSchema[CompanyInResponse](
-            data=company,
+            data=CompanyInResponse.model_validate(company, from_attributes=True),
             context={"status": 200, "message": "公司创建成功"}
         )
     ) 

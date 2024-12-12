@@ -50,8 +50,16 @@ class AccountInDB(BaseModel, UserMixin):
         Returns:
             str: 生成的令牌值
         """
-        token_str = f"{self.id}:{self.username}:{datetime.utcnow().timestamp()}:{salt}"
+        token_str = f"{self.id}:{self.username}:{datetime.now().timestamp()}:{salt}"
         return getmd5(token_str)
+    
+    def get_token(self) -> str:
+        """获取账户令牌
+
+        Returns:
+            str: 账户令牌
+        """
+        return self.token.token
 
 
 class AccountTokenInDB(BaseModel):

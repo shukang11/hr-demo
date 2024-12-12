@@ -1,14 +1,10 @@
 import json
 from unittest.mock import patch, MagicMock
 
-import pytest
-from flask import Flask
 from flask.testing import FlaskClient
 
-from apis.auth import bp as auth_bp
 from extensions.ext_database import db
 from models.account import AccountInDB, AccountTokenInDB
-from schema.user import LoginResponse, UserInResponse
 
 
 
@@ -47,6 +43,7 @@ def test_login_success(client: FlaskClient, test_user: AccountInDB):
     # 验证token
     assert "token" in data["data"]
     assert len(data["data"]["token"]) > 0
+
 
 
 def test_login_invalid_request(client: FlaskClient):

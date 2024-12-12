@@ -1,4 +1,5 @@
-from typing import Optional, List
+from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, Field
 
 class CompanyBase(BaseModel):
@@ -29,6 +30,9 @@ class CompanyInResponse(CompanyBase):
     用于序列化返回给客户端的公司信息
     """
     id: int = Field(..., description="公司唯一标识符")
-    owner_id: int = Field(..., description="公司拥有者ID")
-    created_at: str = Field(..., description="创建时间")
-    updated_at: str = Field(..., description="更新时间") 
+    name: str = Field(..., description="公司名称")
+    created_at: datetime = Field(..., description="创建时间")
+    updated_at: datetime = Field(..., description="更新时间")
+
+    class Config:
+        from_attribute = True

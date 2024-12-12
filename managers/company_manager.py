@@ -58,9 +58,8 @@ class CompanyService:
             new_company = CompanyInDB(
                 name=company_data.name,
                 description=company_data.description,
-                owner_id=self.current_user.id,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
             
             # 添加到数据库

@@ -1,3 +1,4 @@
+import json
 import pytest
 from typing import Generator
 from flask import Flask
@@ -51,8 +52,9 @@ def test_session(app: Flask) -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def test_user(test_session: Session) -> AccountInDB:
+def test_user(client: Flask, test_session: Session) -> AccountInDB:
     """创建测试用户"""
+
     user = AccountInDB(
         username='test_user',
         email='test@example.com',
@@ -63,4 +65,15 @@ def test_user(test_session: Session) -> AccountInDB:
     )
     test_session.add(user)
     test_session.commit()
+    login_data = {
+        "username": user.username,
+        "password": "password123"
+    }
+
+    response = client.post(
+        "/api/auth/login",
+        data=json.dumps(login_data),
+        content_type="application/json"
+    )
+    assert response.status_code == 200
     return user

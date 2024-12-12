@@ -44,4 +44,4 @@ class EmployeeInDB(BaseModel):
     # Relationships
     extra_schema: Mapped['JsonSchemaInDB'] = db.relationship('JsonSchemaInDB', foreign_keys=[extra_schema_id])
     positions: Mapped[list['EmployeePositionInDB']] = db.relationship('EmployeePositionInDB', back_populates='employee')
-    led_departments: Mapped[list['DepartmentInDB']] = db.relationship('DepartmentInDB', back_populates='leader') 
+    led_departments: Mapped[list['DepartmentInDB']] = db.relationship('DepartmentInDB', back_populates='leader')

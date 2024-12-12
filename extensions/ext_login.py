@@ -39,8 +39,9 @@ def init_app(app: Flask) -> None:
 
     @login_manager.unauthorized_handler
     def unauthorized() -> Response:
+        from schema.common.http import ResponseSchema
         return Response(
-            json.dumps({"message": "Unauthorized"}),
+            ResponseSchema[str].from_error("未登录").model_dump_json(),
             status=401,
             content_type="application/json",
         )

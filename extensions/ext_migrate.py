@@ -14,4 +14,5 @@ def init_app(app: "Flask", db: "SQLAlchemy") -> None:
         app (Flask): Flask应用实例
         db (SQLAlchemy): SQLAlchemy数据库实例
     """
+    
     flask_migrate.Migrate(app, db)

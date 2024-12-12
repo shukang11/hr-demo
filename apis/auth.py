@@ -4,7 +4,7 @@ from flask_login import login_user
 from managers.account_manager import AccountService
 from schema.common.http import ResponseSchema, make_api_response
 from schema.user import LoginRequest, LoginResponse
-
+from extensions.ext_database import db
 # 创建认证相关的蓝图
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -17,6 +17,7 @@ def login() -> Tuple[Response, int]:
     Returns:
         Tuple[Response, int]: 包含登录响应数据的JSON响应和HTTP状态码
     """
+    service = AccountService(session=db.session)
     try:
         # 使用 Pydantic 模型验证请求数据
         login_data = LoginRequest(**request.get_json())
@@ -29,7 +30,7 @@ def login() -> Tuple[Response, int]:
         )
 
     # 处理登录请求
-    response_data, error_message, status_code = AccountService.process_login(login_data)
+    response_data, error_message, status_code = service.process_login(login_data)
     
     # 处理错误情况
     if error_message:
@@ -41,7 +42,7 @@ def login() -> Tuple[Response, int]:
         )
 
     # 在Flask-Login中记录用户登录状态
-    user = AccountService.find_account_by_token(response_data.token)
+    user = service.find_account_by_token(response_data.token)
     if user:
         login_user(user)  # 确保这里调用了 login_user
 
