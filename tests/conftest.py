@@ -29,7 +29,7 @@ def app() -> Flask:
 
 
 @pytest.fixture
-def client(app: Flask, init_database: Session) -> FlaskClient:
+def client(app: Flask, test_session: Session) -> FlaskClient:
     """创建测试客户端"""
     return app.test_client()
 
@@ -41,17 +41,17 @@ def runner(app: Flask) -> FlaskCliRunner:
 
 
 @pytest.fixture
-def init_database(app: Flask) -> Generator[Session, None, None]:
+def test_session(app: Flask) -> Generator[Session, None, None]:
     """初始化测试数据库"""
     with app.app_context():
         db.create_all()
-        yield db
+        yield db.session
         db.session.remove()
         db.drop_all()
 
 
 @pytest.fixture
-def test_user(init_database: Session) -> AccountInDB:
+def test_user(test_session: Session) -> AccountInDB:
     """创建测试用户"""
     user = AccountInDB(
         username='test_user',
@@ -61,6 +61,6 @@ def test_user(init_database: Session) -> AccountInDB:
         is_active=True,
         is_admin=False
     )
-    init_database.session.add(user)
-    init_database.session.commit()
+    test_session.add(user)
+    test_session.commit()
     return user
