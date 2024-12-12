@@ -9,10 +9,8 @@ if not shared_config.DEBUG:
 
 from extensions import ext_compress, ext_database, ext_logging, ext_login, ext_migrate
 
-import json
-
-from flask import Flask, Response
-
+from flask import Flask
+from flask_cors import CORS
 from commands import register_commands
 
 from extensions.ext_database import db
@@ -48,8 +46,10 @@ def initialize_extensions(app):
     # extension instance to bind it to the Flask application instance (app)
     ext_compress.init_app(app)
     ext_database.init_app(app)
+    ext_logging.init_app(app)
+    ext_login.init_app(app)
     ext_migrate.init_app(app, db)
-
+    CORS(app)
 
 # register blueprint routers
 def register_blueprints(app: Flask):

@@ -7,6 +7,11 @@ class LoggingConfig(BaseSettings):
     """
     Configuration for application logging
     """
+    
+    LOG_ENABLED: bool = Field(
+        description="Whether to enable logging",
+        default=True,
+    )
 
     LOG_LEVEL: str = Field(
         description="Logging level, default to INFO. Set to ERROR for production environments.",

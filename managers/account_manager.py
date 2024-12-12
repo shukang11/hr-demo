@@ -1,8 +1,11 @@
-from typing import Optional
+from datetime import datetime
+from typing import Optional, Tuple
+import time
 
 from extensions.ext_database import db
 from libs.helper import getmd5
 from models.account import AccountInDB, AccountTokenInDB
+from schema.user import LoginRequest, LoginResponse, UserInResponse
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
@@ -10,7 +13,6 @@ from sqlalchemy.orm import joinedload
 class AccountService:
     @staticmethod
     def find_account_by_id(id: int) -> Optional[AccountInDB]:
-        # session in UserInDB
         session = db.session
         stmt = (
             select(AccountInDB)
@@ -40,7 +42,16 @@ class AccountService:
 
     @staticmethod
     def find_account_by_login(username: str, password: str) -> Optional[AccountInDB]:
-        hashed_password = password
+        """根据用户名和密码查找账户
+        
+        Args:
+            username: 用户名
+            password: 原始密码（未加密）
+            
+        Returns:
+            Optional[AccountInDB]: 找到的账户对象或None
+        """
+        hashed_password = getmd5(password)
         session = db.session
         stmt = (
             select(AccountInDB)
@@ -62,6 +73,15 @@ class AccountService:
 
     @staticmethod
     def get_account_token(account: AccountInDB, salt: str) -> str:
+        """获取账户的令牌，如不存在则创建新令牌
+        
+        Args:
+            account: 账户对象
+            salt: 令牌盐值
+            
+        Returns:
+            str: 令牌字符串
+        """
         if account.token:
             return account.token.token
         new_token = account.make_new_token_value(salt=salt)
@@ -93,8 +113,61 @@ class AccountService:
 
     @staticmethod
     def update_account_token(account: AccountInDB, salt: str) -> str:
-        # find old token
+        """更新账户的令牌
+        
+        Args:
+            account: 账户对象
+            salt: 令牌盐值
+            
+        Returns:
+            str: 新的令牌字符串
+        """
         new_token = account.make_new_token_value(salt=salt)
-        account.token.token = new_token
-        db.session.add(account)
+        if account.token:
+            account.token.token = new_token
+        else:
+            token = AccountTokenInDB(account=account, token=new_token)
+            db.session.add(token)
+        db.session.flush()
         return new_token
+
+    @staticmethod
+    def process_login(login_data: LoginRequest) -> Tuple[Optional[LoginResponse], Optional[str], int]:
+        """处理登录请求
+        
+        Args:
+            login_data: 登录请求数据
+            
+        Returns:
+            Tuple[Optional[LoginResponse], Optional[str], int]: 
+            - LoginResponse: 登录成功时的响应数据
+            - str: 错误信息
+            - int: HTTP状态码
+        """
+        # 查找并验证用户
+        user = AccountService.find_account_by_login(login_data.username, login_data.password)
+        if not user:
+            return None, "用户名或密码错误", 401
+
+        # 检查账户状态
+        if not user.is_active:
+            return None, "账户已被禁用", 403
+
+        # 更新令牌和登录时间
+        token_value = AccountService.update_account_token(user, "login")
+        user.last_login_at = datetime.now()
+        db.session.commit()
+
+        # 构建响应数据
+        response_data = LoginResponse(
+            token=token_value,
+            user=UserInResponse(
+                id=str(user.id),
+                username=user.username,
+                email=user.email,
+                full_name=user.full_name,
+                is_admin=user.is_admin
+            )
+        )
+
+        return response_data, None, 200

@@ -1,9 +1,13 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from flask_login import UserMixin
+from sqlalchemy.orm import Mapped
 from extensions.ext_database import db
 from .base import BaseModel
 from libs.helper import getmd5
+
+if TYPE_CHECKING:
+    from models.company import CompanyInDB
 
 
 class AccountInDB(BaseModel, UserMixin):
@@ -24,18 +28,18 @@ class AccountInDB(BaseModel, UserMixin):
     """
     __tablename__ = 'accounts'
 
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    phone = db.Column(db.String(20))
-    password = db.Column(db.String(255), nullable=False)
-    full_name = db.Column(db.String(255), nullable=False)
-    is_active = db.Column(db.Boolean, default=True)
-    is_admin = db.Column(db.Boolean, default=False)
-    last_login_at = db.Column(db.DateTime)
+    username: Mapped[str] = db.Column(db.String(64), unique=True, nullable=False)
+    email: Mapped[str] = db.Column(db.String(255), unique=True, nullable=False)
+    phone: Mapped[str] = db.Column(db.String(20))
+    password: Mapped[str] = db.Column(db.String(255), nullable=False)
+    full_name: Mapped[Optional[str]] = db.Column(db.String(255), nullable=False)
+    is_active: Mapped[bool] = db.Column(db.Boolean, default=True)
+    is_admin: Mapped[bool] = db.Column(db.Boolean, default=False)
+    last_login_at: Mapped[Optional[datetime]] = db.Column(db.DateTime)
 
     # Relationships
-    token = db.relationship('AccountTokenInDB', uselist=False, back_populates='account', cascade='all, delete-orphan')
-    companies = db.relationship('AccountCompanyInDB', back_populates='account')
+    token: Mapped[Optional['AccountTokenInDB']] = db.relationship('AccountTokenInDB', uselist=False, back_populates='account', cascade='all, delete-orphan')
+    companies: Mapped[list['AccountCompanyInDB']] = db.relationship('AccountCompanyInDB', back_populates='account')
 
     def make_new_token_value(self, salt: str) -> str:
         """生成新的令牌值
@@ -61,11 +65,11 @@ class AccountTokenInDB(BaseModel):
     """
     __tablename__ = 'account_tokens'
 
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, unique=True)
-    token = db.Column(db.String(255), nullable=False, unique=True)
+    account_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, unique=True)
+    token: Mapped[str] = db.Column(db.String(255), nullable=False, unique=True)
 
     # Relationships
-    account = db.relationship('AccountInDB', back_populates='token')
+    account: Mapped['AccountInDB'] = db.relationship('AccountInDB', back_populates='token')
 
 
 class AccountCompanyInDB(BaseModel):
@@ -81,13 +85,13 @@ class AccountCompanyInDB(BaseModel):
     """
     __tablename__ = 'account_company'
 
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
-    role = db.Column(db.String(32), nullable=False)
+    account_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    company_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    role: Mapped[str] = db.Column(db.String(32), nullable=False)
 
     # Relationships
-    account = db.relationship('AccountInDB', back_populates='companies')
-    company = db.relationship('CompanyInDB')
+    account: Mapped['AccountInDB'] = db.relationship('AccountInDB', back_populates='companies')
+    company: Mapped['CompanyInDB'] = db.relationship('CompanyInDB')
 
     __table_args__ = (
         db.UniqueConstraint('account_id', 'company_id', name='uix_account_company'),

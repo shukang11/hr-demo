@@ -54,15 +54,5 @@ app = create_app()
 if app.config["TESTING"]:
     print("App is running in TESTING mode")
 
-
-@app.after_request
-def after_request(response: Response) -> Response:
-    """Add Version headers to the response."""
-    response.set_cookie("remember_token", "", expires=0)
-    # response.headers.add("X-Version", app.config["CURRENT_VERSION"])
-    # response.headers.add("X-Env", app.config["DEPLOY_ENV"])
-    return response
-
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

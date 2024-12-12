@@ -1,7 +1,7 @@
 from typing import Generic, Optional, TypeVar
 
 from pydantic import BaseModel, Field
-
+from flask import jsonify, Response
 from libs.helper import get_current_time
 
 
@@ -30,3 +30,9 @@ class ResponseSchema(BaseModel, Generic[T]):
     @classmethod
     def from_error(cls, message: str, status: int = 500) -> "ResponseSchema":
         return cls(data=None, context=ResponseContext(status=status, message=message))
+    
+def make_api_response(resp: ResponseSchema, status: Optional[int] = None) -> Response:
+    resp_dict = resp.model_dump()
+    if status is None:
+        status = 200
+    return jsonify(resp_dict), status

@@ -13,24 +13,19 @@
     - AccountCompanyInDB: 账户-公司关联
 """
 
-from .models import (
-    JsonSchemaInDB,
-    CompanyInDB,
-    EmployeeInDB,
-    DepartmentInDB,
-    PositionInDB,
-    EmployeePositionInDB,
-)
-from .account import AccountInDB, AccountTokenInDB, AccountCompanyInDB
+from .base import BaseModel
+from .schema import JsonSchemaInDB
+from .company import CompanyInDB
+from .employee import EmployeeInDB
+from .department import DepartmentInDB
+from .position import PositionInDB, EmployeePositionInDB
 
 __all__ = [
+    'BaseModel',
     'JsonSchemaInDB',
     'CompanyInDB',
     'EmployeeInDB',
     'DepartmentInDB',
     'PositionInDB',
     'EmployeePositionInDB',
-    'AccountInDB',
-    'AccountTokenInDB',
-    'AccountCompanyInDB'
 ] 

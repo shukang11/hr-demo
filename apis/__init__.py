@@ -1,6 +1,4 @@
-
 from typing import TYPE_CHECKING
-from flask_cors import CORS
 
 if TYPE_CHECKING:
     from flask import Flask
@@ -8,13 +6,7 @@ if TYPE_CHECKING:
 
 def init_app(app: 'Flask') -> None:
     from .health import bp as health_bp
-    
-    
-    # CORS(
-    #     account_bp,
-    #     allow_headers=["Content-Type", "Authorization", "X-App-Code"],
-    #     methods=["GET", "PUT", "POST", "OPTIONS", "PATCH"],
-    # )
-    # app.register_blueprint(account_bp)
+    from .auth import bp as auth_bp
     
     app.register_blueprint(health_bp)
+    app.register_blueprint(auth_bp)
