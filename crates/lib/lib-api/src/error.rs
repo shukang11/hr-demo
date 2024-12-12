@@ -5,19 +5,19 @@ use axum::{
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum ApiError {
+pub enum APIError {
     #[error("Internal server error")]
     Internal(#[from] anyhow::Error),
 }
 
-impl IntoResponse for ApiError {
+impl IntoResponse for APIError {
     fn into_response(self) -> Response {
         let status = match self {
-            ApiError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            APIError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (status, self.to_string()).into_response()
     }
 }
 
-pub type ApiResult<T> = Result<T, ApiError>; 
+pub type ApiResult<T> = Result<T, APIError>; 

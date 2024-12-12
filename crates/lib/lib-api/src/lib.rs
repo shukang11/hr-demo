@@ -5,9 +5,10 @@ mod server;
 mod middlewares;
 mod routes;
 mod docs;
+mod response;
 
 pub use lib_utils::Settings;
-pub use error::{ApiError, ApiResult};
+pub use error::{APIError, ApiResult};
 pub use server::Server;
 pub use docs::ApiDoc;
 pub use lib_core::DBConnection;

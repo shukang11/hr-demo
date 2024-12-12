@@ -29,7 +29,6 @@ impl CompanyService {
     /// - `Result<Model, DbErr>`: 成功返回公司模型，失败返回数据库错误
     pub async fn insert(&self, params: InsertCompany) -> Result<Model, DbErr> {
         match params.id {
-            // 更新现有公司
             Some(id) => {
                 let company = if let Some(company) = self.find_by_id(id.as_u128() as i32).await? {
                     company
@@ -38,15 +37,12 @@ impl CompanyService {
                 };
 
                 let mut company: ActiveModel = company.into();
-                
-                // 更新字段
                 company.name = Set(params.name);
                 company.extra_value = Set(params.extra_value);
                 company.extra_schema_id = Set(params.extra_schema_id.map(|id| id.as_u128() as i32));
 
                 company.update(&self.db).await
             },
-            // 创建新公司
             None => {
                 let company = ActiveModel {
                     name: Set(params.name),
@@ -219,7 +215,7 @@ mod tests {
         // 验证删除后无法找到
         let find_result = service.find_by_id(company.id).await
             .expect("查询删除的公司失败");
-        assert!(find_result.is_none(), "删除后仍能找到公司");
+        assert!(find_result.is_none(), "删除后仍能找���公司");
     }
 
     /// 测试查询公司功能
@@ -258,7 +254,7 @@ mod tests {
         // 测试名称搜索
         let page_params = PageParams::new(1, 10);
         let result = service.search_by_name("科技", &page_params).await
-            .expect("搜索公司失败");
+            .expect("搜索公司��败");
         assert_eq!(result.total, 1, "搜索结果数量不正确");
         assert!(result.items.iter().any(|c| c.name.contains("科技")), 
             "搜索结果中没有包含关键字的公司");
