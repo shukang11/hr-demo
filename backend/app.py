@@ -1,15 +1,13 @@
-import json
 import logging
 import os
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
-from flask import Flask, Response,  Request, Blueprint
+from flask import Flask
 from flask_cors import CORS
 
 from configs import shared_config, AppConfig
 from extensions import ext_database, ext_login, ext_migrate
 from extensions.ext_database import db
-from extensions.ext_login import login_manager
 
 if not shared_config.DEBUG:
     from gevent import monkey
@@ -22,18 +20,25 @@ def init_extensions(app: Flask) -> None:
     ext_migrate.init_app(app, db)
 
 def register_blueprints(app: Flask) -> None:
-    # from views import init_app as init_views
-    # init_views(app)
+    from apis import init_app as init_apis
+    init_apis(app)
     return None
 
 
-def register_commands(app) -> None: ...
+def register_commands(app) -> None: 
+    from commands import register_commands
+    register_commands(app)
 
 
 def create_app(specific_config: Optional[AppConfig] = None) -> Flask:
     app = Flask(__name__)
     config = specific_config or shared_config
     
+    CORS(app, resources={r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }})
     
     app.config.from_object(config)
 
@@ -54,5 +59,6 @@ app = create_app()
 if app.config["TESTING"]:
     print("App is running in TESTING mode")
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
+    app.run(host="0.0.0.0", port=5000)

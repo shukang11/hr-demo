@@ -8,7 +8,7 @@ from schema.common.http import ResponseSchema, make_api_response
 from schema.company import CompanyCreate, CompanyInResponse
 
 # 创建公司相关的蓝图
-bp = Blueprint("companies", __name__, url_prefix="/api/companies")
+bp = Blueprint("companies", __name__, url_prefix="/companies")
 
 
 @bp.route("/create", methods=["POST"])

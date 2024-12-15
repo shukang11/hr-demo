@@ -1,5 +1,4 @@
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom"
-
 import { ThemeProvider } from "@/components/theme-provider"
 import { Suspense, lazy } from "react"
 import "./App.css"
@@ -7,7 +6,15 @@ import { ToastProvider } from "@/components/ui/toast"
 import { Toaster } from "@/components/ui/toaster"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
-// 懒加载导入所有页面组件
+// 布局组件
+import AuthLayout from "@/layout/auth"
+import RootLayout from "@/layout/root"
+
+// 认证页面
+import LoginPage from '@/app/auth/login/page'
+import RegisterPage from '@/app/auth/register/page'
+
+// 懒加载导入所有功能页面组件
 const DashboardPage = lazy(() => import("@/app/dashboard/page"))
 const EmployeePage = lazy(() => import("@/app/employee/page"))
 const DepartmentPage = lazy(() => import("@/app/department/page"))
@@ -22,84 +29,94 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
   </Suspense>
 )
 
+// 路由保护组件
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/auth/login" replace />;
+  }
+  return <>{children}</>;
+};
+
 function App() {
   return (
-    <HashRouter>
-      <ThemeProvider>
-        <ToastProvider>
-          <div className="min-h-screen">
-            <main>
-              <Routes>
-                {/* 默认重定向到仪表盘 */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                
-                {/* 仪表盘路由 */}
-                <Route 
-                  path="/dashboard" 
+    <div className="w-full min-h-screen">
+      <HashRouter>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              {/* 认证相关路由 */}
+              <Route path="/auth" element={<AuthLayout />}>
+                <Route path="login" element={<LoginPage />} />
+                <Route path="register" element={<RegisterPage />} />
+              </Route>
+
+              {/* 功能页面路由 */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <RootLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route
+                  path="dashboard"
                   element={
                     <PageWrapper>
                       <DashboardPage />
                     </PageWrapper>
-                  } 
+                  }
                 />
-
-                {/* 员工管理路由 */}
-                <Route 
-                  path="/employee" 
+                <Route
+                  path="employee"
                   element={
                     <PageWrapper>
                       <EmployeePage />
                     </PageWrapper>
-                  } 
+                  }
                 />
-
-                {/* 部门管理路由 */}
-                <Route 
-                  path="/department" 
+                <Route
+                  path="department"
                   element={
                     <PageWrapper>
                       <DepartmentPage />
                     </PageWrapper>
-                  } 
+                  }
                 />
-
-                {/* 职位管理路由 */}
-                <Route 
-                  path="/position" 
+                <Route
+                  path="position"
                   element={
                     <PageWrapper>
                       <PositionPage />
                     </PageWrapper>
-                  } 
+                  }
                 />
-
-                {/* 公司管理路由 */}
-                <Route 
-                  path="/company" 
+                <Route
+                  path="company"
                   element={
                     <PageWrapper>
                       <CompanyPage />
                     </PageWrapper>
-                  } 
+                  }
                 />
-
-                {/* 关于页面路由 */}
-                <Route 
-                  path="/about" 
+                <Route
+                  path="about"
                   element={
                     <PageWrapper>
                       <AboutPage />
                     </PageWrapper>
-                  } 
+                  }
                 />
-              </Routes>
-              <Toaster />
-            </main>
-          </div>
-        </ToastProvider>
-      </ThemeProvider>
-    </HashRouter>
-  )
+              </Route>
+            </Routes>
+            <Toaster />
+          </ToastProvider>
+        </ThemeProvider>
+      </HashRouter>
+    </div>
+  );
 }
 
-export default App
+export default App;

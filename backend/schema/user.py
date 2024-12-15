@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 class UserBase(BaseModel):
     """用户基础信息模型
@@ -40,8 +40,18 @@ class LoginRequest(BaseModel):
     
     用于验证用户登录请求的数据
     """
-    username: str = Field(..., description="用户名")
+    username: Optional[str] = Field(None, description="用户名")
+    email: Optional[EmailStr] = Field(None, description="电子邮箱")
     password: str = Field(..., min_length=6, description="密码")
+
+    @model_validator(mode='before')
+    def check_username_or_email(cls, values):
+        """验证用户名或邮箱至少有一个不为空"""
+        username = values.get('username')
+        email = values.get('email')
+        if not username and not email:
+            raise ValueError('用户名和邮箱不能同时为空')
+        return values
 
 class LoginResponse(BaseModel):
     """登录响应模型

@@ -1,8 +1,8 @@
-"""initial migration
+"""init_tables
 
-Revision ID: 8258b38bdadf
+Revision ID: cb611faeb004
 Revises: 
-Create Date: 2024-12-12 06:33:08.014730
+Create Date: 2024-12-15 14:44:24.866654
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '8258b38bdadf'
+revision = 'cb611faeb004'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,14 +22,15 @@ def upgrade():
     sa.Column('username', sa.String(length=64), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('phone', sa.String(length=20), nullable=True),
+    sa.Column('gender', sa.String(length=10), nullable=True),
     sa.Column('password', sa.String(length=255), nullable=False),
-    sa.Column('full_name', sa.String(length=255), nullable=False),
+    sa.Column('full_name', sa.String(length=255), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.Column('last_login_at', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('username')
@@ -37,17 +38,17 @@ def upgrade():
     op.create_table('json_schemas',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('schema', sa.JSON(), nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('account_tokens',
     sa.Column('account_id', sa.Integer(), nullable=False),
     sa.Column('token', sa.String(length=255), nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['account_id'], ['accounts.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('account_id'),
@@ -55,11 +56,12 @@ def upgrade():
     )
     op.create_table('company',
     sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.String(), nullable=True),
     sa.Column('extra_value', sa.JSON(), nullable=True),
     sa.Column('extra_schema_id', sa.Integer(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['extra_schema_id'], ['json_schemas.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -74,9 +76,9 @@ def upgrade():
     sa.Column('gender', sa.String(), nullable=False),
     sa.Column('extra_value', sa.JSON(), nullable=True),
     sa.Column('extra_schema_id', sa.Integer(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['extra_schema_id'], ['json_schemas.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -84,23 +86,23 @@ def upgrade():
     sa.Column('account_id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('role', sa.String(length=32), nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['account_id'], ['accounts.id'], ),
     sa.ForeignKeyConstraint(['company_id'], ['company.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('account_id', 'company_id', name='uix_account_company')
     )
     op.create_table('department',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('parent_id', sa.Integer(), nullable=True),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=64), nullable=False),
     sa.Column('leader_id', sa.Integer(), nullable=True),
     sa.Column('remark', sa.String(length=255), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['company_id'], ['company.id'], ),
     sa.ForeignKeyConstraint(['leader_id'], ['employee.id'], ),
     sa.ForeignKeyConstraint(['parent_id'], ['department.id'], ),
@@ -110,9 +112,9 @@ def upgrade():
     sa.Column('name', sa.String(length=64), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('remark', sa.String(length=255), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['company_id'], ['company.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -122,9 +124,9 @@ def upgrade():
     sa.Column('department_id', sa.Integer(), nullable=False),
     sa.Column('position_id', sa.Integer(), nullable=False),
     sa.Column('remark', sa.String(length=255), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['company_id'], ['company.id'], ),
     sa.ForeignKeyConstraint(['department_id'], ['department.id'], ),
     sa.ForeignKeyConstraint(['employee_id'], ['employee.id'], ),

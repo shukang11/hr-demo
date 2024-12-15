@@ -64,6 +64,12 @@ class AccountService:
             )
         )
         user = session.execute(stmt).scalar_one_or_none()
+
+        # print all data in user
+        users = self.session.query(AccountInDB).all()
+        print(f"users: {len(users)}")
+        for u in users:
+            print(f"{u.email} - {u.username} - {u.password}")
         return user
 
     def create_account_token(self, user_id: int, token: str) -> AccountTokenInDB:

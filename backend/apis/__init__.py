@@ -1,7 +1,4 @@
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from flask import Flask
+from flask import Flask, Blueprint
 
 
 def init_app(app: 'Flask') -> None:
@@ -9,6 +6,10 @@ def init_app(app: 'Flask') -> None:
     from .auth import bp as auth_bp
     from .companies import bp as companies_bp
     
+    api_bp = Blueprint('api', __name__, url_prefix="/api")
+
+    api_bp.register_blueprint(auth_bp)
+    api_bp.register_blueprint(companies_bp)
+    
     app.register_blueprint(health_bp)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(companies_bp)
+    app.register_blueprint(api_bp)

@@ -1,12 +1,12 @@
 from typing import Tuple
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response, current_app
 from flask_login import login_user
 from managers.account_manager import AccountService
 from schema.common.http import ResponseSchema, make_api_response
 from schema.user import LoginRequest, LoginResponse
 from extensions.ext_database import db
 # 创建认证相关的蓝图
-bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @bp.route('/login', methods=['POST'])
 def login() -> Tuple[Response, int]:
@@ -17,11 +17,13 @@ def login() -> Tuple[Response, int]:
     Returns:
         Tuple[Response, int]: 包含登录响应数据的JSON响应和HTTP状态码
     """
+    current_app.logger.info(f"Login request: {request.get_json()}")
     service = AccountService(session=db.session)
     try:
         # 使用 Pydantic 模型验证请求数据
         login_data = LoginRequest(**request.get_json())
-    except ValueError:
+    except ValueError as e:
+        current_app.logger.error(f"Invalid login data: {e}")
         return make_api_response(
             ResponseSchema[LoginResponse].from_error(
                 message='无效的请求数据',
@@ -34,6 +36,7 @@ def login() -> Tuple[Response, int]:
     
     # 处理错误情况
     if error_message:
+        current_app.logger.error(f"Login error: {error_message}")
         return make_api_response(
             ResponseSchema[LoginResponse].from_error(
                 message=error_message,
