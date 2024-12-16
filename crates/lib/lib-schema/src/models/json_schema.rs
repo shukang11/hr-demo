@@ -3,15 +3,14 @@ use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
-use utoipa::ToSchema;
 
 use sea_orm::FromQueryResult;
 
 /// JSON Schema模型
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonSchema {
     /// 唯一标识符
-    pub id: Uuid,
+    pub id: i32,
     /// Schema名称
     pub name: String,
     /// Schema定义（JSON）
@@ -23,7 +22,7 @@ pub struct JsonSchema {
 }
 
 /// 创建JSON Schema的请求数据
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateJsonSchema {
     /// Schema名称
     pub name: String,
@@ -32,7 +31,7 @@ pub struct CreateJsonSchema {
 }
 
 /// 更新JSON Schema的请求数据
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateJsonSchema {
     /// Schema名称
     pub name: Option<String>,
@@ -52,7 +51,7 @@ impl FromQueryResult for JsonSchema {
         };
 
         Ok(Self {
-            id: Uuid::from_u128(res.try_get::<i32>(pre, "id")? as u128),
+            id: res.try_get(pre, "id")?,
             name: res.try_get(pre, "name")?,
             schema,
             created_at: res.try_get(pre, "created_at")?,

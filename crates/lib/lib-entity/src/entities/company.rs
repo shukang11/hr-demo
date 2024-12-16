@@ -1,4 +1,4 @@
-use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
+use chrono::naive::serde::ts_milliseconds::serialize as to_milli_ts;
 use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -16,18 +16,15 @@ impl EntityName for Entity {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Deserialize, Serialize)]
 pub struct Model {
-    #[serde(skip)]
     pub id: i32,                      // 主键
     pub name: String,                 // 公司名称
     pub extra_value: Option<Value>,   // 额外JSON数据
     pub extra_schema_id: Option<i32>, // 额外数据schema ID
-    #[serde(skip)]
-    #[serde(serialize_with = "to_milli_tsopt")]
+    #[serde(serialize_with = "to_milli_ts")]
     pub created_at: NaiveDateTime,    // 创建时间
-    #[serde(skip)]
-    #[serde(serialize_with = "to_milli_tsopt")]
+    #[serde(serialize_with = "to_milli_ts")]
     pub updated_at: NaiveDateTime,    // 更新时间
 }
 

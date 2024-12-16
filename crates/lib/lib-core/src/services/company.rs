@@ -30,7 +30,7 @@ impl CompanyService {
     pub async fn insert(&self, params: InsertCompany) -> Result<Model, DbErr> {
         match params.id {
             Some(id) => {
-                let company = if let Some(company) = self.find_by_id(id.as_u128() as i32).await? {
+                let company = if let Some(company) = self.find_by_id(id).await? {
                     company
                 } else {
                     return Err(DbErr::Custom("Company not found".to_owned()));
@@ -39,21 +39,19 @@ impl CompanyService {
                 let mut company: ActiveModel = company.into();
                 company.name = Set(params.name);
                 company.extra_value = Set(params.extra_value);
-                company.extra_schema_id = Set(params.extra_schema_id.map(|id| id.as_u128() as i32));
+                company.extra_schema_id = Set(params.extra_schema_id);
 
                 company.update(&self.db).await
-            },
+            }
             None => {
                 let company = ActiveModel {
                     name: Set(params.name),
                     extra_value: Set(params.extra_value),
-                    extra_schema_id: Set(params.extra_schema_id.map(|id| id.as_u128() as i32)),
+                    extra_schema_id: Set(params.extra_schema_id),
                     ..Default::default()
                 };
-                
-                Company::insert(company)
-                    .exec_with_returning(&self.db)
-                    .await
+
+                company.insert(&self.db).await
             }
         }
     }
@@ -61,7 +59,7 @@ impl CompanyService {
     /// 删除公司
     /// 
     /// # 参数
-    /// - `id`: 要删除的公司ID
+    /// - `id`: 公司ID
     /// 
     /// # 返回
     /// - `Result<DeleteResult, DbErr>`: 成功返回删除结果，失败返回数据库错误
@@ -69,13 +67,13 @@ impl CompanyService {
         Company::delete_by_id(id).exec(&self.db).await
     }
 
-    /// 根据ID查找公司
+    /// 根据ID查询公司
     /// 
     /// # 参数
     /// - `id`: 公司ID
     /// 
     /// # 返回
-    /// - `Result<Option<Model>, DbErr>`: 成功返回可能存在的公司模型，失败返回数据库错误
+    /// - `Result<Option<Model>, DbErr>`: 成功返回公司模型（如果存在），失败返回数据库错误
     pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>, DbErr> {
         Company::find_by_id(id).one(&self.db).await
     }
@@ -98,10 +96,10 @@ impl CompanyService {
         Ok(PageResult::new(items, total, page_params))
     }
 
-    /// 按名称搜索公司
+    /// 根据名称搜索公司
     /// 
     /// # 参数
-    /// - `name`: 搜索关键字
+    /// - `name`: 公司名称关键字
     /// - `page_params`: 分页参数
     /// 
     /// # 返回
@@ -127,7 +125,6 @@ impl CompanyService {
 mod tests {
     use super::*;
     use crate::test_runner;
-    use uuid::Uuid;
 
     /// 创建测试服务实例
     async fn setup_test_service() -> CompanyService {
@@ -171,7 +168,7 @@ mod tests {
         
         // 测试成功更新
         let update_params = InsertCompany {
-            id: Some(Uuid::from_u128(company.id as u128)),
+            id: Some(company.id),
             name: "新公司名".to_string(),
             extra_value: None,
             extra_schema_id: None,
@@ -184,7 +181,7 @@ mod tests {
         
         // 测试更新不存在的公司
         let invalid_update = InsertCompany {
-            id: Some(Uuid::new_v4()),
+            id: Some(99999),
             name: "测试名称".to_string(),
             extra_value: None,
             extra_schema_id: None,
@@ -215,7 +212,7 @@ mod tests {
         // 验证删除后无法找到
         let find_result = service.find_by_id(company.id).await
             .expect("查询删除的公司失败");
-        assert!(find_result.is_none(), "删除后仍能找���公司");
+        assert!(find_result.is_none(), "删除后仍能找到公司");
     }
 
     /// 测试查询公司功能
@@ -254,7 +251,7 @@ mod tests {
         // 测试名称搜索
         let page_params = PageParams::new(1, 10);
         let result = service.search_by_name("科技", &page_params).await
-            .expect("搜索公司��败");
+            .expect("搜索公司失败");
         assert_eq!(result.total, 1, "搜索结果数量不正确");
         assert!(result.items.iter().any(|c| c.name.contains("科技")), 
             "搜索结果中没有包含关键字的公司");

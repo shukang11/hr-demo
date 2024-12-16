@@ -19,5 +19,3 @@ impl IntoResponse for APIError {
         (status, self.to_string()).into_response()
     }
 }
-
-pub type ApiResult<T> = Result<T, APIError>; 

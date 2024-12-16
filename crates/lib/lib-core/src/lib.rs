@@ -6,9 +6,8 @@ pub type DBConnection = sea_orm::DatabaseConnection;
 // Re-export commonly used types
 pub use services::company::CompanyService;
 
-use std::time::Duration;
-use sea_orm::entity::prelude::DatabaseConnection;
 use sea_orm::{ConnectOptions, Database};
+use std::time::Duration;
 
 pub async fn get_db_conn(uri: String) -> DBConnection {
     let mut opt = ConnectOptions::new(uri.to_owned());
@@ -27,8 +26,8 @@ pub async fn get_db_conn(uri: String) -> DBConnection {
 
 #[cfg(test)]
 mod test_runner {
-    use migration::{Migrator, MigratorTrait};
     use super::DBConnection;
+    use migration::{Migrator, MigratorTrait};
 
     pub(crate) async fn setup_database() -> DBConnection {
         let base_url =

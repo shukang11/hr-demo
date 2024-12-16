@@ -1,20 +1,15 @@
-
 mod error;
 mod handlers;
-mod server;
 mod middlewares;
-mod routes;
-mod docs;
 mod response;
+mod routes;
+mod server;
 
-pub use lib_utils::Settings;
-pub use error::{APIError, ApiResult};
-pub use server::Server;
-pub use docs::ApiDoc;
-pub use lib_core::DBConnection;
 use axum::Router;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
+pub use error::APIError;
+pub use lib_core::DBConnection;
+pub use lib_utils::Settings;
+pub use server::Server;
 
 #[derive(Debug)]
 pub struct AppState {
@@ -22,9 +17,7 @@ pub struct AppState {
     pub setting: Settings,
 }
 
-/// 创建包含 Swagger UI 的路由
+/// 创建路由
 pub fn create_router() -> Router {
     routes::create_router()
-        .merge(SwaggerUi::new("/swagger-ui")
-            .url("/api-docs/openapi.json", docs::ApiDoc::openapi()))
 }

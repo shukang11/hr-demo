@@ -11,7 +11,6 @@ use tracing_subscriber::{
 use crate::{middlewares, AppState};
 use lib_utils::Settings;
 use crate::routes;
-use crate::docs;
 
 pub struct Server;
 
@@ -29,8 +28,7 @@ impl Server {
         });
 
         // 创建路由
-        let router = routes::create_router()
-            .merge(docs::create_swagger_routes());
+        let router = routes::create_router();
 
         let router = router
             .layer(middlewares::logger::LoggerLayer);

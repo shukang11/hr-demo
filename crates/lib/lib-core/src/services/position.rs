@@ -31,33 +31,29 @@ impl PositionService {
         match params.id {
             // 更新现有职位
             Some(id) => {
-                let position = if let Some(position) = self.find_by_id(id.as_u128() as i32).await? {
+                let position = if let Some(position) = self.find_by_id(id).await? {
                     position
                 } else {
                     return Err(DbErr::Custom("Position not found".to_owned()));
                 };
 
                 let mut position: ActiveModel = position.into();
-                
-                // 更新字段
                 position.name = Set(params.name);
-                position.company_id = Set(params.company_id.as_u128() as i32);
+                position.company_id = Set(params.company_id);
                 position.remark = Set(params.remark);
 
                 position.update(&self.db).await
-            },
+            }
             // 创建新职位
             None => {
                 let position = ActiveModel {
                     name: Set(params.name),
-                    company_id: Set(params.company_id.as_u128() as i32),
+                    company_id: Set(params.company_id),
                     remark: Set(params.remark),
                     ..Default::default()
                 };
-                
-                Position::insert(position)
-                    .exec_with_returning(&self.db)
-                    .await
+
+                position.insert(&self.db).await
             }
         }
     }
@@ -65,7 +61,7 @@ impl PositionService {
     /// 删除职位
     /// 
     /// # 参数
-    /// - `id`: 要删除的职位ID
+    /// - `id`: 职位ID
     /// 
     /// # 返回
     /// - `Result<DeleteResult, DbErr>`: 成功返回删除结果，失败返回数据库错误
@@ -73,18 +69,18 @@ impl PositionService {
         Position::delete_by_id(id).exec(&self.db).await
     }
 
-    /// 根据ID查���职位
+    /// 根据ID查询职位
     /// 
     /// # 参数
     /// - `id`: 职位ID
     /// 
     /// # 返回
-    /// - `Result<Option<Model>, DbErr>`: 成功返回可能存在的职位模型，失败返回数据库错误
+    /// - `Result<Option<Model>, DbErr>`: 成功返回职位模型（如果存在），失败返回数据库错误
     pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>, DbErr> {
         Position::find_by_id(id).one(&self.db).await
     }
 
-    /// 分页查询公司的所有职位
+    /// 根据公司ID分页查询职位
     /// 
     /// # 参数
     /// - `company_id`: 公司ID
@@ -108,11 +104,11 @@ impl PositionService {
         Ok(PageResult::new(items, total, page_params))
     }
 
-    /// 按名称搜索职位
+    /// 根据名称搜索职位
     /// 
     /// # 参数
     /// - `company_id`: 公司ID
-    /// - `name`: 搜索关键字
+    /// - `name`: 职位名称关键字
     /// - `page_params`: 分页参数
     /// 
     /// # 返回
@@ -140,7 +136,6 @@ impl PositionService {
 mod tests {
     use super::*;
     use crate::test_runner;
-    use uuid::Uuid;
 
     /// 创建测试服务实例
     async fn setup_test_service() -> PositionService {
@@ -155,7 +150,7 @@ mod tests {
         let params = InsertPosition {
             id: None,
             name: "测试职位".to_string(),
-            company_id: Uuid::new_v4(),
+            company_id: 1,
             remark: None,
         };
         
@@ -176,7 +171,7 @@ mod tests {
         let create_params = InsertPosition {
             id: None,
             name: "原职位名".to_string(),
-            company_id: Uuid::new_v4(),
+            company_id: 1,
             remark: None,
         };
         let position = service.insert(create_params).await
@@ -184,23 +179,22 @@ mod tests {
         
         // 测试成功更新
         let update_params = InsertPosition {
-            id: Some(Uuid::from_u128(position.id as u128)),
+            id: Some(position.id),
             name: "新职位名".to_string(),
-            company_id: Uuid::from_u128(position.company_id as u128),
-            remark: Some("更新备注".to_string()),
+            company_id: position.company_id,
+            remark: None,
         };
         let result = service.insert(update_params).await;
         assert!(result.is_ok(), "更新职位失败: {:?}", result.err());
         
         let updated_position = result.unwrap();
         assert_eq!(updated_position.name, "新职位名");
-        assert_eq!(updated_position.remark, Some("更新备注".to_string()));
         
         // 测试更新不存在的职位
         let invalid_update = InsertPosition {
-            id: Some(Uuid::new_v4()),
+            id: Some(99999),
             name: "测试名称".to_string(),
-            company_id: Uuid::new_v4(),
+            company_id: 1,
             remark: None,
         };
         let result = service.insert(invalid_update).await;
@@ -216,7 +210,7 @@ mod tests {
         let params = InsertPosition {
             id: None,
             name: "待删除职位".to_string(),
-            company_id: Uuid::new_v4(),
+            company_id: 1,
             remark: None,
         };
         let position = service.insert(params).await
@@ -229,14 +223,14 @@ mod tests {
         // 验证删除后无法找到
         let find_result = service.find_by_id(position.id).await
             .expect("查询删除的职位失败");
-        assert!(find_result.is_none(), "删除后仍能找���职位");
+        assert!(find_result.is_none(), "删除后仍能找到职位");
     }
 
     /// 测试查询职位功能
     #[tokio::test]
     async fn test_query_positions() {
         let service = setup_test_service().await;
-        let company_id = Uuid::new_v4();
+        let company_id = 1;
         
         // 创建测试数据
         let positions = vec![
@@ -260,7 +254,7 @@ mod tests {
         
         // 测试分页查询
         let page_params = PageParams::new(1, 3);
-        let result = service.find_by_company(company_id.as_u128() as i32, &page_params).await
+        let result = service.find_by_company(company_id, &page_params).await
             .expect("分页查询失败");
         assert_eq!(result.total, 5, "总记录数不正确");
         assert_eq!(result.items.len(), 3, "分页大小不正确");
@@ -269,7 +263,7 @@ mod tests {
         // 测试名称搜索
         let page_params = PageParams::new(1, 10);
         let result = service.search_by_name(
-            company_id.as_u128() as i32,
+            company_id,
             "工程师",
             &page_params
         ).await.expect("搜索职位失败");

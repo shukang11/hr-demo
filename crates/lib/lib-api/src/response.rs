@@ -1,21 +1,20 @@
 use axum::{
     response::{IntoResponse, Response},
-    Json,
+    Form, Json,
 };
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use utoipa::ToSchema;
 
 use crate::error::APIError;
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize)]
 pub struct APIResponseContext {
     pub code: i32,
     pub message: Option<String>,
     pub server_at: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize)]
 pub struct APIResponse<T: Serialize> {
     #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<T>,
@@ -53,6 +52,18 @@ impl<T: Serialize> APIResponse<T> {
     pub fn with_error(self, error: APIError) -> Self {
         self.with_code(code_for_error(&error))
             .with_message(format!("{}", error))
+    }
+}
+
+impl<T: Serialize> From<T> for APIResponse<T> {
+    fn from(data: T) -> Self {
+        APIResponse::new().with_data(data)
+    }
+}
+
+impl<T: Serialize> From<APIError> for APIResponse<T> {
+    fn from(error: APIError) -> Self {
+        APIResponse::new().with_error(error)
     }
 }
 
