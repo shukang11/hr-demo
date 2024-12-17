@@ -20,7 +20,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            addr: "127.0.0.1:3000".parse().unwrap(),
+            addr: "127.0.0.1:5000".parse().unwrap(),
             log_dir: None,
             database_url: "sqlite:memory:".to_string(),
         }

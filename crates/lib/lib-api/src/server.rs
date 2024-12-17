@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::sync::Arc;
+use tower_http::cors::{CorsLayer, Any};
 use axum::Extension;
 use tokio::net::TcpListener;
 use tracing::level_filters::LevelFilter;
@@ -29,9 +30,17 @@ impl Server {
 
         // 创建路由
         let router = routes::create_router();
-
+        
+        
         let router = router
-            .layer(middlewares::logger::LoggerLayer);
+        .layer(middlewares::logger::LoggerLayer);
+    
+            // 在创建路由后添加 CORS 中间件
+    let cors = CorsLayer::new()
+    .allow_methods(Any)
+    .allow_headers(Any)
+    .allow_origin(Any);
+        let router = router.layer(cors);
 
         let app = router.layer(Extension(state));
 

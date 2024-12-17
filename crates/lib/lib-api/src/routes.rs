@@ -5,4 +5,5 @@ use crate::handlers;
 pub fn create_router() -> Router {
     Router::new()
         .nest("/health", handlers::health_routes())
+        .nest("/company", handlers::company_routes())
 }

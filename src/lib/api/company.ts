@@ -1,4 +1,5 @@
 import { PageParams, PageResult } from "@/lib/types"
+import { serverAPI, ApiResponse } from "./client"
 
 export interface Company {
   id: number
@@ -16,49 +17,46 @@ export interface InsertCompany {
   extra_schema_id?: number
 }
 
-const API_PREFIX = "/api/company"
+const API_PREFIX = "company"
 
 export async function createOrUpdateCompany(data: InsertCompany): Promise<Company> {
-  const response = await fetch(API_PREFIX, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-  const result = await response.json()
-  return result.data
+  const response = await serverAPI.post(`${API_PREFIX}/create`, {
+    json: data
+  }).json<ApiResponse<Company>>()
+  return response.data
 }
 
 export async function getCompanyList(params: PageParams): Promise<PageResult<Company>> {
-  const searchParams = new URLSearchParams({
-    page: params.page.toString(),
-    limit: params.limit.toString(),
-  })
-  const response = await fetch(`${API_PREFIX}?${searchParams}`)
-  const result = await response.json()
-  return result.data
+  console.log('Fetching company list with params:', params);
+  const response = await serverAPI.get(`${API_PREFIX}/list`, {
+    searchParams: {
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    }
+  }).json<ApiResponse<PageResult<Company>>>();
+  console.log('Company list response:', response);
+  if (!response.data) {
+    throw new Error('No data returned from server');
+  }
+  return response.data;
 }
 
 export async function searchCompanies(name: string, params: PageParams): Promise<PageResult<Company>> {
-  const searchParams = new URLSearchParams({
-    name,
-    page: params.page.toString(),
-    limit: params.limit.toString(),
-  })
-  const response = await fetch(`${API_PREFIX}/search?${searchParams}`)
-  const result = await response.json()
-  return result.data
+  const response = await serverAPI.get(`${API_PREFIX}/search`, {
+    searchParams: {
+      name,
+      page: params.page.toString(),
+      limit: params.limit.toString(),
+    }
+  }).json<ApiResponse<PageResult<Company>>>()
+  return response.data
 }
 
 export async function getCompanyById(id: number): Promise<Company | null> {
-  const response = await fetch(`${API_PREFIX}/${id}`)
-  const result = await response.json()
-  return result.data
+  const response = await serverAPI.get(`${API_PREFIX}/${id}`).json<ApiResponse<Company | null>>()
+  return response.data
 }
 
 export async function deleteCompany(id: number): Promise<void> {
-  await fetch(`${API_PREFIX}/${id}`, {
-    method: "DELETE",
-  })
+  await serverAPI.delete(`${API_PREFIX}/${id}`).json<ApiResponse<void>>()
 } 
