@@ -1,7 +1,7 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, NaiveDateTime};
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
-
+use lib_entity::entities::department::Model;
 use sea_orm::FromQueryResult;
 
 /// 部门模型
@@ -20,9 +20,9 @@ pub struct Department {
     /// 备注
     pub remark: Option<String>,
     /// 创建时间
-    pub created_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
     /// 更新时间
-    pub updated_at: DateTime<Utc>,
+    pub updated_at: NaiveDateTime,
 }
 
 /// 部门数据模型，用于创建和更新
@@ -54,5 +54,20 @@ impl FromQueryResult for Department {
             created_at: res.try_get(pre, "created_at")?,
             updated_at: res.try_get(pre, "updated_at")?,
         })
+    }
+}
+
+impl From<Model> for Department {
+    fn from(model: Model) -> Self {
+        Self {
+            id: model.id,
+            name: model.name,
+            parent_id: model.parent_id,
+            company_id: model.company_id,
+            leader_id: model.leader_id,
+            remark: model.remark,
+            created_at: model.created_at,
+            updated_at: model.updated_at,
+        }
     }
 }

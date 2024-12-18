@@ -1,6 +1,10 @@
+import { DepartmentList } from "./components/department-list"
 import { AppLayout } from "@/components/layout/app-layout"
 
 export default function DepartmentPage() {
+  // TODO: 这里需要从路由或者其他地方获取公司ID
+  const companyId = 1
+
   return (
     <AppLayout
       breadcrumbs={[
@@ -9,7 +13,7 @@ export default function DepartmentPage() {
       ]}
     >
       <div className="rounded-xl bg-muted/50 p-4">
-        <h1>部门管理页面</h1>
+        <DepartmentList companyId={companyId} />
       </div>
     </AppLayout>
   )

@@ -22,8 +22,9 @@ const API_PREFIX = "company"
 export async function createOrUpdateCompany(data: InsertCompany): Promise<Company> {
   const response = await serverAPI.post(`${API_PREFIX}/create`, {
     json: data
-  }).json<ApiResponse<Company>>()
-  return response.data
+  }).json<ApiResponse<Company>>();
+  if (!response.data) throw new Error('No data returned');
+  return response.data;
 }
 
 export async function getCompanyList(params: PageParams): Promise<PageResult<Company>> {
@@ -49,11 +50,13 @@ export async function searchCompanies(name: string, params: PageParams): Promise
       limit: params.limit.toString(),
     }
   }).json<ApiResponse<PageResult<Company>>>()
+  if (!response.data) throw new Error('No data returned');
   return response.data
 }
 
 export async function getCompanyById(id: number): Promise<Company | null> {
   const response = await serverAPI.get(`${API_PREFIX}/${id}`).json<ApiResponse<Company | null>>()
+  if (!response.data) throw new Error('No data returned');
   return response.data
 }
 
