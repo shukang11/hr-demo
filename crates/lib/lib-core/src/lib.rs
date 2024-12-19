@@ -6,7 +6,8 @@ pub type DBConnection = sea_orm::DatabaseConnection;
 // Re-export commonly used types
 pub use services::company::CompanyService;
 pub use services::department::DepartmentService;
-
+pub use services::employee::EmployeeService;
+pub use services::position::PositionService;
 
 use sea_orm::{ConnectOptions, Database};
 use std::time::Duration;

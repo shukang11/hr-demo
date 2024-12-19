@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use lib_entity::entities::employee::Gender as DbGender;
+use lib_entity::entities::employee::{Gender as DbGender, Model as DbEmployee};
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -90,11 +90,9 @@ pub struct InsertEmployee {
 impl FromQueryResult for Employee {
     fn from_query_result(res: &QueryResult, pre: &str) -> Result<Self, DbErr> {
         let extra_value: Option<Value> =
-            if let Ok(json_str) = res.try_get::<String>(pre, "extra_value") {
-                serde_json::from_str(&json_str).unwrap_or(None)
-            } else {
-                None
-            };
+            res.try_get::<String>(pre, "extra_value")
+                .ok()
+                .and_then(|s| serde_json::from_str(&s).ok());
 
         let db_gender = match res.try_get::<String>(pre, "gender")?.as_str() {
             "Male" => DbGender::Male,
@@ -115,5 +113,23 @@ impl FromQueryResult for Employee {
             created_at: res.try_get(pre, "created_at")?,
             updated_at: res.try_get(pre, "updated_at")?,
         })
+    }
+}
+
+impl From<DbEmployee> for Employee {
+    fn from(model: DbEmployee) -> Self {
+        Self {
+            id: model.id,
+            name: model.name,
+            email: model.email,
+            phone: model.phone,
+            birthdate: model.birthdate.map(|dt| dt.and_utc()),
+            address: model.address,
+            gender: model.gender.into(),
+            extra_value: None,
+            extra_schema_id: model.extra_schema_id,
+            created_at: model.created_at.and_utc(),
+            updated_at: model.updated_at.and_utc(),
+        }
     }
 }

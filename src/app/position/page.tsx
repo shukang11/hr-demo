@@ -1,15 +1,16 @@
 import { AppLayout } from "@/components/layout/app-layout"
+import { PositionList } from "./components/position-list"
 
 export default function PositionPage() {
   return (
     <AppLayout
       breadcrumbs={[
         { label: "职位管理", href: "/position" },
-        { label: "职位列表" },
+        { label: "职位信息" },
       ]}
     >
       <div className="rounded-xl bg-muted/50 p-4">
-        <h1>职位管理页面</h1>
+        <PositionList />
       </div>
     </AppLayout>
   )

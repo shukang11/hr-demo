@@ -1,13 +1,13 @@
 use lib_entity::entities::{
     company, department,
-    employee::{ActiveModel as EmployeeActive, Entity as Employee, Model as EmployeeModel},
+    employee::{self, ActiveModel as EmployeeActive, Entity as Employee, Model as EmployeeModel},
     employee_position::{
         self, ActiveModel as EmployeePositionActive, Entity as EmployeePosition,
         Model as EmployeePositionModel,
     },
     position,
 };
-use lib_schema::models::employee::InsertEmployee;
+use lib_schema::{models::employee::InsertEmployee, PageParams, PageResult};
 use lib_schema::models::employee_position::InsertEmployeePosition;
 use sea_orm::*;
 
@@ -215,6 +215,144 @@ impl EmployeeService {
     /// - `Result<DeleteResult, DbErr>`: 成功返回删除结果，失败返回数据库错误
     pub async fn remove_position(&self, id: i32) -> Result<DeleteResult, DbErr> {
         EmployeePosition::delete_by_id(id).exec(&self.db).await
+    }
+
+    /// 分页查询所有员工
+    ///
+    /// # 参数
+    /// - `params`: 分页参数
+    ///
+    /// # 返回
+    /// - `Result<PageResult<EmployeeModel>, DbErr>`: 成功返回分页结果，失败返回数据库错误
+    pub async fn find_all(&self, params: &PageParams) -> Result<PageResult<EmployeeModel>, DbErr> {
+        let page = params.page;
+        let limit = params.limit;
+
+        let paginator = Employee::find()
+            .order_by_asc(employee::Column::Id)
+            .paginate(&self.db, limit);
+
+        let total = paginator.num_items().await?;
+        let total_pages = paginator.num_pages().await?;
+        let items = paginator.fetch_page(page - 1).await?;
+
+        Ok(PageResult {
+            items,
+            total,
+            page: page,
+            limit: limit,
+            total_pages,
+        })
+    }
+
+    /// 按公司分页查询员工
+    ///
+    /// # 参数
+    /// - `company_id`: 公司ID
+    /// - `params`: 分页参数
+    ///
+    /// # 返回
+    /// - `Result<PageResult<EmployeeModel>, DbErr>`: 成功返回分页结果，失败返回数据库错误
+    pub async fn find_by_company(
+        &self,
+        company_id: i32,
+        params: &PageParams,
+    ) -> Result<PageResult<EmployeeModel>, DbErr> {
+        let page = params.page;
+        let limit = params.limit;
+
+        let paginator = Employee::find()
+            .join(
+                JoinType::InnerJoin,
+                employee::Relation::EmployeePosition.def(),
+            )
+            .filter(employee_position::Column::CompanyId.eq(company_id))
+            .order_by_asc(employee::Column::Id)
+            .paginate(&self.db, limit);
+
+        let total = paginator.num_items().await?;
+        let total_pages = paginator.num_pages().await?;
+        let items = paginator.fetch_page(page - 1).await?;
+
+        Ok(PageResult {
+            items,
+            total,
+            page: page,
+            limit: limit,
+            total_pages,
+        })
+    }
+
+    /// 按部门分页查询员工
+    ///
+    /// # 参数
+    /// - `department_id`: 部门ID
+    /// - `params`: 分页参数
+    ///
+    /// # 返回
+    /// - `Result<PageResult<EmployeeModel>, DbErr>`: 成功返回分页结果，失败返回数据库错误
+    pub async fn find_by_department(
+        &self,
+        department_id: i32,
+        params: &PageParams,
+    ) -> Result<PageResult<EmployeeModel>, DbErr> {
+        let page = params.page;
+        let limit = params.limit;
+
+        let paginator = Employee::find()
+            .join(
+                JoinType::InnerJoin,
+                employee::Relation::EmployeePosition.def(),
+            )
+            .filter(employee_position::Column::DepartmentId.eq(department_id))
+            .order_by_asc(employee::Column::Id)
+            .paginate(&self.db, limit);
+
+        let total = paginator.num_items().await?;
+        let total_pages = paginator.num_pages().await?;
+        let items = paginator.fetch_page(page - 1).await?;
+
+        Ok(PageResult {
+            items,
+            total,
+            page: page,
+            limit: limit,
+            total_pages,
+        })
+    }
+
+    /// 按名称搜索员工
+    ///
+    /// # 参数
+    /// - `name`: 员工姓名（支持模糊搜索）
+    /// - `params`: 分页参数
+    ///
+    /// # 返回
+    /// - `Result<PageResult<EmployeeModel>, DbErr>`: 成功返回分页结果，失败返回数据库错误
+    pub async fn search_by_name(
+        &self,
+        name: &str,
+        params: &PageParams,
+    ) -> Result<PageResult<EmployeeModel>, DbErr> {
+        let page = params.page;
+        let limit = params.limit;
+
+        let paginator = Employee::find()
+            .filter(employee::Column::Name.contains(name))
+            .order_by_asc(employee::Column::Id)
+            .paginate(&self.db, limit);
+
+        let total = paginator.num_items().await?;
+        let total_pages = paginator.num_pages().await?;
+        let items = paginator.fetch_page(page - 1).await?;
+
+        Ok(PageResult {
+            items,
+            total,
+            page: page,
+            limit: limit,
+            total_pages,
+        })
     }
 }
 

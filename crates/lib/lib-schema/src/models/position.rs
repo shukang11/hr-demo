@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use lib_entity::entities::position::Model;
 
 use sea_orm::FromQueryResult;
 
@@ -33,6 +34,19 @@ pub struct InsertPosition {
     pub company_id: i32,
     /// 备注
     pub remark: Option<String>,
+}
+
+impl From<Model> for Position {
+    fn from(model: Model) -> Self {
+        Self {
+            id: model.id,
+            name: model.name,
+            company_id: model.company_id,
+            remark: model.remark,
+            created_at: model.created_at.and_utc(),
+            updated_at: model.updated_at.and_utc(),
+        }
+    }
 }
 
 impl FromQueryResult for Position {

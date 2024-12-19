@@ -7,4 +7,6 @@ pub fn create_router() -> Router {
         .nest("/health", handlers::health_routes())
         .nest("/company", handlers::company_routes())
         .nest("/department", handlers::department_routes())
+        .nest("/employee", handlers::employee_routes())
+        .nest("/position", handlers::position_routes())
 }
