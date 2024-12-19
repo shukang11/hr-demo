@@ -1,4 +1,4 @@
-import { AppLayout } from "@/components/layout/app-layout"
+import  {AppLayout}  from "@/layout/app"
 import { PositionList } from "./components/position-list"
 
 export default function PositionPage() {

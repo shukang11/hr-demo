@@ -1,4 +1,4 @@
-import { AppLayout } from "@/components/layout/app-layout"
+import  {AppLayout}  from "@/layout/app"
 import { CompanyList } from "./components/company-list"
 
 export default function CompanyPage() {

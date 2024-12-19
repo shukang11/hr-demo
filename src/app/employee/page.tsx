@@ -1,4 +1,4 @@
-import { AppLayout } from "@/components/layout/app-layout"
+import  {AppLayout}  from "@/layout/app"
 import { EmployeeList } from "./components/employee-list"
 
 export default function EmployeePage() {

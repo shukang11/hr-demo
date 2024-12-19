@@ -1,5 +1,5 @@
 import { DepartmentList } from "./components/department-list"
-import { AppLayout } from "@/components/layout/app-layout"
+import  {AppLayout}  from "@/layout/app"
 
 export default function DepartmentPage() {
   // TODO: 这里需要从路由或者其他地方获取公司ID

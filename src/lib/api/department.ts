@@ -5,8 +5,10 @@ import useSWR from 'swr'
 export interface Department {
   id: number
   name: string
+  parent_id?: number | null
   company_id: number
-  remark: string | null
+  leader_id?: number | null
+  remark?: string | null
   created_at: string
   updated_at: string
 }
@@ -14,7 +16,9 @@ export interface Department {
 export interface InsertDepartment {
   id?: number
   name: string
+  parent_id?: number | null
   company_id: number
+  leader_id?: number | null
   remark?: string | null
 }
 

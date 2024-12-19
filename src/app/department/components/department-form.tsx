@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Department, InsertDepartment, insertDepartment } from "@/lib/api/department"
+import { Department, InsertDepartment, createOrUpdateDepartment } from "@/lib/api/department"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
@@ -64,7 +64,7 @@ export function DepartmentForm({ open, onOpenChange, onSuccess, initialData, com
         leader_id: values.leader_id ? parseInt(values.leader_id) : undefined,
         remark: values.remark || undefined,
       }
-      await insertDepartment(data)
+      await createOrUpdateDepartment(data)
       toast({
         title: "成功",
         description: `${initialData ? "更新" : "创建"}部门成功`,
