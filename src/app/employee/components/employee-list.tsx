@@ -8,6 +8,7 @@ import { EmployeeForm } from "./employee-form"
 import { Employee, deleteEmployee, getEmployeeList, searchEmployees } from "@/lib/api/employee"
 import { useDebounce } from "@/hooks/use-debounce"
 import { PageParams } from "@/lib/types"
+import { useCompanyStore } from "@/hooks/use-company-store"
 
 export function EmployeeList() {
   const { toast } = useToast()
@@ -15,6 +16,9 @@ export function EmployeeList() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
+  const { currentCompany } = useCompanyStore()
+  
+  const companyId = currentCompany?.id || 0;
 
   const [pageParams, setPageParams] = useState<PageParams>({
     page: 1,
@@ -22,11 +26,15 @@ export function EmployeeList() {
   })
 
   const { data, error, mutate } = useSWR(
-    ['employees', pageParams, debouncedSearchTerm],
+    ['employees', companyId, pageParams, debouncedSearchTerm],
     () => debouncedSearchTerm
-      ? searchEmployees(debouncedSearchTerm, pageParams)
-      : getEmployeeList(pageParams)
+      ? searchEmployees(companyId, debouncedSearchTerm, pageParams)
+      : getEmployeeList(companyId, pageParams)
   )
+
+  if (!currentCompany?.id) {
+    return <div className="text-center text-muted-foreground">请先选择公司</div>
+  }
 
   const handleDelete = async (id: number) => {
     try {
@@ -50,14 +58,16 @@ export function EmployeeList() {
     setIsFormOpen(true)
   }
 
-  const handleFormClose = () => {
-    setIsFormOpen(false)
-    setEditingEmployee(null)
+  const handleFormClose = (open: boolean) => {
+    setIsFormOpen(open)
+    if (!open) {
+      setEditingEmployee(null)
+    }
   }
 
-  const handleFormSubmit = () => {
+  const handleFormSuccess = () => {
     mutate()
-    handleFormClose()
+    handleFormClose(false)
   }
 
   const isLoading = !data && !error
@@ -145,9 +155,10 @@ export function EmployeeList() {
 
       <EmployeeForm
         open={isFormOpen}
-        employee={editingEmployee}
-        onClose={handleFormClose}
-        onSubmit={handleFormSubmit}
+        onOpenChange={handleFormClose}
+        onSuccess={handleFormSuccess}
+        initialData={editingEmployee}
+        companyId={companyId}
       />
     </div>
   )

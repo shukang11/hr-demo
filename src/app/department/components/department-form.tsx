@@ -60,10 +60,11 @@ export function DepartmentForm({ open, onOpenChange, onSuccess, initialData, com
         id: initialData?.id,
         name: values.name,
         company_id: companyId,
-        parent_id: values.parent_id ? parseInt(values.parent_id) : undefined,
-        leader_id: values.leader_id ? parseInt(values.leader_id) : undefined,
-        remark: values.remark || undefined,
+        parent_id: values.parent_id ? parseInt(values.parent_id) : null,
+        leader_id: values.leader_id ? parseInt(values.leader_id) : null,
+        remark: values.remark || null,
       }
+      console.log(`${initialData ? "更新" : "创建"}部门请求:`, data)
       await createOrUpdateDepartment(data)
       toast({
         title: "成功",

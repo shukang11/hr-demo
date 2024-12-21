@@ -25,66 +25,85 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Employee, InsertEmployee, createOrUpdateEmployee } from "@/lib/api/employee"
+import { Employee, InsertEmployee, createOrUpdateEmployee, Gender } from "@/lib/api/employee"
+import { useState } from "react"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 const formSchema = z.object({
-  id: z.number().optional(),
   name: z.string().min(1, "姓名不能为空"),
   email: z.string().email("邮箱格式不正确").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   birthdate: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
-  gender: z.enum(["Male", "Female", "Unknown"]),
+  gender: z.enum(["Male", "Female", "Unknown"] as const),
 })
+
+type EmployeeFormValues = z.infer<typeof formSchema>
 
 interface EmployeeFormProps {
   open: boolean
-  employee?: Employee | null
-  onClose: () => void
-  onSubmit: () => void
+  onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
+  initialData?: Employee | null
+  companyId: number
 }
 
-export function EmployeeForm({ open, employee, onClose, onSubmit }: EmployeeFormProps) {
+export function EmployeeForm({ open, onOpenChange, onSuccess, initialData, companyId }: EmployeeFormProps) {
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const form = useForm<InsertEmployee>({
+
+  const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id: employee?.id,
-      name: employee?.name || "",
-      email: employee?.email || "",
-      phone: employee?.phone || "",
-      birthdate: employee?.birthdate || "",
-      address: employee?.address || "",
-      gender: employee?.gender || "Unknown",
+      name: initialData?.name ?? "",
+      email: initialData?.email ?? "",
+      phone: initialData?.phone ?? "",
+      birthdate: initialData?.birthdate ?? "",
+      address: initialData?.address ?? "",
+      gender: initialData?.gender ?? "Unknown",
     },
   })
 
-  const handleSubmit = async (values: InsertEmployee) => {
+  async function onSubmit(values: EmployeeFormValues) {
     try {
-      await createOrUpdateEmployee(values)
+      setLoading(true)
+      const data: InsertEmployee = {
+        id: initialData?.id,
+        name: values.name,
+        email: values.email || null,
+        phone: values.phone || null,
+        birthdate: values.birthdate || null,
+        address: values.address || null,
+        gender: values.gender as Gender,
+        company_id: companyId,
+      }
+      await createOrUpdateEmployee(data)
       toast({
-        title: "保存成功",
-        description: "员工信息已更新",
+        title: "成功",
+        description: `${initialData ? "更新" : "创建"}员工成功`,
       })
-      onSubmit()
+      onSuccess?.()
     } catch (error) {
+      console.error(`${initialData ? "更新" : "创建"}员工失败:`, error)
       toast({
-        title: "保存失败",
-        description: "无法保存员工信息",
+        title: "错误",
+        description: `${initialData ? "更新" : "创建"}员工失败`,
         variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{employee ? "编辑员工" : "添加员工"}</DialogTitle>
+          <DialogTitle>{initialData ? "编辑员工" : "新建员工"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -92,7 +111,7 @@ export function EmployeeForm({ open, employee, onClose, onSubmit }: EmployeeForm
                 <FormItem>
                   <FormLabel>姓名</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="请输入姓名" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,7 +125,7 @@ export function EmployeeForm({ open, employee, onClose, onSubmit }: EmployeeForm
                 <FormItem>
                   <FormLabel>邮箱</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input type="email" placeholder="请输入邮箱" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,7 +139,7 @@ export function EmployeeForm({ open, employee, onClose, onSubmit }: EmployeeForm
                 <FormItem>
                   <FormLabel>电话</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input type="tel" placeholder="请输入电话" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,7 +167,7 @@ export function EmployeeForm({ open, employee, onClose, onSubmit }: EmployeeForm
                 <FormItem>
                   <FormLabel>地址</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="请输入地址" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -164,7 +183,7 @@ export function EmployeeForm({ open, employee, onClose, onSubmit }: EmployeeForm
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="选择性别" />
+                        <SelectValue placeholder="请选择性别" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -179,10 +198,18 @@ export function EmployeeForm({ open, employee, onClose, onSubmit }: EmployeeForm
             />
 
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
                 取消
               </Button>
-              <Button type="submit">保存</Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? <LoadingSpinner className="mr-2" /> : null}
+                确定
+              </Button>
             </div>
           </form>
         </Form>

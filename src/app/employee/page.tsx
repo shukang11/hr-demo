@@ -1,7 +1,10 @@
 import  {AppLayout}  from "@/layout/app"
 import { EmployeeList } from "./components/employee-list"
+import { useCompanyStore } from "@/hooks/use-company-store"
 
 export default function EmployeePage() {
+  const { currentCompany } = useCompanyStore();
+
   return (
     <AppLayout
       breadcrumbs={[
@@ -10,7 +13,8 @@ export default function EmployeePage() {
       ]}
     >
       <div className="rounded-xl bg-muted/50 p-4">
-        <EmployeeList />
+        {currentCompany?.id && <EmployeeList />}
+        {!currentCompany?.id && <div className="text-center text-muted-foreground">请先选择公司</div>}
       </div>
     </AppLayout>
   )

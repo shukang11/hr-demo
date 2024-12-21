@@ -2,12 +2,18 @@ import { PageParams, PageResult } from "@/lib/types"
 import { serverAPI, ApiResponse } from "./client"
 import useSWR from 'swr'
 
+export type Gender = 'Male' | 'Female' | 'Unknown'
+
 export interface Employee {
   id: number
   name: string
-  company_id: number
-  department_id: number
-  remark: string | null
+  email?: string | null
+  phone?: string | null
+  birthdate?: string | null
+  address?: string | null
+  gender: Gender
+  extra_value?: any | null
+  extra_schema_id?: number | null
   created_at: string
   updated_at: string
 }
@@ -15,9 +21,14 @@ export interface Employee {
 export interface InsertEmployee {
   id?: number
   name: string
+  email?: string | null
+  phone?: string | null
+  birthdate?: string | null
+  address?: string | null
+  gender: Gender
+  extra_value?: any | null
+  extra_schema_id?: number | null
   company_id: number
-  department_id: number
-  remark?: string | null
 }
 
 const API_PREFIX = "employee"
@@ -27,8 +38,18 @@ const API_PREFIX = "employee"
  * @param data 员工数据
  */
 export async function createOrUpdateEmployee(data: InsertEmployee): Promise<Employee> {
-  const response = await serverAPI.post(`${API_PREFIX}/create`, {
-    json: data
+  const response = await serverAPI.post(`${API_PREFIX}/insert`, {
+    json: {
+      id: data.id || null,
+      name: data.name,
+      email: data.email || null,
+      phone: data.phone || null,
+      birthdate: data.birthdate || null,
+      address: data.address || null,
+      gender: data.gender,
+      extra_value: data.extra_value || null,
+      extra_schema_id: data.extra_schema_id || null
+    }
   }).json<ApiResponse<Employee>>();
   if (!response.data) throw new Error('No data returned');
   return response.data;

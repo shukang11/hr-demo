@@ -15,13 +15,18 @@ async fn insert_department(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertDepartment>,
 ) -> APIResponse<Department> {
+    tracing::info!("收到创建部门请求: {:?}", params);
     let department_service = DepartmentService::new(app.pool.clone());
     match department_service.insert(params).await {
         Ok(result) => {
+            tracing::info!("部门创建成功: {:?}", result);
             let model = Department::from(result);
             APIResponse::new().with_data(model)
         }
-        Err(e) => APIError::Internal(e.into()).into(),
+        Err(e) => {
+            tracing::error!("部门创建失败: {:?}", e);
+            APIError::Internal(e.into()).into()
+        }
     }
 }
 

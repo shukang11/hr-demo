@@ -95,7 +95,7 @@ async fn delete_company(
 
 pub(crate) fn build_routes() -> Router {
     Router::new()
-        .route("/create", post(create_or_update))
+        .route("/insert", post(create_or_update))
         .route("/list", get(get_list))
         .route("/search", get(search))
         .route("/:id", get(get_by_id))

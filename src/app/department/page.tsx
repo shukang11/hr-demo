@@ -1,9 +1,10 @@
+import { useCompanyStore } from "@/hooks/use-company-store"
 import { DepartmentList } from "./components/department-list"
 import  {AppLayout}  from "@/layout/app"
 
 export default function DepartmentPage() {
-  // TODO: 这里需要从路由或者其他地方获取公司ID
-  const companyId = 1
+
+  const { currentCompany } = useCompanyStore()
 
   return (
     <AppLayout
@@ -13,7 +14,8 @@ export default function DepartmentPage() {
       ]}
     >
       <div className="rounded-xl bg-muted/50 p-4">
-        <DepartmentList companyId={companyId} />
+        {currentCompany?.id && <DepartmentList companyId={currentCompany?.id} />}
+        {!currentCompany?.id && <div className="text-center text-muted-foreground">请先选择公司</div>}
       </div>
     </AppLayout>
   )

@@ -29,8 +29,15 @@ const API_PREFIX = "department"
  * @param data 部门数据
  */
 export async function createOrUpdateDepartment(data: InsertDepartment): Promise<Department> {
-  const response = await serverAPI.post(`${API_PREFIX}/create`, {
-    json: data
+  const response = await serverAPI.post(`${API_PREFIX}/insert`, {
+    json: {
+      id: data.id || null,
+      name: data.name,
+      company_id: data.company_id,
+      parent_id: data.parent_id || null,
+      leader_id: data.leader_id || null,
+      remark: data.remark || null
+    }
   }).json<ApiResponse<Department>>();
   if (!response.data) throw new Error('No data returned');
   return response.data;

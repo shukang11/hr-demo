@@ -25,7 +25,7 @@ const API_PREFIX = "company"
  * @param data 公司数据
  */
 export async function createOrUpdateCompany(data: InsertCompany): Promise<Company> {
-  const response = await serverAPI.post(`${API_PREFIX}/create`, {
+  const response = await serverAPI.post(`${API_PREFIX}/insert`, {
     json: data
   }).json<ApiResponse<Company>>();
   if (!response.data) throw new Error('No data returned');
