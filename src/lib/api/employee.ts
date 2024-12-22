@@ -6,6 +6,7 @@ export type Gender = 'Male' | 'Female' | 'Unknown'
 
 export interface Employee {
   id: number
+  company_id: number
   name: string
   email?: string | null
   phone?: string | null
@@ -20,6 +21,7 @@ export interface Employee {
 
 export interface InsertEmployee {
   id?: number
+  company_id: number
   name: string
   email?: string | null
   phone?: string | null
@@ -28,7 +30,26 @@ export interface InsertEmployee {
   gender: Gender
   extra_value?: any | null
   extra_schema_id?: number | null
+}
+
+export interface EmployeePosition {
+  id: number
+  employee_id: number
   company_id: number
+  department_id: number
+  position_id: number
+  remark?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface InsertEmployeePosition {
+  id?: number
+  employee_id: number
+  company_id: number
+  department_id: number
+  position_id: number
+  remark?: string | null
 }
 
 const API_PREFIX = "employee"
@@ -41,6 +62,7 @@ export async function createOrUpdateEmployee(data: InsertEmployee): Promise<Empl
   const response = await serverAPI.post(`${API_PREFIX}/insert`, {
     json: {
       id: data.id || null,
+      company_id: data.company_id,
       name: data.name,
       email: data.email || null,
       phone: data.phone || null,
@@ -191,4 +213,56 @@ export function useEmployee(id: number | undefined) {
       return await getEmployeeById(id)
     }
   )
+}
+
+/**
+ * 为员工添加职位
+ * @param data 职位关联数据
+ */
+export async function addEmployeePosition(data: InsertEmployeePosition): Promise<EmployeePosition> {
+  const response = await serverAPI.post(`${API_PREFIX}/position/add`, {
+    json: {
+      id: data.id || null,
+      employee_id: data.employee_id,
+      company_id: data.company_id,
+      department_id: data.department_id,
+      position_id: data.position_id,
+      remark: data.remark || null
+    }
+  }).json<ApiResponse<EmployeePosition>>();
+  if (!response.data) throw new Error('No data returned');
+  return response.data;
+}
+
+/**
+ * 移除员工职位
+ * @param id 职位关联ID
+ */
+export async function removeEmployeePosition(id: number): Promise<void> {
+  await serverAPI.post(`${API_PREFIX}/position/remove/${id}`).json<ApiResponse<void>>();
+}
+
+/**
+ * 获取员工的职位列表
+ * @param employeeId 员工ID
+ */
+export async function getEmployeePositions(employeeId: number): Promise<EmployeePosition[]> {
+  const response = await serverAPI.get(`${API_PREFIX}/position/list/${employeeId}`)
+    .json<ApiResponse<EmployeePosition[]>>();
+  if (!response.data) throw new Error('No data returned');
+  return response.data;
+}
+
+/**
+ * 使用 SWR 获取员工职位关联
+ * @param employeeId 员工ID
+ */
+export function useEmployeePositions(employeeId: number | undefined) {
+  return useSWR(
+    employeeId ? ['employee', 'positions', employeeId] : null,
+    async () => {
+      if (!employeeId) return null;
+      return await getEmployeePositions(employeeId);
+    }
+  );
 } 

@@ -42,6 +42,8 @@ impl From<DbGender> for Gender {
 pub struct Employee {
     /// 员工唯一标识符
     pub id: i32,
+    /// 公司ID
+    pub company_id: i32,
     /// 员工姓名
     pub name: String,
     /// 电子邮箱
@@ -69,6 +71,8 @@ pub struct Employee {
 pub struct InsertEmployee {
     /// 员工唯一标识符（更新时使用）
     pub id: Option<i32>,
+    /// 公司ID
+    pub company_id: i32,
     /// 员工姓名
     pub name: String,
     /// 电子邮箱
@@ -102,6 +106,7 @@ impl FromQueryResult for Employee {
 
         Ok(Self {
             id: res.try_get(pre, "id")?,
+            company_id: res.try_get(pre, "company_id")?,
             name: res.try_get(pre, "name")?,
             email: res.try_get(pre, "email").unwrap_or(None),
             phone: res.try_get(pre, "phone").unwrap_or(None),
@@ -120,13 +125,14 @@ impl From<DbEmployee> for Employee {
     fn from(model: DbEmployee) -> Self {
         Self {
             id: model.id,
+            company_id: model.company_id,
             name: model.name,
             email: model.email,
             phone: model.phone,
             birthdate: model.birthdate.map(|dt| dt.and_utc()),
             address: model.address,
             gender: model.gender.into(),
-            extra_value: None,
+            extra_value: model.extra_value,
             extra_schema_id: model.extra_schema_id,
             created_at: model.created_at.and_utc(),
             updated_at: model.updated_at.and_utc(),

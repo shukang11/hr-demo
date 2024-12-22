@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Employee, InsertEmployee, createOrUpdateEmployee, Gender } from "@/lib/api/employee"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 const formSchema = z.object({
@@ -36,6 +36,8 @@ const formSchema = z.object({
   birthdate: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
   gender: z.enum(["Male", "Female", "Unknown"] as const),
+  extra_value: z.any().optional(),
+  extra_schema_id: z.number().optional().nullable(),
 })
 
 type EmployeeFormValues = z.infer<typeof formSchema>
@@ -55,27 +57,57 @@ export function EmployeeForm({ open, onOpenChange, onSuccess, initialData, compa
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name ?? "",
-      email: initialData?.email ?? "",
-      phone: initialData?.phone ?? "",
-      birthdate: initialData?.birthdate ?? "",
-      address: initialData?.address ?? "",
-      gender: initialData?.gender ?? "Unknown",
+      name: "",
+      email: "",
+      phone: "",
+      birthdate: "",
+      address: "",
+      gender: "Unknown",
+      extra_value: null,
+      extra_schema_id: null,
     },
   })
+
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name,
+        email: initialData.email ?? "",
+        phone: initialData.phone ?? "",
+        birthdate: initialData.birthdate ? initialData.birthdate.split('T')[0] : "",
+        address: initialData.address ?? "",
+        gender: initialData.gender,
+        extra_value: initialData.extra_value ?? null,
+        extra_schema_id: initialData.extra_schema_id ?? null,
+      })
+    } else {
+      form.reset({
+        name: "",
+        email: "",
+        phone: "",
+        birthdate: "",
+        address: "",
+        gender: "Unknown",
+        extra_value: null,
+        extra_schema_id: null,
+      })
+    }
+  }, [form, initialData])
 
   async function onSubmit(values: EmployeeFormValues) {
     try {
       setLoading(true)
       const data: InsertEmployee = {
         id: initialData?.id,
+        company_id: companyId,
         name: values.name,
         email: values.email || null,
         phone: values.phone || null,
-        birthdate: values.birthdate || null,
+        birthdate: values.birthdate ? `${values.birthdate}T00:00:00Z` : null,
         address: values.address || null,
         gender: values.gender as Gender,
-        company_id: companyId,
+        extra_value: values.extra_value || null,
+        extra_schema_id: values.extra_schema_id || null,
       }
       await createOrUpdateEmployee(data)
       toast({
@@ -83,6 +115,7 @@ export function EmployeeForm({ open, onOpenChange, onSuccess, initialData, compa
         description: `${initialData ? "更新" : "创建"}员工成功`,
       })
       onSuccess?.()
+      onOpenChange(false)
     } catch (error) {
       console.error(`${initialData ? "更新" : "创建"}员工失败:`, error)
       toast({
@@ -180,7 +213,7 @@ export function EmployeeForm({ open, onOpenChange, onSuccess, initialData, compa
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>性别</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="请选择性别" />

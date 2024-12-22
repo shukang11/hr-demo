@@ -32,6 +32,7 @@ impl EntityName for Entity {
 pub struct Model {
     #[serde(skip)]
     pub id: i32,                      // 主键
+    pub company_id: i32,              // 公司ID
     pub name: String,                 // 姓名
     pub email: Option<String>,        // 邮箱
     pub phone: Option<String>,        // 电话
@@ -51,6 +52,7 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
+    CompanyId,
     Name,
     Email,
     Phone,
@@ -80,6 +82,7 @@ impl ColumnTrait for Column {
     fn def(&self) -> ColumnDef {
         match self {
             Self::Id => ColumnType::Integer.def(),
+            Self::CompanyId => ColumnType::Integer.def(),
             Self::Name => ColumnType::String(StringLen::N(255)).def(),
             Self::Email => ColumnType::String(StringLen::N(255)).def().nullable(),
             Self::Phone => ColumnType::String(StringLen::N(20)).def().nullable(),
@@ -101,12 +104,17 @@ impl ColumnTrait for Column {
 #[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
     EmployeePosition,
+    Company,
 }
 
 impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
         match self {
             Self::EmployeePosition => Entity::has_many(super::employee_position::Entity).into(),
+            Self::Company => Entity::belongs_to(super::company::Entity)
+                .from(Column::CompanyId)
+                .to(super::company::Column::Id)
+                .into(),
         }
     }
 }
@@ -114,6 +122,12 @@ impl RelationTrait for Relation {
 impl Related<super::employee_position::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::EmployeePosition.def()
+    }
+}
+
+impl Related<super::company::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Company.def()
     }
 }
 

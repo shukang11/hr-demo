@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { EmployeeForm } from "./employee-form"
+import { EmployeePositionManager } from "./employee-position-manager"
 import { Employee, deleteEmployee, getEmployeeList, searchEmployees } from "@/lib/api/employee"
 import { useDebounce } from "@/hooks/use-debounce"
 import { PageParams } from "@/lib/types"
@@ -13,7 +14,9 @@ import { useCompanyStore } from "@/hooks/use-company-store"
 export function EmployeeList() {
   const { toast } = useToast()
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isPositionManagerOpen, setIsPositionManagerOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+  const [managingEmployee, setManagingEmployee] = useState<Employee | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const { currentCompany } = useCompanyStore()
@@ -58,10 +61,22 @@ export function EmployeeList() {
     setIsFormOpen(true)
   }
 
+  const handleManagePositions = (employee: Employee) => {
+    setManagingEmployee(employee)
+    setIsPositionManagerOpen(true)
+  }
+
   const handleFormClose = (open: boolean) => {
     setIsFormOpen(open)
     if (!open) {
       setEditingEmployee(null)
+    }
+  }
+
+  const handlePositionManagerClose = (open: boolean) => {
+    setIsPositionManagerOpen(open)
+    if (!open) {
+      setManagingEmployee(null)
     }
   }
 
@@ -134,6 +149,13 @@ export function EmployeeList() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => handleManagePositions(employee)}
+                    >
+                      管理职位
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleEdit(employee)}
                     >
                       编辑
@@ -160,6 +182,14 @@ export function EmployeeList() {
         initialData={editingEmployee}
         companyId={companyId}
       />
+
+      {managingEmployee && (
+        <EmployeePositionManager
+          open={isPositionManagerOpen}
+          onOpenChange={handlePositionManagerClose}
+          employee={managingEmployee}
+        />
+      )}
     </div>
   )
 }

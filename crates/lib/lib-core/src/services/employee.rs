@@ -35,18 +35,34 @@ impl EmployeeService {
     /// # 返回
     /// - `Result<EmployeeModel, DbErr>`: 成功返回员工模型，失败返回数据库错误
     pub async fn insert(&self, params: InsertEmployee) -> Result<EmployeeModel, DbErr> {
+        // 验证公司是否存在
+        if !company::Entity::find_by_id(params.company_id)
+            .one(&self.db)
+            .await?
+            .is_some()
+        {
+            return Err(DbErr::Custom(format!(
+                "Company not found with id: {}",
+                params.company_id
+            )));
+        }
+
         match params.id {
             // 更新现有员工
             Some(id) => {
                 let employee = if let Some(employee) = self.find_by_id(id).await? {
                     employee
                 } else {
-                    return Err(DbErr::Custom("Employee not found".to_owned()));
+                    return Err(DbErr::Custom(format!(
+                        "Employee not found with id: {}",
+                        id
+                    )));
                 };
 
                 let mut employee: EmployeeActive = employee.into();
 
                 // 更新字段
+                employee.company_id = Set(params.company_id);
                 employee.name = Set(params.name);
                 employee.email = Set(params.email);
                 employee.phone = Set(params.phone);
@@ -56,11 +72,14 @@ impl EmployeeService {
                 employee.extra_value = Set(params.extra_value);
                 employee.extra_schema_id = Set(params.extra_schema_id);
 
-                employee.update(&self.db).await
+                employee.update(&self.db).await.map_err(|e| {
+                    DbErr::Custom(format!("Failed to update employee: {}", e))
+                })
             }
             // 创建新员工
             None => {
                 let employee = EmployeeActive {
+                    company_id: Set(params.company_id),
                     name: Set(params.name),
                     email: Set(params.email),
                     phone: Set(params.phone),
@@ -72,7 +91,9 @@ impl EmployeeService {
                     ..Default::default()
                 };
 
-                employee.insert(&self.db).await
+                employee.insert(&self.db).await.map_err(|e| {
+                    DbErr::Custom(format!("Failed to create employee: {}", e))
+                })
             }
         }
     }
@@ -262,11 +283,7 @@ impl EmployeeService {
         let limit = params.limit;
 
         let paginator = Employee::find()
-            .join(
-                JoinType::InnerJoin,
-                employee::Relation::EmployeePosition.def(),
-            )
-            .filter(employee_position::Column::CompanyId.eq(company_id))
+            .filter(employee::Column::CompanyId.eq(company_id))
             .order_by_asc(employee::Column::Id)
             .paginate(&self.db, limit);
 
@@ -353,6 +370,23 @@ impl EmployeeService {
             limit: limit,
             total_pages,
         })
+    }
+
+    /// 获取员工的所有职位
+    ///
+    /// # 参数
+    /// - `employee_id`: 员工ID
+    ///
+    /// # 返回
+    /// - `Result<Vec<EmployeePositionModel>, DbErr>`: 成功返回职位列表，失败返回数据库错误
+    pub async fn find_positions_by_employee(
+        &self,
+        employee_id: i32,
+    ) -> Result<Vec<EmployeePositionModel>, DbErr> {
+        EmployeePosition::find()
+            .filter(employee_position::Column::EmployeeId.eq(employee_id))
+            .all(&self.db)
+            .await
     }
 }
 

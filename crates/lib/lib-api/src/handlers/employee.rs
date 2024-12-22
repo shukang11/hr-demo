@@ -1,10 +1,16 @@
 use axum::{
     extract::{Path, Query},
-    routing::{get, post, delete},
+    routing::{get, post},
     Extension, Json, Router,
 };
 use lib_core::EmployeeService;
-use lib_schema::{models::employee::InsertEmployee, Employee, PageParams, PageResult};
+use lib_schema::{
+    models::{
+        employee::InsertEmployee,
+        employee_position::{EmployeePosition, InsertEmployeePosition},
+    },
+    Employee, PageParams, PageResult,
+};
 use std::sync::Arc;
 
 use crate::{response::APIResponse, APIError, AppState};
@@ -14,13 +20,18 @@ async fn create_or_update(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertEmployee>,
 ) -> APIResponse<Employee> {
+    tracing::info!("收到创建雇员请求: {:?}", params);
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.insert(params).await {
         Ok(result) => {
             let model = Employee::from(result);
+            tracing::info!("创建雇员成功: id={}", model.id);
             APIResponse::new().with_data(model)
         }
-        Err(e) => APIError::Internal(e.into()).into(),
+        Err(e) => {
+            tracing::error!("创建雇员失败: {}", e);
+            APIError::Internal(e.into()).into()
+        }
     }
 }
 
@@ -139,6 +150,78 @@ async fn delete_employee(
     }
 }
 
+/// 为员工���加职位
+async fn add_position(
+    app: Extension<Arc<AppState>>,
+    Json(params): Json<InsertEmployeePosition>,
+) -> APIResponse<EmployeePosition> {
+    tracing::info!("收到添加职位请求: {:?}", params);
+    let employee_service = EmployeeService::new(app.pool.clone());
+    match employee_service.add_position(params).await {
+        Ok(result) => {
+            let model = EmployeePosition {
+                id: result.id,
+                employee_id: result.employee_id,
+                company_id: result.company_id,
+                department_id: result.department_id,
+                position_id: result.position_id,
+                remark: result.remark,
+                created_at: result.created_at,
+                updated_at: result.updated_at,
+            };
+            tracing::info!("添加职位成功: id={}", model.id);
+            APIResponse::new().with_data(model)
+        }
+        Err(e) => {
+            tracing::error!("添加职位失败: {}", e);
+            APIError::Internal(e.into()).into()
+        }
+    }
+}
+
+/// 移除员工职位
+async fn remove_position(
+    app: Extension<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> APIResponse<()> {
+    tracing::info!("收到移除职位请求: id={}", id);
+    let employee_service = EmployeeService::new(app.pool.clone());
+    match employee_service.remove_position(id).await {
+        Ok(_) => {
+            tracing::info!("移除职位成功: id={}", id);
+            APIResponse::new()
+        }
+        Err(e) => {
+            tracing::error!("移除职位失败: {}", e);
+            APIError::Internal(e.into()).into()
+        }
+    }
+}
+
+/// 获取员工的职位列表
+async fn get_employee_positions(
+    app: Extension<Arc<AppState>>,
+    Path(employee_id): Path<i32>,
+) -> APIResponse<Vec<EmployeePosition>> {
+    let employee_service = EmployeeService::new(app.pool.clone());
+    match employee_service.find_positions_by_employee(employee_id).await {
+        Ok(result) => {
+            let positions = result.into_iter().map(|pos| EmployeePosition {
+                id: pos.id,
+                employee_id: pos.employee_id,
+                company_id: pos.company_id,
+                department_id: pos.department_id,
+                position_id: pos.position_id,
+                remark: pos.remark,
+                created_at: pos.created_at,
+                updated_at: pos.updated_at,
+            }).collect();
+            APIResponse::new().with_data(positions)
+        }
+        Err(e) => APIError::Internal(e.into()).into(),
+    }
+}
+
 pub(crate) fn build_routes() -> Router {
     Router::new()
         .route("/insert", post(create_or_update))
@@ -148,4 +231,7 @@ pub(crate) fn build_routes() -> Router {
         .route("/search", get(search))
         .route("/get/:id", get(get_by_id))
         .route("/delete/:id", post(delete_employee))
+        .route("/position/add", post(add_position))
+        .route("/position/remove/:id", post(remove_position))
+        .route("/position/list/:employee_id", get(get_employee_positions))
 } 

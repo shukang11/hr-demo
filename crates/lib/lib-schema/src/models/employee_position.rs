@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -20,9 +20,9 @@ pub struct EmployeePosition {
     /// 备注
     pub remark: Option<String>,
     /// 创建时间
-    pub created_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
     /// 更新时间
-    pub updated_at: DateTime<Utc>,
+    pub updated_at: NaiveDateTime,
 }
 
 /// 员工职位关联数据模型，用于创建和更新

@@ -229,7 +229,7 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // ��建 employee 表
+        // 创建 employee 表
         manager
             .create_table(
                 Table::create()
@@ -242,6 +242,12 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key()
                             .comment("主键".to_string()),
+                    )
+                    .col(
+                        ColumnDef::new(Employee::CompanyId)
+                            .integer()
+                            .not_null()
+                            .comment("公司ID".to_string()),
                     )
                     .col(
                         ColumnDef::new(Employee::Name)
@@ -304,6 +310,14 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(Expr::current_timestamp())
                             .comment("更新时间".to_string()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-employee-company_id")
+                            .from(Employee::Table, Employee::CompanyId)
+                            .to(Company::Table, Company::Id)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -479,6 +493,7 @@ enum Position {
 enum Employee {
     Table,
     Id,
+    CompanyId,
     Name,
     Email,
     Phone,

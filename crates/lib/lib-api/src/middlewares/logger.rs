@@ -7,30 +7,20 @@ use std::{
 };
 use tower::{Layer, Service};
 
-
 #[derive(Debug, Default)]
 struct LoggerMessage {
     method: String,
-    request_id: String,
-    host: String,
     uri: String,
-    user_agent: String,
     status_code: u16,
-    version: String,
     latency: Duration,
 }
 
 impl Display for LoggerMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "status_code: {}, method: {}, uri: {}, host: {}, request_id: {}, user_agent: {}, version: {}, latency: {:?}",
-        self.status_code,
-            self.method,
-            self.uri,
-            self.host,
-            self.request_id,
-            self.user_agent,
-            self.version,
-            self.latency,
+        write!(
+            f,
+            "{} {} [{}] {:?}",
+            self.method, self.uri, self.status_code, self.latency
         )
     }
 }
@@ -54,14 +44,10 @@ pub struct LoggerMiddleware<S> {
 impl<S> Service<Request<Body>> for LoggerMiddleware<S>
 where
     S: Service<Request<Body>, Response = Response> + Send + 'static,
-
     S::Future: Send + 'static,
 {
     type Response = S::Response;
-
     type Error = S::Error;
-
-    // `BoxFuture` is a type alias for `Pin<Box<dyn Future + Send + 'a>>`
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -70,28 +56,26 @@ where
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let now = Instant::now();
-        let request_headers = req.headers();
 
-        let host = request_headers.get("host").map_or("".to_string(), |h| h.to_str().unwrap_or("").to_string());
-        let request_id = request_headers.get("x-request-id").map_or("".to_string(), |h| h.to_str().unwrap_or("").to_string());
-        let user_agent = request_headers.get("user-agent").map_or("".to_string(), |h| h.to_str().unwrap_or("").to_string());
-
-        let mut message = LoggerMessage {
+        let message = LoggerMessage {
             method: req.method().to_string(),
-            request_id,
-            host,
             uri: req.uri().to_string(),
-            user_agent,
             ..Default::default()
         };
+
         let future = self.inner.call(req);
 
         Box::pin(async move {
             let response: Response = future.await?;
+            let mut message = message;
             message.status_code = response.status().as_u16();
-            message.version = format!("{:?}", response.version());
             message.latency = now.elapsed();
-            tracing::info!("{}", message);
+
+            if message.status_code < 200 || message.status_code >= 300 {
+                tracing::warn!("{}", message);
+            } else if message.uri.contains("/api/") {
+                tracing::info!("{}", message);
+            }
 
             Ok(response)
         })
