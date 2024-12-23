@@ -1,10 +1,10 @@
-
 pub mod department;
 pub mod company;
 pub mod employee;
 pub mod position;
 pub mod employee_position;
 pub mod json_schema;
+pub mod candidate;
 
 pub use department::*;
 pub use company::*;
@@ -12,3 +12,9 @@ pub use employee::*;
 pub use position::*;
 pub use employee_position::*;
 pub use json_schema::*;
+pub use candidate::{Candidate, InsertCandidate, UpdateCandidateStatus};
+pub use company::{Company, InsertCompany};
+pub use department::{Department, InsertDepartment};
+pub use employee::{Employee, Gender, InsertEmployee};
+pub use employee_position::{EmployeePosition, InsertEmployeePosition};
+pub use position::{InsertPosition, Position};

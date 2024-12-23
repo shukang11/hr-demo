@@ -4,3 +4,4 @@ pub mod employee;
 pub mod employee_position;
 pub mod json_schema;
 pub mod position;
+pub mod candidate;

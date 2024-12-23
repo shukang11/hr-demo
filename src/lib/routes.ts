@@ -22,6 +22,11 @@ export const routes: Route[] = [
     icon: LayoutDashboard
   },
   {
+    path: '/candidate',
+    label: '候选人管理',
+    icon: Users
+  },
+  {
     path: '/employee',
     label: '员工管理',
     icon: Users

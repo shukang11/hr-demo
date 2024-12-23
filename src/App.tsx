@@ -11,6 +11,7 @@ import RootLayout from "@/layout/root"
 
 // 懒加载导入所有功能页面组件
 const DashboardPage = lazy(() => import("@/app/dashboard/page"))
+const CandidatePage = lazy(() => import("@/app/candidate/page"))
 const EmployeePage = lazy(() => import("@/app/employee/page"))
 const DepartmentPage = lazy(() => import("@/app/department/page"))
 const PositionPage = lazy(() => import("@/app/position/page"))
@@ -43,6 +44,14 @@ function App() {
                 element={
                   <PageWrapper>
                     <DashboardPage />
+                  </PageWrapper>
+                }
+              />
+              <Route
+                path="candidate"
+                element={
+                  <PageWrapper>
+                    <CandidatePage />
                   </PageWrapper>
                 }
               />

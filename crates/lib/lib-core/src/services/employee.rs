@@ -409,6 +409,7 @@ mod tests {
         let service = setup_test_service().await;
         let params = InsertEmployee {
             id: None,
+            company_id: 1,
             name: "张三".to_string(),
             email: Some("zhangsan@example.com".to_string()),
             phone: Some("13800138000".to_string()),
@@ -437,6 +438,7 @@ mod tests {
         // 创建测试数据
         let create_params = InsertEmployee {
             id: None,
+            company_id: 1,
             name: "李四".to_string(),
             email: Some("lisi@example.com".to_string()),
             phone: Some("13900139000".to_string()),
@@ -454,6 +456,7 @@ mod tests {
         // 测试成功更新
         let update_params = InsertEmployee {
             id: Some(employee.id),
+            company_id: 1,
             name: "李四改".to_string(),
             email: Some("lisi.new@example.com".to_string()),
             phone: Some("13900139001".to_string()),
@@ -477,6 +480,7 @@ mod tests {
         // 测试更新不存在的员工
         let invalid_update = InsertEmployee {
             id: Some(99999),
+            company_id: 1,
             name: "不存在".to_string(),
             email: None,
             phone: None,
@@ -498,6 +502,7 @@ mod tests {
         // 创建测试数据
         let params = InsertEmployee {
             id: None,
+            company_id: 1,
             name: "王五".to_string(),
             email: None,
             phone: None,

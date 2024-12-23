@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+sea-orm = { workspace = true, features = ["macros", "with-chrono", "with-uuid", "with-json"] }
 
-sea-orm = { workspace = true, features = ["macros", "with-chrono", "with-uuid"] }
 serde = { workspace = true }
 chrono = { workspace = true }
 serde_json = { workspace = true }

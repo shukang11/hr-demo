@@ -1,0 +1,25 @@
+[package]
+name = "examples"
+version = "0.1.0"
+edition = "2021"
+
+[[example]]
+name = "run_api"
+path = "run_api.rs"
+
+[[example]]
+name = "migrate"
+path = "migrate.rs"
+
+[dependencies]
+lib-api = { path = "../lib/lib-api" }
+lib-core = { path = "../lib/lib-core" }
+lib-entity = { path = "../lib/lib-entity" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+sea-orm = { workspace = true }
+sea-orm-migration = { workspace = true }
+
+[lints]
+workspace = true 

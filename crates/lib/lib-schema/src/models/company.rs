@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -17,9 +17,9 @@ pub struct Company {
     /// 额外字段模式ID
     pub extra_schema_id: Option<i32>,
     /// 创建时间
-    pub created_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
     /// 更新时间
-    pub updated_at: DateTime<Utc>,
+    pub updated_at: NaiveDateTime,
 }
 
 impl From<lib_entity::company::Model> for Company {
@@ -29,8 +29,8 @@ impl From<lib_entity::company::Model> for Company {
             name: value.name,
             extra_value: value.extra_value,
             extra_schema_id: value.extra_schema_id,
-            created_at: DateTime::from_naive_utc_and_offset(value.created_at, Utc),
-            updated_at: DateTime::from_naive_utc_and_offset(value.updated_at, Utc),
+            created_at: value.created_at,
+            updated_at: value.updated_at,
         }
     }
 }

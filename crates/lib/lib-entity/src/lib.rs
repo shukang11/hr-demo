@@ -1,2 +1,3 @@
 pub mod entities;
-pub use entities::*; 
+
+pub use entities::*;

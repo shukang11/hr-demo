@@ -4,6 +4,7 @@ pub use sea_orm::DbErr;
 pub type DBConnection = sea_orm::DatabaseConnection;
 
 // Re-export commonly used types
+pub use services::candidate::CandidateService;
 pub use services::company::CompanyService;
 pub use services::department::DepartmentService;
 pub use services::employee::EmployeeService;

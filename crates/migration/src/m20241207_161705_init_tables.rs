@@ -33,11 +33,31 @@ impl MigrationTrait for Migration {
                             .comment("JSON Schema".to_string()),
                     )
                     .col(
+                        ColumnDef::new(JsonSchemas::CompanyId)
+                            .integer()
+                            .null()
+                            .comment("公司ID".to_string()),
+                    )
+                    .col(
+                        ColumnDef::new(JsonSchemas::Remark)
+                            .string_len(255)
+                            .null()
+                            .comment("备注".to_string()),
+                    )
+                    .col(
                         ColumnDef::new(JsonSchemas::CreatedAt)
                             .date_time()
                             .not_null()
                             .default(Expr::current_timestamp())
                             .comment("创建时间".to_string()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-json_schemas-company_id")
+                            .from(JsonSchemas::Table, JsonSchemas::CompanyId)
+                            .to(Company::Table, Company::Id)
+                            .on_delete(ForeignKeyAction::SetNull)
+                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -451,6 +471,8 @@ enum JsonSchemas {
     Id,
     Name,
     Schema,
+    CompanyId,
+    Remark,
     CreatedAt,
 }
 

@@ -2617,6 +2617,7 @@ dependencies = [
  "migration",
  "pretty_assertions",
  "sea-orm",
+ "serde_json",
  "thiserror 2.0.4",
  "tokio",
  "tracing",
