@@ -9,13 +9,24 @@ import {
 } from "@/components/ui/table"
 import { useState, useEffect } from "react"
 import { DepartmentForm } from "./department-form"
-import { Department, deleteDepartment, getDepartmentList } from "@/lib/api/department"
+import { Department, deleteDepartment, getDepartmentList, useDepartment } from "@/lib/api/department"
 import { PageParams } from "@/lib/types"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { useToast } from "@/hooks/use-toast"
+import { useEmployee } from "@/lib/api/employee"
 
 interface DepartmentListProps {
   companyId: number
+}
+
+function DepartmentName({ id }: { id: number }) {
+  const { data: department } = useDepartment(id)
+  return <span>{department?.name || '-'}</span>
+}
+
+function EmployeeName({ id }: { id: number }) {
+  const { data: employee } = useEmployee(id)
+  return <span>{employee?.name || '-'}</span>
 }
 
 export function DepartmentList({ companyId }: DepartmentListProps) {
@@ -93,7 +104,10 @@ export function DepartmentList({ companyId }: DepartmentListProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">部门列表</h2>
-        <Button onClick={() => setIsFormOpen(true)}>新建部门</Button>
+        <Button onClick={() => {
+          setCurrentDepartment(null)
+          setIsFormOpen(true)
+        }}>新建部门</Button>
       </div>
 
       {loading ? (
@@ -109,8 +123,6 @@ export function DepartmentList({ companyId }: DepartmentListProps) {
               <TableHead>上级部门</TableHead>
               <TableHead>负责人</TableHead>
               <TableHead>备注</TableHead>
-              <TableHead>创建时间</TableHead>
-              <TableHead>更新时间</TableHead>
               <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
@@ -119,11 +131,21 @@ export function DepartmentList({ companyId }: DepartmentListProps) {
               <TableRow key={department.id}>
                 <TableCell>{department.id}</TableCell>
                 <TableCell>{department.name}</TableCell>
-                <TableCell>{department.parent_id || '-'}</TableCell>
-                <TableCell>{department.leader_id || '-'}</TableCell>
+                <TableCell>
+                  {department.parent_id ? (
+                    <DepartmentName id={department.parent_id} />
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+                <TableCell>
+                  {department.leader_id ? (
+                    <EmployeeName id={department.leader_id} />
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
                 <TableCell>{department.remark || '-'}</TableCell>
-                <TableCell>{new Date(department.created_at).toLocaleString()}</TableCell>
-                <TableCell>{new Date(department.updated_at).toLocaleString()}</TableCell>
                 <TableCell>
                   <div className="space-x-2">
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(department)}>

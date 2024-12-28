@@ -1,3 +1,4 @@
+import * as React from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
@@ -38,21 +39,23 @@ export function AppLayout({ children, breadcrumbs }: AppLayoutProps) {
                 <Breadcrumb>
                   <BreadcrumbList>
                     {breadcrumbs.map((item, index) => (
-                      <BreadcrumbItem key={index}>
-                        {item.href ? (
-                          <BreadcrumbLink 
-                            href={item.href}
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                          >
-                            {item.label}
-                          </BreadcrumbLink>
-                        ) : (
-                          <BreadcrumbPage className="text-sm font-medium">
-                            {item.label}
-                          </BreadcrumbPage>
-                        )}
+                      <React.Fragment key={index}>
+                        <BreadcrumbItem>
+                          {item.href ? (
+                            <BreadcrumbLink 
+                              href={item.href}
+                              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                            >
+                              {item.label}
+                            </BreadcrumbLink>
+                          ) : (
+                            <BreadcrumbPage className="text-sm font-medium">
+                              {item.label}
+                            </BreadcrumbPage>
+                          )}
+                        </BreadcrumbItem>
                         {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-                      </BreadcrumbItem>
+                      </React.Fragment>
                     ))}
                   </BreadcrumbList>
                 </Breadcrumb>

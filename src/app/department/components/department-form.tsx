@@ -19,8 +19,10 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Department, InsertDepartment, createOrUpdateDepartment } from "@/lib/api/department"
 import { useToast } from "@/hooks/use-toast"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { DepartmentSelect } from "./department-select"
+import { EmployeeSelect } from "./employee-select"
 
 const formSchema = z.object({
   name: z.string().min(1, "部门名称不能为空"),
@@ -52,6 +54,18 @@ export function DepartmentForm({ open, onOpenChange, onSuccess, initialData, com
       remark: initialData?.remark ?? "",
     },
   })
+
+  // 监听 initialData 的变化，更新表单值
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: initialData?.name ?? "",
+        parent_id: initialData?.parent_id?.toString() ?? "",
+        leader_id: initialData?.leader_id?.toString() ?? "",
+        remark: initialData?.remark ?? "",
+      })
+    }
+  }, [form, initialData, open])
 
   async function onSubmit(values: DepartmentFormValues) {
     try {
@@ -113,7 +127,12 @@ export function DepartmentForm({ open, onOpenChange, onSuccess, initialData, com
                 <FormItem>
                   <FormLabel>上级部门</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="请输入上级部门ID" {...field} />
+                    <DepartmentSelect
+                      companyId={companyId}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      excludeId={initialData?.id}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -127,7 +146,11 @@ export function DepartmentForm({ open, onOpenChange, onSuccess, initialData, com
                 <FormItem>
                   <FormLabel>负责人</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="请输入负责人ID" {...field} />
+                    <EmployeeSelect
+                      companyId={companyId}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
