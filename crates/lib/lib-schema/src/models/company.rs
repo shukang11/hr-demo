@@ -1,4 +1,6 @@
 use chrono::NaiveDateTime;
+use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
+use chrono::naive::serde::ts_milliseconds_option::deserialize as from_milli_tsopt;
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -13,13 +15,23 @@ pub struct Company {
     /// 公司名称
     pub name: String,
     /// 额外字段值（JSON）
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_value: Option<Value>,
     /// 额外字段模式ID
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_schema_id: Option<i32>,
     /// 创建时间
-    pub created_at: NaiveDateTime,
+    #[serde(
+        serialize_with = "to_milli_tsopt",
+        deserialize_with = "from_milli_tsopt"
+    )]
+    pub created_at: Option<NaiveDateTime>,
     /// 更新时间
-    pub updated_at: NaiveDateTime,
+    #[serde(
+        serialize_with = "to_milli_tsopt",
+        deserialize_with = "from_milli_tsopt"
+    )]
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 impl From<lib_entity::company::Model> for Company {
@@ -29,8 +41,8 @@ impl From<lib_entity::company::Model> for Company {
             name: value.name,
             extra_value: value.extra_value,
             extra_schema_id: value.extra_schema_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
+            created_at: Some(value.created_at),
+            updated_at: Some(value.updated_at),
         }
     }
 }
@@ -62,8 +74,8 @@ impl FromQueryResult for Company {
             name: res.try_get(pre, "name")?,
             extra_value,
             extra_schema_id: res.try_get(pre, "extra_schema_id").ok(),
-            created_at: res.try_get(pre, "created_at")?,
-            updated_at: res.try_get(pre, "updated_at")?,
+            created_at: Some(res.try_get(pre, "created_at")?),
+            updated_at: Some(res.try_get(pre, "updated_at")?),
         })
     }
 }

@@ -43,26 +43,26 @@ export const serverAPI = ky.create({
         console.log('API请求:', {
           url,
           method,
-          body,
+          body: JSON.stringify(body, null, 2),
           searchParams,
           headers: Object.fromEntries(request.headers.entries())
         });
       }
     ],
     afterResponse: [
-      async (_request, _options, response) => {
-        try {
-          const clonedResponse = response.clone();
-          const responseData = await clonedResponse.json();
-          console.log("API URL: ", _request.url);
-          console.log('API响应:', {
-            status: response.status,
-            data: responseData
-          });
-        } catch (error) {
-          console.error('解析响应数据失败:', error);
-        }
-      }
+      // async (_request, _options, response) => {
+      //   try {
+      //     const clonedResponse = response.clone();
+      //     const responseData = await clonedResponse.json();
+      //     console.log("API URL: ", _request.url);
+      //     console.log('API响应:', {
+      //       status: response.status,
+      //       data: responseData
+      //     });
+      //   } catch (error) {
+      //     console.error('解析响应数据失败:', error);
+      //   }
+      // }
     ],
     beforeError: [
       async error => {

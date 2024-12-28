@@ -23,11 +23,7 @@ async fn create_or_update(
     tracing::info!("收到创建雇员请求: {:?}", params);
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.insert(params).await {
-        Ok(result) => {
-            let model = Employee::from(result);
-            tracing::info!("创建雇员成功: id={}", model.id);
-            APIResponse::new().with_data(model)
-        }
+        Ok(result) => APIResponse::new().with_data(result),
         Err(e) => {
             tracing::error!("创建雇员失败: {}", e);
             APIError::Internal(e.into()).into()
@@ -42,17 +38,7 @@ async fn get_list(
 ) -> APIResponse<PageResult<Employee>> {
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.find_all(&params).await {
-        Ok(result) => {
-            let items = result.items.into_iter().map(Employee::from).collect();
-            let page_result = PageResult {
-                items,
-                total: result.total,
-                page: result.page,
-                limit: result.limit,
-                total_pages: result.total_pages,
-            };
-            APIResponse::new().with_data(page_result)
-        }
+        Ok(result) => APIResponse::new().with_data(result),
         Err(e) => APIError::Internal(e.into()).into(),
     }
 }
@@ -65,17 +51,7 @@ async fn get_list_by_company(
 ) -> APIResponse<PageResult<Employee>> {
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.find_by_company(company_id, &params).await {
-        Ok(result) => {
-            let items = result.items.into_iter().map(Employee::from).collect();
-            let page_result = PageResult {
-                items,
-                total: result.total,
-                page: result.page,
-                limit: result.limit,
-                total_pages: result.total_pages,
-            };
-            APIResponse::new().with_data(page_result)
-        }
+        Ok(result) => APIResponse::new().with_data(result),
         Err(e) => APIError::Internal(e.into()).into(),
     }
 }
@@ -87,7 +63,10 @@ async fn get_list_by_department(
     Query(params): Query<PageParams>,
 ) -> APIResponse<PageResult<Employee>> {
     let employee_service = EmployeeService::new(app.pool.clone());
-    match employee_service.find_by_department(department_id, &params).await {
+    match employee_service
+        .find_by_department(department_id, &params)
+        .await
+    {
         Ok(result) => {
             let items = result.items.into_iter().map(Employee::from).collect();
             let page_result = PageResult {
@@ -139,10 +118,7 @@ async fn get_by_id(
 }
 
 /// 删除雇员
-async fn delete_employee(
-    app: Extension<Arc<AppState>>,
-    Path(id): Path<i32>,
-) -> APIResponse<()> {
+async fn delete_employee(app: Extension<Arc<AppState>>, Path(id): Path<i32>) -> APIResponse<()> {
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.delete(id).await {
         Ok(_) => APIResponse::new(),
@@ -150,7 +126,7 @@ async fn delete_employee(
     }
 }
 
-/// 为员工���加职位
+/// 为员工加职位
 async fn add_position(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertEmployeePosition>,
@@ -159,16 +135,7 @@ async fn add_position(
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.add_position(params).await {
         Ok(result) => {
-            let model = EmployeePosition {
-                id: result.id,
-                employee_id: result.employee_id,
-                company_id: result.company_id,
-                department_id: result.department_id,
-                position_id: result.position_id,
-                remark: result.remark,
-                created_at: result.created_at,
-                updated_at: result.updated_at,
-            };
+            let model = EmployeePosition::from(result);
             tracing::info!("添加职位成功: id={}", model.id);
             APIResponse::new().with_data(model)
         }
@@ -180,10 +147,7 @@ async fn add_position(
 }
 
 /// 移除员工职位
-async fn remove_position(
-    app: Extension<Arc<AppState>>,
-    Path(id): Path<i32>,
-) -> APIResponse<()> {
+async fn remove_position(app: Extension<Arc<AppState>>, Path(id): Path<i32>) -> APIResponse<()> {
     tracing::info!("收到移除职位请求: id={}", id);
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.remove_position(id).await {
@@ -204,19 +168,40 @@ async fn get_employee_positions(
     Path(employee_id): Path<i32>,
 ) -> APIResponse<Vec<EmployeePosition>> {
     let employee_service = EmployeeService::new(app.pool.clone());
-    match employee_service.find_positions_by_employee(employee_id).await {
+    match employee_service
+        .find_positions_by_employee(employee_id)
+        .await
+    {
         Ok(result) => {
-            let positions = result.into_iter().map(|pos| EmployeePosition {
-                id: pos.id,
-                employee_id: pos.employee_id,
-                company_id: pos.company_id,
-                department_id: pos.department_id,
-                position_id: pos.position_id,
-                remark: pos.remark,
-                created_at: pos.created_at,
-                updated_at: pos.updated_at,
-            }).collect();
+            let positions = result.into_iter().map(EmployeePosition::from).collect();
             APIResponse::new().with_data(positions)
+        }
+        Err(e) => APIError::Internal(e.into()).into(),
+    }
+}
+
+/// 获取员工当前职位状态
+async fn get_current_position(
+    app: Extension<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> APIResponse<Option<EmployeePosition>> {
+    let employee_service = EmployeeService::new(app.pool.clone());
+    match employee_service.find_current_position(id).await {
+        Ok(result) => APIResponse::new().with_data(result.map(EmployeePosition::from)),
+        Err(e) => APIError::Internal(e.into()).into(),
+    }
+}
+
+/// 获取员工所有职位历史
+async fn get_position_history(
+    app: Extension<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> APIResponse<Vec<EmployeePosition>> {
+    let employee_service = EmployeeService::new(app.pool.clone());
+    match employee_service.find_positions_by_employee(id).await {
+        Ok(result) => {
+            let items = result.into_iter().map(EmployeePosition::from).collect();
+            APIResponse::new().with_data(items)
         }
         Err(e) => APIError::Internal(e.into()).into(),
     }
@@ -227,11 +212,16 @@ pub(crate) fn build_routes() -> Router {
         .route("/insert", post(create_or_update))
         .route("/list", get(get_list))
         .route("/list/:company_id", get(get_list_by_company))
-        .route("/list/department/:department_id", get(get_list_by_department))
+        .route(
+            "/list/department/:department_id",
+            get(get_list_by_department),
+        )
         .route("/search", get(search))
         .route("/get/:id", get(get_by_id))
         .route("/delete/:id", post(delete_employee))
         .route("/position/add", post(add_position))
         .route("/position/remove/:id", post(remove_position))
         .route("/position/list/:employee_id", get(get_employee_positions))
-} 
+        .route("/position/:id", get(get_current_position))
+        .route("/position/history/:id", get(get_position_history))
+}

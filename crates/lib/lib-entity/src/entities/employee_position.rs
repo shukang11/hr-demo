@@ -1,3 +1,4 @@
+use chrono::naive::serde::ts_milliseconds::serialize as to_milli_ts;
 use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
 use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
@@ -18,18 +19,21 @@ impl EntityName for Entity {
 #[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Deserialize, Serialize)]
 pub struct Model {
     #[serde(skip)]
-    pub id: i32,                      // 主键
-    pub employee_id: i32,             // 员工ID
-    pub company_id: i32,              // 公司ID
-    pub department_id: i32,           // 部门ID
-    pub position_id: i32,             // 职位ID
-    pub remark: Option<String>,       // 备注
+    pub id: i32, // 主键
+    pub employee_id: i32,       // 员工ID
+    pub company_id: i32,        // 公司ID
+    pub department_id: i32,     // 部门ID
+    pub position_id: i32,       // 职位ID
+    pub remark: Option<String>, // 备注
     #[serde(skip)]
     #[serde(serialize_with = "to_milli_tsopt")]
-    pub created_at: NaiveDateTime,    // 创建时间
+    pub created_at: NaiveDateTime, // 创建时间
     #[serde(skip)]
     #[serde(serialize_with = "to_milli_tsopt")]
-    pub updated_at: NaiveDateTime,    // 更新时间
+    pub updated_at: NaiveDateTime, // 更新时间
+    // 入职时间
+    #[serde(serialize_with = "to_milli_ts")]
+    pub entry_at: NaiveDateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
@@ -42,6 +46,7 @@ pub enum Column {
     Remark,
     CreatedAt,
     UpdatedAt,
+    EntryAt,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
@@ -72,6 +77,7 @@ impl ColumnTrait for Column {
             Self::UpdatedAt => ColumnType::DateTime
                 .def()
                 .default(Expr::current_timestamp()),
+            Self::EntryAt => ColumnType::DateTime.def(),
         }
     }
 }
@@ -131,4 +137,4 @@ impl Related<super::position::Entity> for Entity {
     }
 }
 
-impl ActiveModelBehavior for ActiveModel {} 
+impl ActiveModelBehavior for ActiveModel {}

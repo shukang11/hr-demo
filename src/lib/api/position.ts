@@ -7,8 +7,8 @@ export interface Position {
   name: string
   company_id: number
   remark: string | null
-  created_at: string
-  updated_at: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface InsertPosition {
@@ -118,6 +118,20 @@ export function usePositionSearch(companyId: number | undefined, keyword: string
     async () => {
       if (!companyId) return null
       return await searchPositions(companyId, keyword, params)
+    }
+  )
+}
+
+/**
+ * 使用 SWR 获取职位详情
+ * @param id 职位ID
+ */
+export function usePosition(id: number | undefined) {
+  return useSWR(
+    id ? ['position', id] : null,
+    async () => {
+      if (!id) return null
+      return await getPositionById(id)
     }
   )
 } 

@@ -96,6 +96,7 @@ export function CandidateList() {
               <TableHead>面试时间</TableHead>
               <TableHead>面试官</TableHead>
               <TableHead>状态</TableHead>
+              <TableHead>备注</TableHead>
               <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
@@ -107,9 +108,14 @@ export function CandidateList() {
                 <TableCell>{item.email || "-"}</TableCell>
                 <TableCell>{getDepartmentName(item.department_id)}</TableCell>
                 <TableCell>{getPositionName(item.position_id)}</TableCell>
-                <TableCell>{format(new Date(item.interview_date), "yyyy-MM-dd HH:mm")}</TableCell>
+                <TableCell>
+                  {item.interview_date ? format(new Date(item.interview_date), "yyyy-MM-dd HH:mm") : "-"}
+                </TableCell>
                 <TableCell>{getInterviewerName(item.interviewer_id)}</TableCell>
                 <TableCell>{item.status}</TableCell>
+                <TableCell className="max-w-[200px] truncate" title={item.remark || ""}>
+                  {item.remark || "-"}
+                </TableCell>
                 <TableCell className="space-x-2">
                   <Button
                     variant="outline"

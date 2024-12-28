@@ -1,5 +1,5 @@
-use lib_entity::entities::department::{self, ActiveModel, Entity as Department, Model};
-use lib_schema::models::department::InsertDepartment;
+use lib_entity::entities::department::{self, ActiveModel, Entity as Department};
+use lib_schema::models::department::{Department as SchemaDepartment, InsertDepartment};
 use lib_schema::{PageParams, PageResult};
 use sea_orm::*;
 
@@ -26,13 +26,14 @@ impl DepartmentService {
     /// - `params`: 部门参数，如果包含id则为更新，否则为创建
     ///
     /// # 返回
-    /// - `Result<Model, DbErr>`: 成功返回部门模型，失败返回数据库错误
-    pub async fn insert(&self, params: InsertDepartment) -> Result<Model, DbErr> {
+    /// - `Result<SchemaDepartment, DbErr>`: 成功返回部门模型，失败返回数据库错误
+    pub async fn insert(&self, params: InsertDepartment) -> Result<SchemaDepartment, DbErr> {
         match params.id {
             // 更新现有部门
             Some(id) => {
-                let department = if let Some(department) = self.find_by_id(id).await? {
-                    department
+                let department = if let Ok(Some(m)) = Department::find_by_id(id).one(&self.db).await
+                {
+                    m
                 } else {
                     return Err(DbErr::Custom("Department not found".to_owned()));
                 };
@@ -46,7 +47,8 @@ impl DepartmentService {
                 department.leader_id = Set(params.leader_id);
                 department.remark = Set(params.remark);
 
-                department.update(&self.db).await
+                let result = department.update(&self.db).await?;
+                Ok(result.into())
             }
             // 创建新部门
             None => {
@@ -59,7 +61,8 @@ impl DepartmentService {
                     ..Default::default()
                 };
 
-                department.insert(&self.db).await
+                let result = department.insert(&self.db).await?;
+                Ok(result.into())
             }
         }
     }
@@ -81,9 +84,10 @@ impl DepartmentService {
     /// - `id`: 部门ID
     ///
     /// # 返回
-    /// - `Result<Option<Model>, DbErr>`: 成功返回部门模型（如果存在），失败返回数据库错误
-    pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>, DbErr> {
-        Department::find_by_id(id).one(&self.db).await
+    /// - `Result<Option<SchemaDepartment>, DbErr>`: 成功返回部门模型（如果存在），失败返回数据库错误
+    pub async fn find_by_id(&self, id: i32) -> Result<Option<SchemaDepartment>, DbErr> {
+        let result = Department::find_by_id(id).one(&self.db).await?;
+        Ok(result.map(|model| model.into()))
     }
 
     /// 根据公司ID分页查询部门
@@ -93,12 +97,12 @@ impl DepartmentService {
     /// - `page_params`: 分页参数
     ///
     /// # 返回
-    /// - `Result<PageResult<Model>, DbErr>`: 成功返回分页结果，失败返回数据库错误
+    /// - `Result<PageResult<SchemaDepartment>, DbErr>`: 成功返回分页结果，失败返回数据库错误
     pub async fn find_by_company(
         &self,
         company_id: i32,
         page_params: &PageParams,
-    ) -> Result<PageResult<Model>, DbErr> {
+    ) -> Result<PageResult<SchemaDepartment>, DbErr> {
         let paginator = Department::find()
             .filter(department::Column::CompanyId.eq(company_id))
             .order_by_asc(department::Column::Id)
@@ -106,6 +110,7 @@ impl DepartmentService {
 
         let total = paginator.num_items().await?;
         let items = paginator.fetch_page(page_params.page - 1).await?;
+        let items = items.into_iter().map(|model| model.into()).collect();
 
         Ok(PageResult::new(items, total, page_params))
     }
@@ -118,13 +123,13 @@ impl DepartmentService {
     /// - `page_params`: 分页参数
     ///
     /// # 返回
-    /// - `Result<PageResult<Model>, DbErr>`: 成功返回分页结果，失败返回数据库错误
+    /// - `Result<PageResult<SchemaDepartment>, DbErr>`: 成功返回分页结果，失败返回数据库错误
     pub async fn search_by_name(
         &self,
         company_id: i32,
         name: &str,
         page_params: &PageParams,
-    ) -> Result<PageResult<Model>, DbErr> {
+    ) -> Result<PageResult<SchemaDepartment>, DbErr> {
         let paginator = Department::find()
             .filter(department::Column::CompanyId.eq(company_id))
             .filter(department::Column::Name.contains(name))
@@ -133,6 +138,7 @@ impl DepartmentService {
 
         let total = paginator.num_items().await?;
         let items = paginator.fetch_page(page_params.page - 1).await?;
+        let items = items.into_iter().map(|model| model.into()).collect();
 
         Ok(PageResult::new(items, total, page_params))
     }

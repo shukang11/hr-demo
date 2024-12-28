@@ -9,8 +9,8 @@ export interface Department {
   company_id: number
   leader_id?: number | null
   remark?: string | null
-  created_at: string
-  updated_at: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface InsertDepartment {

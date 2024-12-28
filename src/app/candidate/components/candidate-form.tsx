@@ -22,8 +22,8 @@ import * as z from "zod"
 import { createOrUpdateCandidate, useCandidate } from "@/lib/api/candidate"
 import { useDepartments } from "@/lib/api/department"
 import { usePositions } from "@/lib/api/position"
-import { useEmployees } from "@/lib/api/employee"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 
 const formSchema = z.object({
   name: z.string().min(1, "请输入姓名"),
@@ -31,8 +31,9 @@ const formSchema = z.object({
   email: z.string().email("请输入有效的邮箱").optional().nullable().or(z.literal("")),
   department_id: z.coerce.number().min(1, "请选择部门"),
   position_id: z.coerce.number().min(1, "请选择职位"),
-  interview_date: z.string().min(1, "请选择面试时间"),
-  interviewer_id: z.coerce.number().optional().nullable(),
+  interview_date: z.string().min(1, "请选择面试日期"),
+  interview_time: z.string().optional(),
+  remark: z.string().optional().nullable(),
 })
 
 interface Props {
@@ -57,21 +58,17 @@ export function CandidateForm({ id, open, onOpenChange, onSuccess }: Props) {
     limit: 100,
   })
 
-  const { data: employeeData } = useEmployees(currentCompany?.id, {
-    page: 1,
-    limit: 100,
-  })
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    values: {
       name: candidate?.name || "",
       phone: candidate?.phone || "",
       email: candidate?.email || "",
       department_id: candidate?.department_id || 0,
       position_id: candidate?.position_id || 0,
-      interview_date: candidate?.interview_date || new Date().toISOString().slice(0, 16),
-      interviewer_id: candidate?.interviewer_id || 0,
+      interview_date: candidate?.interview_date ? new Date(candidate.interview_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      interview_time: candidate?.interview_date ? new Date(candidate.interview_date).toISOString().split('T')[1].slice(0, 5) : "",
+      remark: candidate?.remark || "",
     },
   })
 
@@ -79,7 +76,9 @@ export function CandidateForm({ id, open, onOpenChange, onSuccess }: Props) {
     if (!currentCompany?.id) return
 
     try {
-      const interviewDate = new Date(values.interview_date).toISOString();
+      const interviewDate = values.interview_time 
+        ? `${values.interview_date}T${values.interview_time}:00.000Z`
+        : `${values.interview_date}T00:00:00.000Z`;
 
       await createOrUpdateCandidate({
         id: id,
@@ -90,7 +89,8 @@ export function CandidateForm({ id, open, onOpenChange, onSuccess }: Props) {
         department_id: values.department_id,
         position_id: values.position_id,
         interview_date: interviewDate,
-        interviewer_id: values.interviewer_id === 0 ? null : values.interviewer_id,
+        interviewer_id: null,
+        remark: values.remark || null,
       })
       toast({
         description: `候选人${id ? "更新" : "创建"}成功`,
@@ -206,40 +206,50 @@ export function CandidateForm({ id, open, onOpenChange, onSuccess }: Props) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="interview_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>面试时间 *</FormLabel>
-                  <FormControl>
-                    <Input type="datetime-local" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="interview_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>面试日期 *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="interview_time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>面试时间（可选）</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
-              name="interviewer_id"
+              name="remark"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>面试官</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value?.toString() || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="请选择面试官" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {employeeData?.items.map((employee) => (
-                        <SelectItem key={employee.id} value={employee.id.toString()}>
-                          {employee.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>备注</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="请输入备注信息..."
+                      className="resize-none"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

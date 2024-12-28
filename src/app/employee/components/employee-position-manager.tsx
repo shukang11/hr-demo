@@ -47,16 +47,19 @@ export function EmployeePositionManager({
   const { data: positions, mutate: mutatePositions } = useEmployeePositions(employee.id)
   
   // 获取部门列表
-  const { data: departments } = useDepartments(employee.company_id, {
+  const { data: departments, isLoading: isLoadingDepartments } = useDepartments(employee.company_id, {
     page: 1,
     limit: 100,
   })
 
   // 获取职位列表
-  const { data: positionList } = usePositions(employee.company_id, {
+  const { data: positionList, isLoading: isLoadingPositions } = usePositions(employee.company_id, {
     page: 1,
     limit: 100,
   })
+
+  // 判断数据是否都已加载完成
+  const isLoading = isLoadingDepartments || isLoadingPositions || !positions
 
   // 添加职位
   const handleAddPosition = async () => {
@@ -76,6 +79,7 @@ export function EmployeePositionManager({
         company_id: employee.company_id,
         department_id: selectedDepartmentId,
         position_id: selectedPositionId,
+        remark: null,
       }
       await addEmployeePosition(data)
       toast({
@@ -192,10 +196,10 @@ export function EmployeePositionManager({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {!positions ? (
+                {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center">
-                      加载中...
+                      <LoadingSpinner className="mx-auto" />
                     </TableCell>
                   </TableRow>
                 ) : positions.length === 0 ? (
@@ -208,14 +212,10 @@ export function EmployeePositionManager({
                   positions.map((pos) => (
                     <TableRow key={pos.id}>
                       <TableCell>
-                        {departments?.items.find(
-                          (d) => d.id === pos.department_id
-                        )?.name ?? "-"}
+                        {departments?.items.find(d => d.id === pos.department_id)?.name ?? "-"}
                       </TableCell>
                       <TableCell>
-                        {positionList?.items.find(
-                          (p) => p.id === pos.position_id
-                        )?.name ?? "-"}
+                        {positionList?.items.find(p => p.id === pos.position_id)?.name ?? "-"}
                       </TableCell>
                       <TableCell>{pos.remark || "-"}</TableCell>
                       <TableCell className="text-right">

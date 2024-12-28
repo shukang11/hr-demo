@@ -382,6 +382,12 @@ impl MigrationTrait for Migration {
                             .comment("职位ID".to_string()),
                     )
                     .col(
+                        ColumnDef::new(EmployeePosition::EntryAt)
+                            .date_time()
+                            .null()
+                            .comment("入职时间".to_string()),
+                    )
+                    .col(
                         ColumnDef::new(EmployeePosition::Remark)
                             .string_len(255)
                             .null()
@@ -539,4 +545,5 @@ enum EmployeePosition {
     Remark,
     CreatedAt,
     UpdatedAt,
+    EntryAt,
 }

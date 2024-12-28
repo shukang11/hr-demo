@@ -1,6 +1,7 @@
 import { PageParams, PageResult } from "@/lib/types"
 import { serverAPI, ApiResponse } from "./client"
 import useSWR from 'swr'
+import { dateToTimestamp } from "../utils"
 
 export type Gender = 'Male' | 'Female' | 'Unknown'
 
@@ -10,13 +11,15 @@ export interface Employee {
   name: string
   email?: string | null
   phone?: string | null
-  birthdate?: string | null
+  birthdate?: number | null
   address?: string | null
   gender: Gender
   extra_value?: any | null
   extra_schema_id?: number | null
-  created_at: string
-  updated_at: string
+  created_at?: number | null
+  updated_at?: number | null
+  department_id?: number | null
+  position_id?: number | null
 }
 
 export interface InsertEmployee {
@@ -25,11 +28,15 @@ export interface InsertEmployee {
   name: string
   email?: string | null
   phone?: string | null
-  birthdate?: string | null
+  birthdate?: number | null
   address?: string | null
   gender: Gender
   extra_value?: any | null
   extra_schema_id?: number | null
+  department_id?: number | null
+  position_id?: number | null
+  entry_date?: number | null
+  candidate_id?: number | null
 }
 
 export interface EmployeePosition {
@@ -39,8 +46,7 @@ export interface EmployeePosition {
   department_id: number
   position_id: number
   remark?: string | null
-  created_at: string
-  updated_at: string
+  entry_at?: number | null
 }
 
 export interface InsertEmployeePosition {
@@ -59,19 +65,25 @@ const API_PREFIX = "employee"
  * @param data 员工数据
  */
 export async function createOrUpdateEmployee(data: InsertEmployee): Promise<Employee> {
+  const jsonValue = {
+    id: data.id || null,
+    company_id: data.company_id,
+    name: data.name,
+    email: data.email || null,
+    phone: data.phone || null,
+    birthdate: data.birthdate,
+    address: data.address || null,
+    gender: data.gender,
+    extra_value: data.extra_value || null,
+    extra_schema_id: data.extra_schema_id || null,
+    department_id: data.department_id || null,
+    position_id: data.position_id || null,
+    entry_date: data.entry_date,
+    candidate_id: data.candidate_id || null,
+  };
+  console.log('请求体:', JSON.stringify(jsonValue, null, 2));
   const response = await serverAPI.post(`${API_PREFIX}/insert`, {
-    json: {
-      id: data.id || null,
-      company_id: data.company_id,
-      name: data.name,
-      email: data.email || null,
-      phone: data.phone || null,
-      birthdate: data.birthdate || null,
-      address: data.address || null,
-      gender: data.gender,
-      extra_value: data.extra_value || null,
-      extra_schema_id: data.extra_schema_id || null
-    }
+    json: jsonValue
   }).json<ApiResponse<Employee>>();
   if (!response.data) throw new Error('No data returned');
   return response.data;
@@ -265,4 +277,24 @@ export function useEmployeePositions(employeeId: number | undefined) {
       return await getEmployeePositions(employeeId);
     }
   );
+}
+
+/**
+ * 获取员工当前职位状态
+ * @param id 员工ID
+ */
+export async function getEmployeeCurrentPosition(id: number): Promise<EmployeePosition | null> {
+  const response = await serverAPI.get(`${API_PREFIX}/position/${id}`).json<ApiResponse<EmployeePosition | null>>();
+  if (!response.data) throw new Error('No data returned');
+  return response.data;
+}
+
+/**
+ * 获取员工职位历史
+ * @param id 员工ID
+ */
+export async function getEmployeePositionHistory(id: number): Promise<EmployeePosition[]> {
+  const response = await serverAPI.get(`${API_PREFIX}/position/history/${id}`).json<ApiResponse<EmployeePosition[]>>();
+  if (!response.data) throw new Error('No data returned');
+  return response.data;
 } 

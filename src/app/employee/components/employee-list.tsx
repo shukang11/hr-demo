@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -6,10 +6,68 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useToast } from "@/hooks/use-toast"
 import { EmployeeForm } from "./employee-form"
 import { EmployeePositionManager } from "./employee-position-manager"
-import { Employee, deleteEmployee, getEmployeeList, searchEmployees } from "@/lib/api/employee"
+import { Employee, deleteEmployee, getEmployeeList, searchEmployees, useEmployeePositions } from "@/lib/api/employee"
 import { useDebounce } from "@/hooks/use-debounce"
 import { PageParams } from "@/lib/types"
 import { useCompanyStore } from "@/hooks/use-company-store"
+import { useDepartment } from "@/lib/api/department"
+import { usePosition } from "@/lib/api/position"
+import { timestampToDateString } from "@/lib/utils"
+
+interface EmployeeRowProps {
+  employee: Employee
+  onEdit: (employee: Employee) => void
+  onDelete: (id: number) => void
+  onManagePositions: (employee: Employee) => void
+}
+
+function EmployeeRow({ employee, onEdit, onDelete, onManagePositions }: EmployeeRowProps) {
+  const { data: positions } = useEmployeePositions(employee.id)
+  const currentPosition = positions?.[0]
+  const { data: department } = useDepartment(currentPosition?.department_id)
+  const { data: position } = usePosition(currentPosition?.position_id)
+
+  return (
+    <TableRow key={employee.id}>
+      <TableCell>{employee.name}</TableCell>
+      <TableCell>
+        {employee.gender === "Male"
+          ? "男"
+          : employee.gender === "Female"
+          ? "女"
+          : "未知"}
+      </TableCell>
+      <TableCell>{department?.name || "-"}</TableCell>
+      <TableCell>{position?.name || "-"}</TableCell>
+      <TableCell>
+        {timestampToDateString(currentPosition?.entry_at) || "-"}
+      </TableCell>
+      <TableCell className="text-right space-x-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onManagePositions(employee)}
+        >
+          管理职位
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onEdit(employee)}
+        >
+          编辑
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDelete(employee.id)}
+        >
+          删除
+        </Button>
+      </TableCell>
+    </TableRow>
+  )
+}
 
 export function EmployeeList() {
   const { toast } = useToast()
@@ -105,10 +163,10 @@ export function EmployeeList() {
           <TableHeader>
             <TableRow>
               <TableHead>姓名</TableHead>
-              <TableHead>邮箱</TableHead>
-              <TableHead>电话</TableHead>
               <TableHead>性别</TableHead>
-              <TableHead>地址</TableHead>
+              <TableHead>部门</TableHead>
+              <TableHead>职位</TableHead>
+              <TableHead>入职时间</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
@@ -133,42 +191,13 @@ export function EmployeeList() {
               </TableRow>
             ) : (
               data?.items.map((employee: Employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell>{employee.name}</TableCell>
-                  <TableCell>{employee.email || "-"}</TableCell>
-                  <TableCell>{employee.phone || "-"}</TableCell>
-                  <TableCell>
-                    {employee.gender === "Male"
-                      ? "男"
-                      : employee.gender === "Female"
-                      ? "女"
-                      : "未知"}
-                  </TableCell>
-                  <TableCell>{employee.address || "-"}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleManagePositions(employee)}
-                    >
-                      管理职位
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(employee)}
-                    >
-                      编辑
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(employee.id)}
-                    >
-                      删除
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                <EmployeeRow
+                  key={employee.id}
+                  employee={employee}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onManagePositions={handleManagePositions}
+                />
               ))
             )}
           </TableBody>
@@ -181,6 +210,7 @@ export function EmployeeList() {
         onSuccess={handleFormSuccess}
         initialData={editingEmployee}
         companyId={companyId}
+        id={editingEmployee?.id}
       />
 
       {managingEmployee && (

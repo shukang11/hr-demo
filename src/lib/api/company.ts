@@ -7,8 +7,8 @@ export interface Company {
   name: string
   extra_value?: any
   extra_schema_id?: number
-  created_at: string
-  updated_at: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface InsertCompany {

@@ -1,4 +1,6 @@
 use chrono::NaiveDateTime;
+use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
+use chrono::naive::serde::ts_milliseconds_option::deserialize as from_milli_tsopt;
 use lib_entity::candidate::Model as DbCandidate;
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -24,23 +26,36 @@ pub struct Candidate {
     /// 目标部门ID
     pub department_id: i32,
     /// 面试日期
-    pub interview_date: NaiveDateTime,
+    #[serde(
+        serialize_with = "to_milli_tsopt",
+        deserialize_with = "from_milli_tsopt"
+    )]
+    pub interview_date: Option<NaiveDateTime>,
     /// 状态
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     /// 面试官ID
     pub interviewer_id: Option<i32>,
     /// 面试评价
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub evaluation: Option<String>,
     /// 备注
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub remark: Option<String>,
     /// 额外字段值（JSON）
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_value: Option<Value>,
     /// 额外字段模式ID
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_schema_id: Option<i32>,
     /// 创建时间
-    pub created_at: NaiveDateTime,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "to_milli_tsopt", deserialize_with = "from_milli_tsopt")]
+    pub created_at: Option<NaiveDateTime>,
     /// 更新时间
-    pub updated_at: NaiveDateTime,
+    #[serde(serialize_with = "to_milli_tsopt", deserialize_with = "from_milli_tsopt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 /// 候选人数模型，用于创建和更新
@@ -61,7 +76,11 @@ pub struct InsertCandidate {
     /// 目标部门ID
     pub department_id: i32,
     /// 面试日期
-    pub interview_date: NaiveDateTime,
+    #[serde(
+        serialize_with = "to_milli_tsopt",
+        deserialize_with = "from_milli_tsopt"
+    )]
+    pub interview_date: Option<NaiveDateTime>,
     /// 面试官ID
     pub interviewer_id: Option<i32>,
     /// 额外字段值（JSON）
@@ -119,15 +138,15 @@ impl From<DbCandidate> for Candidate {
             email: model.email,
             position_id: model.position_id,
             department_id: model.department_id,
-            interview_date: model.interview_date,
+            interview_date: Some(model.interview_date),
             status: model.status,
             interviewer_id: model.interviewer_id,
             evaluation: model.evaluation,
             remark: model.remark,
             extra_value: model.extra_value,
             extra_schema_id: model.extra_schema_id,
-            created_at: model.created_at,
-            updated_at: model.updated_at,
+            created_at: Some(model.created_at),
+            updated_at: Some(model.updated_at),
         }
     }
 } 
