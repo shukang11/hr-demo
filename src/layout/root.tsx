@@ -1,17 +1,28 @@
-import { Outlet } from "react-router-dom"
+import { Outlet, useLocation } from "react-router-dom"
+import { AppLayout } from "./app"
 
+// 路由面包屑映射
+const BREADCRUMB_MAP: Record<string, string> = {
+  dashboard: "看板",
+  candidate: "候选人",
+  employee: "员工",
+  department: "部门",
+  position: "职位",
+  company: "公司",
+  about: "关于",
+}
 
 export default function RootLayout() {
+  const location = useLocation()
+  const path = location.pathname.split("/")[1] || "dashboard"
+  const breadcrumbs = [
+    { label: "首页", href: "/" },
+    { label: BREADCRUMB_MAP[path] || path },
+  ]
 
   return (
-    <div className="min-h-screen">
-      {/* 顶部导航栏 */}
-      
-
-      {/* 主要内容区域 */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <Outlet />
-      </main>
-    </div>
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Outlet />
+    </AppLayout>
   )
 } 

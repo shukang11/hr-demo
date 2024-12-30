@@ -26,3 +26,61 @@ export function timestampToDateString(timestamp: number | null | undefined): str
   const date = new Date(timestamp);
   return date.toISOString().split('T')[0];
 }
+
+/**
+ * 获取指定月份的时间范围
+ * @param date 日期对象，默认为当前日期
+ * @returns 月份的起止时间戳
+ */
+export function getMonthRange(date: Date = new Date()): { startTime: number; endTime: number } {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  
+  const startTime = new Date(year, month, 1).getTime()
+  const endTime = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime()
+  
+  return { startTime, endTime }
+}
+
+/**
+ * 获取指定日期的时间范围（当天）
+ * @param date 日期对象，默认为当前日期
+ * @returns 当天的起止时间戳
+ */
+export function getDateRange(date: Date = new Date()): { startTime: number; endTime: number } {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const day = date.getDate()
+  
+  const startTime = new Date(year, month, day).getTime()
+  const endTime = new Date(year, month, day, 23, 59, 59, 999).getTime()
+  
+  return { startTime, endTime }
+}
+
+/**
+ * 获取跨年的时间范围
+ * @param startMonth 开始月份（1-12）
+ * @param startDay 开始日期
+ * @param endMonth 结束月份（1-12）
+ * @param endDay 结束日期
+ * @param baseDate 基准日期，用于确定年份，默认为当前日期
+ * @returns 时间范围的起止时间戳
+ */
+export function getCrossYearRange(
+  startMonth: number,
+  startDay: number,
+  endMonth: number,
+  endDay: number,
+  baseDate: Date = new Date()
+): { startTime: number; endTime: number } {
+  const year = baseDate.getFullYear()
+  
+  // 如果结束月份小于开始月份，说明跨年了，结束年份需要加1
+  const endYear = endMonth < startMonth ? year + 1 : year
+  
+  const startTime = new Date(year, startMonth - 1, startDay).getTime()
+  const endTime = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999).getTime()
+  
+  return { startTime, endTime }
+}

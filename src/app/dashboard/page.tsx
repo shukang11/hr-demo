@@ -1,53 +1,93 @@
-import  {AppLayout}  from "@/layout/app"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+'use client'
+
+import { useCompanyStore } from "@/hooks/use-company-store"
+import { useEmployeeOverview, useRecruitmentStats, useOrganizationStats } from "@/lib/api/dashboard"
+import { OverviewStats } from "./components/overview-stats"
+import { RecruitmentStats } from "./components/recruitment-stats"
+import { OrganizationStats } from "./components/organization-stats"
+import { BirthdayStats } from "./components/birthday-stats"
+import { Skeleton } from "@/components/ui/skeleton"
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="h-[300px] rounded-lg bg-muted animate-pulse" />
+      <div className="h-[300px] rounded-lg bg-muted animate-pulse" />
+      <div className="h-[300px] rounded-lg bg-muted animate-pulse" />
+    </div>
+  )
+}
+
+function EmployeeOverviewSection({ companyId }: { companyId: number }) {
+  const { data, error } = useEmployeeOverview(companyId)
+
+  if (error) return <div>加载人员概览数据失败</div>
+  if (!data) return <LoadingSkeleton />
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold tracking-tight mb-4">人员概览</h2>
+      <OverviewStats companyId={companyId} />
+    </div>
+  )
+}
+
+function RecruitmentStatsSection({ companyId }: { companyId: number }) {
+  const { data, error } = useRecruitmentStats(companyId)
+
+  if (error) return <div>加载招聘概况数据失败</div>
+  if (!data) return <LoadingSkeleton />
+
+  const { candidateStatusDistribution, monthlyInterviews, conversionRate } = data
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold tracking-tight mb-4">招聘概况</h2>
+      <RecruitmentStats 
+        candidateStatusDistribution={candidateStatusDistribution}
+        monthlyInterviews={monthlyInterviews}
+        conversionRate={conversionRate}
+      />
+    </div>
+  )
+}
+
+function OrganizationStatsSection({ companyId }: { companyId: number }) {
+  const { data, error } = useOrganizationStats(companyId)
+
+  if (error) return <div>加载组织发展数据失败</div>
+  if (!data) return <LoadingSkeleton />
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold tracking-tight mb-4">组织发展</h2>
+      <OrganizationStats {...data} />
+    </div>
+  )
+}
+
+function BirthdaySection({ companyId }: { companyId: number }) {
+  return (
+    <div>
+      <h2 className="text-2xl font-bold tracking-tight mb-4">生日提醒</h2>
+      <BirthdayStats companyId={companyId} />
+    </div>
+  )
+}
 
 export default function DashboardPage() {
-  return (
-    <AppLayout
-      breadcrumbs={[
-        { label: "仪表盘", href: "/dashboard" },
-        { label: "概览" },
-      ]}
-    >
-      <div className="flex w-full flex-col space-y-6">
-        {/* 统计卡片 */}
-        <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">总员工数</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">1,234</div>
-              <p className="text-xs text-muted-foreground">
-                较上月增长 +2.1%
-              </p>
-            </CardContent>
-          </Card>
-          {/* 其他统计卡片 */}
-        </div>
+  const { currentCompany } = useCompanyStore()
 
-        {/* 图表区域 */}
-        <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="lg:col-span-4">
-            <CardHeader>
-              <CardTitle>员工增长趋势</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* 这里放置折线图 */}
-              <div className="h-[300px]" />
-            </CardContent>
-          </Card>
-          <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle>部门分布</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* 这里放置饼图 */}
-              <div className="h-[300px]" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </AppLayout>
+  if (!currentCompany) {
+    return <div>请先选择公司</div>
+  }
+
+  return (
+    <div className="space-y-8 p-8">
+      <EmployeeOverviewSection companyId={currentCompany.id} />
+      <RecruitmentStatsSection companyId={currentCompany.id} />
+      <OrganizationStatsSection companyId={currentCompany.id} />
+      <BirthdaySection companyId={currentCompany.id} />
+    </div>
   )
 }

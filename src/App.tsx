@@ -5,8 +5,6 @@ import "./App.css"
 import { Toaster } from "@/components/ui/toaster"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
-// 布局组件
-import AuthLayout from "@/layout/auth"
 import RootLayout from "@/layout/root"
 
 // 懒加载导入所有功能页面组件

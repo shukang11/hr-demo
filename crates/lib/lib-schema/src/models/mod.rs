@@ -5,6 +5,7 @@ pub mod position;
 pub mod employee_position;
 pub mod json_schema;
 pub mod candidate;
+pub mod dashboard;
 
 pub use department::*;
 pub use company::*;
@@ -18,3 +19,4 @@ pub use department::{Department, InsertDepartment};
 pub use employee::{Employee, Gender, InsertEmployee};
 pub use employee_position::{EmployeePosition, InsertEmployeePosition};
 pub use position::{InsertPosition, Position};
+pub use dashboard::*;

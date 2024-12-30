@@ -10,4 +10,5 @@ pub fn create_router() -> Router {
         .nest("/employee", handlers::employee_routes())
         .nest("/position", handlers::position_routes())
         .nest("/candidate", handlers::candidate_routes())
+        .nest("/dashboard", handlers::dashboard_routes())
 }

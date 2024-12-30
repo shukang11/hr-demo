@@ -9,6 +9,7 @@ pub use services::company::CompanyService;
 pub use services::department::DepartmentService;
 pub use services::employee::EmployeeService;
 pub use services::position::PositionService;
+pub use services::dashboard::DashboardService;
 
 use sea_orm::{ConnectOptions, Database};
 use std::time::Duration;
