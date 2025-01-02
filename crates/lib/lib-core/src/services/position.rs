@@ -20,6 +20,34 @@ impl PositionService {
         Self { db }
     }
 
+    /// 检查职位名称是否重复
+    async fn check_duplicate(
+        &self,
+        id: Option<i32>,
+        company_id: i32,
+        name: &str,
+    ) -> Result<bool, DbErr> {
+        use sea_orm::QueryFilter;
+
+        tracing::info!(
+            "检查重复职位: id={:?}, company_id={}, name={}",
+            id, company_id, name
+        );
+
+        let mut query = Position::find()
+            .filter(position::Column::CompanyId.eq(company_id))
+            .filter(position::Column::Name.eq(name));
+
+        // 如果是更新操作，排除当前记录
+        if let Some(current_id) = id {
+            query = query.filter(position::Column::Id.ne(current_id));
+        }
+
+        let count = query.count(&self.db).await?;
+        tracing::info!("查询结果: 找到 {} 个重名职位", count);
+        Ok(count > 0)
+    }
+
     /// 创建或更新职位
     ///
     /// # 参数
@@ -28,6 +56,11 @@ impl PositionService {
     /// # 返回
     /// - `Result<SchemaPosition, DbErr>`: 成功返回职位模型，失败返回数据库错误
     pub async fn insert(&self, params: InsertPosition) -> Result<SchemaPosition, DbErr> {
+        // 检查是否存在重名职位
+        if self.check_duplicate(params.id, params.company_id, &params.name).await? {
+            return Err(DbErr::Custom("该公司已存在相同名称的职位".to_string()));
+        }
+
         match params.id {
             // 更新现有职位
             Some(id) => {

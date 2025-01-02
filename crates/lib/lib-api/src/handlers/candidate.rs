@@ -18,29 +18,19 @@ async fn create_or_update(
     Json(params): Json<InsertCandidate>,
 ) -> APIResponse<Candidate> {
     let candidate_service = CandidateService::new(app.pool.clone());
-    match candidate_service
-        .create(
-            params.company_id,
-            params.name,
-            params.phone,
-            params.email,
-            params.position_id,
-            params.department_id,
-            params.interview_date,
-            params.interviewer_id,
-            params.extra_value,
-            params.extra_schema_id,
-        )
-        .await
-    {
+    match candidate_service.create(params).await {
         Ok(result) => {
             let model = Candidate::from(result);
-            tracing::info!("创建候选人成���: id={}", model.id);
+            tracing::info!("创建候选人成功: id={}", model.id);
             APIResponse::new().with_data(model)
         }
         Err(e) => {
             tracing::error!("创建候选人失败: {}", e);
-            APIError::Internal(e.into()).into()
+            if e.to_string().contains("同一天内已存在相同姓名的候选人") {
+                APIError::BadRequest(e.to_string()).into()
+            } else {
+                APIError::Internal(e.into()).into()
+            }
         }
     }
 }
@@ -52,15 +42,20 @@ async fn update_status(
     Json(params): Json<UpdateCandidateStatus>,
 ) -> APIResponse<Candidate> {
     let candidate_service = CandidateService::new(app.pool.clone());
+    let status = params.status.clone();
     match candidate_service
-        .update_status(id, params.status, params.evaluation, params.remark)
+        .update_status(id, params)
         .await
     {
         Ok(result) => {
             let model = Candidate::from(result);
+            tracing::info!("更新候选人状态成功: id={}, status={:?}", id, status);
             APIResponse::new().with_data(model)
         }
-        Err(e) => APIError::Internal(e.into()).into(),
+        Err(e) => {
+            tracing::error!("更新候选人状态失败: {}", e);
+            APIError::Internal(e.into()).into()
+        }
     }
 }
 

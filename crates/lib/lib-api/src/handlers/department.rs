@@ -15,17 +15,26 @@ async fn insert_department(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertDepartment>,
 ) -> APIResponse<Department> {
-    tracing::info!("收到创建部门请求: {:?}", params);
+    tracing::info!(
+        "收到创建部门请求: id={:?}, company_id={}, name={}",
+        params.id, params.company_id, params.name
+    );
+
     let department_service = DepartmentService::new(app.pool.clone());
     match department_service.insert(params).await {
         Ok(result) => {
-            tracing::info!("部门创建成功: {:?}", result);
             let model = Department::from(result);
+            tracing::info!("部门创建成功: id={}", model.id);
             APIResponse::new().with_data(model)
         }
         Err(e) => {
-            tracing::error!("部门创建失败: {:?}", e);
-            APIError::Internal(e.into()).into()
+            tracing::error!("部门创建失败: {}", e);
+            if e.to_string().contains("该公司已存在相同名称的部门") {
+                tracing::warn!("尝试创建重复的部门");
+                APIError::BadRequest(e.to_string()).into()
+            } else {
+                APIError::Internal(e.into()).into()
+            }
         }
     }
 }

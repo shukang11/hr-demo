@@ -6,6 +6,24 @@ use serde_json::Value;
 
 use super::{company, department, employee, json_schema, position};
 
+// 候选人状态枚举
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize, Serialize)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(20))")]
+pub enum CandidateStatus {
+    #[sea_orm(string_value = "Pending")]
+    Pending,         // 待处理
+    #[sea_orm(string_value = "Scheduled")]
+    Scheduled,       // 已安排面试
+    #[sea_orm(string_value = "Interviewed")]
+    Interviewed,     // 已面试
+    #[sea_orm(string_value = "Accepted")]
+    Accepted,        // 已通过
+    #[sea_orm(string_value = "Rejected")]
+    Rejected,        // 已拒绝
+    #[sea_orm(string_value = "Withdrawn")]
+    Withdrawn,       // 已撤回
+}
+
 #[derive(Copy, Clone, Default, Debug, DeriveEntity)]
 pub struct Entity;
 
@@ -29,7 +47,7 @@ pub struct Model {
     pub position_id: i32,                 // 应聘职位ID
     pub department_id: i32,               // 目标部门ID
     pub interview_date: NaiveDateTime,    // 面试日期
-    pub status: Option<String>,           // 状态
+    pub status: CandidateStatus,          // 状态
     pub interviewer_id: Option<i32>,      // 面试官ID
     pub evaluation: Option<String>,       // 面试评价
     pub remark: Option<String>,           // 备注
@@ -87,8 +105,8 @@ impl ColumnTrait for Column {
             Self::PositionId => ColumnType::Integer.def(),
             Self::DepartmentId => ColumnType::Integer.def(),
             Self::InterviewDate => ColumnType::DateTime.def(),
-            Self::Status => ColumnType::String(StringLen::N(20)).def(),
-            Self::InterviewerId => ColumnType::Integer.def(),
+            Self::Status => ColumnType::String(StringLen::N(20)).def().default(Value::String("Pending".to_string())),
+            Self::InterviewerId => ColumnType::Integer.def().null(),
             Self::Evaluation => ColumnType::Text.def().null(),
             Self::Remark => ColumnType::String(StringLen::N(255)).def().null(),
             Self::ExtraValue => ColumnType::Json.def().null(),

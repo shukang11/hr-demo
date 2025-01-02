@@ -86,25 +86,65 @@ export interface BirthdayEmployee {
 
 // API 函数
 export async function getDashboardStats(companyId: number): Promise<DashboardStats> {
-  const response = await serverAPI.get(`dashboard/stats/${companyId}`).json<ApiResponse<DashboardStats>>()
+  // 默认获取最近12个月的数据
+  const now = new Date()
+  const startTime = new Date(now.getFullYear(), now.getMonth() - 11, 1).getTime()
+  const endTime = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime()
+
+  const response = await serverAPI.get(`dashboard/stats/${companyId}`, {
+    searchParams: {
+      start_time: startTime.toString(),
+      end_time: endTime.toString(),
+    }
+  }).json<ApiResponse<DashboardStats>>()
   if (!response.data) throw new Error('No data returned')
   return response.data
 }
 
 export async function getEmployeeOverview(companyId: number): Promise<EmployeeOverview> {
-  const response = await serverAPI.get(`dashboard/employee-overview/${companyId}`).json<ApiResponse<EmployeeOverview>>()
+  // 默认获取最近12个月的数据
+  const now = new Date()
+  const startTime = new Date(now.getFullYear(), now.getMonth() - 11, 1).getTime()
+  const endTime = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime()
+
+  const response = await serverAPI.get(`dashboard/employee-overview/${companyId}`, {
+    searchParams: {
+      start_time: startTime.toString(),
+      end_time: endTime.toString(),
+    }
+  }).json<ApiResponse<EmployeeOverview>>()
   if (!response.data) throw new Error('No data returned')
   return response.data
 }
 
 export async function getRecruitmentStats(companyId: number): Promise<RecruitmentStats> {
-  const response = await serverAPI.get(`dashboard/recruitment-stats/${companyId}`).json<ApiResponse<RecruitmentStats>>()
+  // 默认获取最近12个月的数据
+  const now = new Date()
+  const startTime = new Date(now.getFullYear(), now.getMonth() - 11, 1).getTime()
+  const endTime = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime()
+
+  const response = await serverAPI.get(`dashboard/recruitment-stats/${companyId}`, {
+    searchParams: {
+      start_time: startTime.toString(),
+      end_time: endTime.toString(),
+    }
+  }).json<ApiResponse<RecruitmentStats>>()
   if (!response.data) throw new Error('No data returned')
   return response.data
 }
 
 export async function getOrganizationStats(companyId: number): Promise<OrganizationStats> {
-  const response = await serverAPI.get(`dashboard/organization-stats/${companyId}`).json<ApiResponse<OrganizationStats>>()
+  // 默认获取最近12个月的数据
+  const now = new Date()
+  const startTime = new Date(now.getFullYear(), now.getMonth() - 11, 1).getTime()
+  const endTime = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime()
+
+  const response = await serverAPI.get(`dashboard/organization-stats/${companyId}`, {
+    searchParams: {
+      start_time: startTime.toString(),
+      end_time: endTime.toString(),
+    }
+  }).json<ApiResponse<OrganizationStats>>()
   if (!response.data) throw new Error('No data returned')
   return response.data
 }

@@ -118,12 +118,14 @@ pub struct InsertEmployee {
     pub department_id: Option<i32>,
     /// 职位ID
     pub position_id: Option<i32>,
-    
+    /// 入职日期
     #[serde(
         serialize_with = "to_milli_tsopt",
         deserialize_with = "from_milli_tsopt"
     )]
     pub entry_date: Option<NaiveDateTime>,
+    /// 候选人ID
+    pub candidate_id: Option<i32>,
     /// 额外字段值（JSON）
     pub extra_value: Option<Value>,
     /// 额外字段模式ID

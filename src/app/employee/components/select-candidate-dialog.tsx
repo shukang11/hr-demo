@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { useCompanyStore } from "@/hooks/use-company-store"
-import { useCandidateList } from "@/lib/api/candidate"
+import { useCandidateList, CandidateStatus, Candidate } from "@/lib/api/candidate"
 import { useState } from "react"
 import { format } from "date-fns"
 import { useDepartments } from "@/lib/api/department"
@@ -25,7 +25,7 @@ import { Search } from "lucide-react"
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSelect: (candidate: any) => void
+  onSelect: (candidate: Candidate) => void
 }
 
 export function SelectCandidateDialog({ open, onOpenChange, onSelect }: Props) {
@@ -36,7 +36,7 @@ export function SelectCandidateDialog({ open, onOpenChange, onSelect }: Props) {
   const { data: candidateData } = useCandidateList(currentCompany?.id, {
     page,
     limit: 10,
-    status: "通过",
+    status: CandidateStatus.Accepted,
     search,
   })
 

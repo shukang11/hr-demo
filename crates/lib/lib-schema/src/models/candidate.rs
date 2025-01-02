@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
 use chrono::naive::serde::ts_milliseconds_option::deserialize as from_milli_tsopt;
-use lib_entity::candidate::Model as DbCandidate;
+use lib_entity::entities::candidate::{Model as DbCandidate, CandidateStatus};
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -32,8 +32,7 @@ pub struct Candidate {
     )]
     pub interview_date: Option<NaiveDateTime>,
     /// 状态
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
+    pub status: CandidateStatus,
     /// 面试官ID
     pub interviewer_id: Option<i32>,
     /// 面试评价
@@ -93,7 +92,7 @@ pub struct InsertCandidate {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateCandidateStatus {
     /// 状态
-    pub status: String,
+    pub status: CandidateStatus,
     /// 面试评价
     pub evaluation: Option<String>,
     /// 备注
@@ -107,6 +106,16 @@ impl FromQueryResult for Candidate {
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok());
 
+        let status = match res.try_get::<String>(pre, "status")?.as_str() {
+            "Pending" => CandidateStatus::Pending,
+            "Scheduled" => CandidateStatus::Scheduled,
+            "Interviewed" => CandidateStatus::Interviewed,
+            "Accepted" => CandidateStatus::Accepted,
+            "Rejected" => CandidateStatus::Rejected,
+            "Withdrawn" => CandidateStatus::Withdrawn,
+            _ => CandidateStatus::Pending, // 默认状态
+        };
+
         Ok(Self {
             id: res.try_get(pre, "id")?,
             company_id: res.try_get(pre, "company_id")?,
@@ -116,7 +125,7 @@ impl FromQueryResult for Candidate {
             position_id: res.try_get(pre, "position_id")?,
             department_id: res.try_get(pre, "department_id")?,
             interview_date: res.try_get(pre, "interview_date")?,
-            status: res.try_get(pre, "status")?,
+            status,
             interviewer_id: res.try_get(pre, "interviewer_id")?,
             evaluation: res.try_get(pre, "evaluation").unwrap_or(None),
             remark: res.try_get(pre, "remark").unwrap_or(None),

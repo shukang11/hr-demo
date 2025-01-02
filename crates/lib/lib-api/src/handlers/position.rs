@@ -14,13 +14,27 @@ async fn create_or_update(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertPosition>,
 ) -> APIResponse<Position> {
+    tracing::info!(
+        "收到创建职位请求: id={:?}, company_id={}, name={}",
+        params.id, params.company_id, params.name
+    );
+
     let position_service = PositionService::new(app.pool.clone());
     match position_service.insert(params).await {
         Ok(result) => {
             let model = Position::from(result);
+            tracing::info!("职位创建成功: id={}", model.id);
             APIResponse::new().with_data(model)
         }
-        Err(e) => APIError::Internal(e.into()).into(),
+        Err(e) => {
+            tracing::error!("职位创建失败: {}", e);
+            if e.to_string().contains("该公司已存在相同名称的职位") {
+                tracing::warn!("尝试创建重复的职位");
+                APIError::BadRequest(e.to_string()).into()
+            } else {
+                APIError::Internal(e.into()).into()
+            }
+        }
     }
 }
 

@@ -1,10 +1,6 @@
 use chrono::{Datelike, Local, NaiveDateTime, NaiveDate};
 use lib_entity::{
-    employee::{self, Entity as Employee, Gender},
-    candidate::{self, Entity as Candidate},
-    department::{self, Entity as Department},
-    position::{self, Entity as Position},
-    employee_position::{self, Entity as EmployeePosition},
+    candidate::{self, CandidateStatus, Entity as Candidate}, department::{self, Entity as Department}, employee::{self, Entity as Employee, Gender}, employee_position::{self, Entity as EmployeePosition}, position::{self, Entity as Position}
 };
 use lib_schema::models::dashboard::*;
 use sea_orm::{
@@ -18,6 +14,7 @@ use sea_orm::{
 
 /// 年龄范围定义
 const AGE_RANGES: &[(&str, i32, i32)] = &[
+    ("未设置", -1, -1),
     ("20岁以下", 0, 20),
     ("20-25岁", 20, 25),
     ("26-30岁", 26, 30),
@@ -233,24 +230,36 @@ impl DashboardService {
     async fn get_age_distribution(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<AgeDistribution>, DbErr> {
         let mut distribution = Vec::new();
         for (range_name, min_age, max_age) in AGE_RANGES {
-            let current_date = date_range.end_time;
-            let min_birth_date = current_date
-                .with_year(current_date.year() - max_age)
-                .unwrap();
-            let max_birth_date = current_date
-                .with_year(current_date.year() - min_age)
-                .unwrap();
+            let count = if *min_age == -1 && *max_age == -1 {
+                // 统计未设置出生日期的员工
+                Employee::find()
+                    .inner_join(EmployeePosition)
+                    .filter(employee_position::Column::CompanyId.eq(company_id))
+                    .filter(employee_position::Column::EntryAt.gte(date_range.start_time))
+                    .filter(employee_position::Column::EntryAt.lte(date_range.end_time))
+                    .filter(employee::Column::Birthdate.is_null())
+                    .count(&self.db)
+                    .await? as i64
+            } else {
+                let current_date = date_range.end_time;
+                let min_birth_date = current_date
+                    .with_year(current_date.year() - max_age)
+                    .unwrap();
+                let max_birth_date = current_date
+                    .with_year(current_date.year() - min_age)
+                    .unwrap();
 
-            let count = Employee::find()
-                .inner_join(EmployeePosition)
-                .filter(employee_position::Column::CompanyId.eq(company_id))
-                .filter(employee_position::Column::EntryAt.gte(date_range.start_time))
-                .filter(employee_position::Column::EntryAt.lte(date_range.end_time))
-                .filter(employee::Column::Birthdate.is_not_null())
-                .filter(employee::Column::Birthdate.gte(min_birth_date))
-                .filter(employee::Column::Birthdate.lt(max_birth_date))
-                .count(&self.db)
-                .await? as i64;
+                Employee::find()
+                    .inner_join(EmployeePosition)
+                    .filter(employee_position::Column::CompanyId.eq(company_id))
+                    .filter(employee_position::Column::EntryAt.gte(date_range.start_time))
+                    .filter(employee_position::Column::EntryAt.lte(date_range.end_time))
+                    .filter(employee::Column::Birthdate.is_not_null())
+                    .filter(employee::Column::Birthdate.gte(min_birth_date))
+                    .filter(employee::Column::Birthdate.lt(max_birth_date))
+                    .count(&self.db)
+                    .await? as i64
+            };
 
             distribution.push(AgeDistribution {
                 range: range_name.to_string(),
@@ -302,7 +311,7 @@ impl DashboardService {
 
         let total_onboard = Candidate::find()
             .filter(candidate::Column::CompanyId.eq(company_id))
-            .filter(candidate::Column::Status.eq("onboard"))
+            .filter(candidate::Column::Status.eq(CandidateStatus::Accepted))
             .filter(candidate::Column::UpdatedAt.gte(date_range.start_time))
             .filter(candidate::Column::UpdatedAt.lte(date_range.end_time))
             .count(&self.db)
@@ -515,37 +524,16 @@ impl DashboardService {
     pub async fn get_birthday_employees(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<BirthdayEmployee>, DbErr> {
         // 先获取所有员工
         let employees = Employee::find()
-            .join(
-                JoinType::InnerJoin,
-                employee_position::Entity::belongs_to(employee::Entity)
-                    .from(employee_position::Column::EmployeeId)
-                    .to(employee::Column::Id)
-                    .into(),
-            )
-            .join(
-                JoinType::InnerJoin,
-                department::Entity::belongs_to(employee_position::Entity)
-                    .from(department::Column::Id)
-                    .to(employee_position::Column::DepartmentId)
-                    .into(),
-            )
-            .join(
-                JoinType::InnerJoin,
-                position::Entity::belongs_to(employee_position::Entity)
-                    .from(position::Column::Id)
-                    .to(employee_position::Column::PositionId)
-                    .into(),
-            )
+            .find_also_related(EmployeePosition)
             .filter(employee_position::Column::CompanyId.eq(company_id))
             .filter(employee::Column::Birthdate.is_not_null())
             .order_by_asc(employee::Column::Birthdate)
-            .find_with_related(EmployeePosition)
             .all(&self.db)
             .await?;
 
         let mut result = Vec::new();
-        for (emp, emp_positions) in employees {
-            if let Some(emp_pos) = emp_positions.first() {
+        for (emp, emp_pos) in employees {
+            if let Some(emp_pos) = emp_pos {
                 // 获取部门和职位信息
                 let dept = Department::find_by_id(emp_pos.department_id)
                     .one(&self.db)

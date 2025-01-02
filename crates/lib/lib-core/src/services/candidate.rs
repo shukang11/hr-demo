@@ -1,7 +1,7 @@
 use sea_orm::*;
 use chrono::NaiveDateTime;
-use lib_entity::{candidate, entities::candidate::Entity as Candidate};
-use lib_schema::models::candidate::Candidate as SchemaCandidate;
+use lib_entity::{candidate, entities::candidate::{Entity as Candidate, CandidateStatus}};
+use lib_schema::models::candidate::{Candidate as SchemaCandidate, UpdateCandidateStatus, InsertCandidate};
 
 #[derive(Clone)]
 pub struct CandidateService {
@@ -13,34 +13,89 @@ impl CandidateService {
         Self { db }
     }
 
+    /// 检查同一天内是否存在重复的候选人
+    async fn check_duplicate(
+        &self,
+        company_id: i32,
+        name: &str,
+        phone: &Option<String>,
+        email: &Option<String>,
+        interview_date: &Option<NaiveDateTime>,
+    ) -> Result<bool, DbErr> {
+        use sea_orm::QueryFilter;
+        use chrono::Timelike;
+
+        let interview_date = interview_date.unwrap_or_else(|| chrono::Utc::now().naive_utc());
+        let start_of_day = interview_date
+            .with_hour(0)
+            .unwrap()
+            .with_minute(0)
+            .unwrap()
+            .with_second(0)
+            .unwrap()
+            .with_nanosecond(0)
+            .unwrap();
+        let end_of_day = interview_date
+            .with_hour(23)
+            .unwrap()
+            .with_minute(59)
+            .unwrap()
+            .with_second(59)
+            .unwrap()
+            .with_nanosecond(999999999)
+            .unwrap();
+
+        let mut query = Candidate::find()
+            .filter(candidate::Column::CompanyId.eq(company_id))
+            .filter(candidate::Column::Name.eq(name))
+            .filter(
+                candidate::Column::InterviewDate.between(start_of_day, end_of_day)
+            );
+
+        // 如果提供了手机号，加入手机号匹配条件
+        if let Some(phone) = phone {
+            query = query.filter(candidate::Column::Phone.eq(phone));
+        }
+
+        // 如果提供了邮箱，加入邮箱匹配条件
+        if let Some(email) = email {
+            query = query.filter(candidate::Column::Email.eq(email));
+        }
+
+        let count = query.count(&self.db).await?;
+        Ok(count > 0)
+    }
+
     /// 创建候选人
     pub async fn create(
         &self,
-        company_id: i32,
-        name: String,
-        phone: Option<String>,
-        email: Option<String>,
-        position_id: i32,
-        department_id: i32,
-        interview_date: Option<NaiveDateTime>,
-        interviewer_id: Option<i32>,
-        extra_value: Option<serde_json::Value>,
-        extra_schema_id: Option<i32>,
+        params: InsertCandidate,
     ) -> Result<SchemaCandidate, DbErr> {
+        // 检查是否存在重复候选人
+        if self.check_duplicate(
+            params.company_id,
+            &params.name,
+            &params.phone,
+            &params.email,
+            &params.interview_date
+        ).await? {
+            return Err(DbErr::Custom("同一天内已存在相同姓名的候选人".to_string()));
+        }
+
         let candidate = candidate::ActiveModel {
-            company_id: Set(company_id),
-            name: Set(name),
-            phone: Set(phone),
-            email: Set(email),
-            position_id: Set(position_id),
-            department_id: Set(department_id),
-            interview_date: Set(interview_date.unwrap_or_else(|| chrono::Utc::now().naive_utc())),
-            status: Set(Some("待面试".to_string())),
-            interviewer_id: Set(interviewer_id),
+            company_id: Set(params.company_id),
+            name: Set(params.name),
+            phone: Set(params.phone),
+            email: Set(params.email),
+            position_id: Set(params.position_id),
+            department_id: Set(params.department_id),
+            interview_date: Set(params.interview_date.unwrap_or_else(|| chrono::Utc::now().naive_utc())),
+            status: Set(CandidateStatus::Pending),
+            interviewer_id: Set(params.interviewer_id),
             evaluation: Set(None),
             remark: Set(None),
-            extra_value: Set(extra_value),
-            extra_schema_id: Set(extra_schema_id),
+            extra_value: Set(params.extra_value),
+            extra_schema_id: Set(params.extra_schema_id),
             ..Default::default()
         };
 
@@ -52,9 +107,7 @@ impl CandidateService {
     pub async fn update_status(
         &self,
         id: i32,
-        status: String,
-        evaluation: Option<String>,
-        remark: Option<String>,
+        status_update: UpdateCandidateStatus,
     ) -> Result<SchemaCandidate, DbErr> {
         let candidate = Candidate::find_by_id(id)
             .one(&self.db)
@@ -62,9 +115,9 @@ impl CandidateService {
             .ok_or(DbErr::Custom("Candidate not found".to_string()))?;
 
         let mut candidate: candidate::ActiveModel = candidate.into();
-        candidate.status = Set(Some(status));
-        candidate.evaluation = Set(evaluation);
-        candidate.remark = Set(remark);
+        candidate.status = Set(status_update.status);
+        candidate.evaluation = Set(status_update.evaluation);
+        candidate.remark = Set(status_update.remark);
 
         let result = candidate.update(&self.db).await?;
         Ok(result.into())

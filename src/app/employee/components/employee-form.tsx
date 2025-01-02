@@ -51,6 +51,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
   const { toast } = useToast()
   const { data: employee } = useEmployee(id)
   const [showCandidateDialog, setShowCandidateDialog] = useState(false)
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null)
 
   const { data: departmentData } = useDepartments(companyId, {
     page: 1,
@@ -92,6 +93,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         address: "",
         gender: "Unknown",
       })
+      setSelectedCandidate(null)
     }
   }, [open, form])
 
@@ -126,6 +128,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         birthdate: values.birthdate || null,
         address: values.address || null,
         gender: values.gender,
+        candidate_id: selectedCandidate?.id || null,
         extra_value: null,
         extra_schema_id: null,
       })
@@ -144,6 +147,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
   }
 
   const handleSelectCandidate = (candidate: any) => {
+    setSelectedCandidate(candidate)
     form.setValue("name", candidate.name)
     form.setValue("phone", candidate.phone || "")
     form.setValue("email", candidate.email || "")

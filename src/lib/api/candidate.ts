@@ -3,8 +3,18 @@ import { serverAPI, ApiResponse } from "./client"
 import useSWR from 'swr'
 
 export interface CandidateListParams extends PageParams {
-  status?: string
+  status?: CandidateStatus
   search?: string
+}
+
+// 候选人状态枚举
+export enum CandidateStatus {
+  Pending = "Pending",         // 待处理
+  Scheduled = "Scheduled",     // 已安排面试
+  Interviewed = "Interviewed", // 已面试
+  Accepted = "Accepted",       // 已通过
+  Rejected = "Rejected",       // 已拒绝
+  Withdrawn = "Withdrawn",     // 已撤回
 }
 
 export interface Candidate {
@@ -16,7 +26,7 @@ export interface Candidate {
   position_id: number
   department_id: number
   interview_date?: number | null
-  status: string
+  status: CandidateStatus
   interviewer_id: number
   evaluation?: string | null
   remark?: string | null
@@ -42,7 +52,7 @@ export interface InsertCandidate {
 }
 
 export interface UpdateCandidateStatus {
-  status: string
+  status: CandidateStatus
   evaluation?: string | null
   remark?: string | null
 }
@@ -155,4 +165,30 @@ export function useCandidate(id: number | undefined) {
       return await getCandidateById(id);
     }
   );
+}
+
+/**
+ * 获取候选人状态的中文描述
+ * @param status 状态枚举值
+ */
+export function getCandidateStatusText(status: CandidateStatus): string {
+  const statusMap: Record<CandidateStatus, string> = {
+    [CandidateStatus.Pending]: '待处理',
+    [CandidateStatus.Scheduled]: '已安排面试',
+    [CandidateStatus.Interviewed]: '已面试',
+    [CandidateStatus.Accepted]: '已通过',
+    [CandidateStatus.Rejected]: '已拒绝',
+    [CandidateStatus.Withdrawn]: '已撤回',
+  };
+  return statusMap[status] || '未知状态';
+}
+
+/**
+ * 获取所有候选人状态选项
+ */
+export function getCandidateStatusOptions() {
+  return Object.entries(CandidateStatus).map(([key, value]) => ({
+    label: getCandidateStatusText(value as CandidateStatus),
+    value: value,
+  }));
 } 

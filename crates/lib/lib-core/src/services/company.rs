@@ -20,6 +20,32 @@ impl CompanyService {
         Self { db }
     }
 
+    /// 检查公司名称是否重复
+    async fn check_duplicate(
+        &self,
+        id: Option<i32>,
+        name: &str,
+    ) -> Result<bool, DbErr> {
+        use sea_orm::QueryFilter;
+
+        tracing::info!(
+            "检查重复公司: id={:?}, name={}",
+            id, name
+        );
+
+        let mut query = CompanyEntity::find()
+            .filter(company::Column::Name.eq(name));
+
+        // 如果是更新操作，排除当前记录
+        if let Some(current_id) = id {
+            query = query.filter(company::Column::Id.ne(current_id));
+        }
+
+        let count = query.count(&self.db).await?;
+        tracing::info!("查询结果: 找到 {} 个重名公司", count);
+        Ok(count > 0)
+    }
+
     /// 创建或更新公司
     ///
     /// # 参数
@@ -28,6 +54,11 @@ impl CompanyService {
     /// # 返回
     /// - `Result<SchemaCompany, DbErr>`: 成功返回公司模型，失败返回数据库错误
     pub async fn insert(&self, params: InsertCompany) -> Result<SchemaCompany, DbErr> {
+        // 检查是否存在重名公司
+        if self.check_duplicate(params.id, &params.name).await? {
+            return Err(DbErr::Custom("已存在相同名称的公司".to_string()));
+        }
+
         match params.id {
             Some(id) => {
                 let company = if let Ok(Some(m)) = CompanyEntity::find_by_id(id).one(&self.db).await

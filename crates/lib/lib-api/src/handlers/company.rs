@@ -14,13 +14,27 @@ async fn create_or_update(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertCompany>,
 ) -> APIResponse<Company> {
+    tracing::info!(
+        "收到创建公司请求: id={:?}, name={}",
+        params.id, params.name
+    );
+
     let company_service = CompanyService::new(app.pool.clone());
     match company_service.insert(params).await {
         Ok(result) => {
             let model = Company::from(result);
+            tracing::info!("创建公司成功: id={}", model.id);
             APIResponse::new().with_data(model)
         }
-        Err(e) => APIError::Internal(e.into()).into(),
+        Err(e) => {
+            tracing::error!("创建公司失败: {}", e);
+            if e.to_string().contains("已存在相同名称的公司") {
+                tracing::warn!("尝试创建重复的公司");
+                APIError::BadRequest(e.to_string()).into()
+            } else {
+                APIError::Internal(e.into()).into()
+            }
+        }
     }
 }
 

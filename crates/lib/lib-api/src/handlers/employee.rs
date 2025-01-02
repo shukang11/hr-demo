@@ -20,13 +20,25 @@ async fn create_or_update(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertEmployee>,
 ) -> APIResponse<Employee> {
-    tracing::info!("收到创建雇员请求: {:?}", params);
+    tracing::info!(
+        "收到创建雇员请求: company_id={}, name={}, phone={:?}, email={:?}",
+        params.company_id, params.name, params.phone, params.email
+    );
+
     let employee_service = EmployeeService::new(app.pool.clone());
     match employee_service.insert(params).await {
-        Ok(result) => APIResponse::new().with_data(result),
+        Ok(result) => {
+            tracing::info!("创建雇员成功: id={}", result.id);
+            APIResponse::new().with_data(result)
+        }
         Err(e) => {
             tracing::error!("创建雇员失败: {}", e);
-            APIError::Internal(e.into()).into()
+            if e.to_string().contains("该公司已存在相同手机号或邮箱的员工") {
+                tracing::warn!("尝试创建重复的员工");
+                APIError::BadRequest(e.to_string()).into()
+            } else {
+                APIError::Internal(e.into()).into()
+            }
         }
     }
 }

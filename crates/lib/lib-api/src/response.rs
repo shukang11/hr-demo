@@ -76,5 +76,6 @@ impl<T: Serialize> IntoResponse for APIResponse<T> {
 pub fn code_for_error(e: &APIError) -> i32 {
     match e {
         APIError::Internal(_) => 99999,
+        APIError::BadRequest(_) => 40000,
     }
 }
