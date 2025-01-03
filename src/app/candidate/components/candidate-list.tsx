@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table"
 import { useCompanyStore } from "@/hooks/use-company-store"
 import { useToast } from "@/hooks/use-toast"
-import { useCandidateList, deleteCandidate } from "@/lib/api/candidate"
+import { useCandidateList, deleteCandidate, getCandidateStatusText } from "@/lib/api/candidate"
 import { useState } from "react"
 import { CandidateForm } from "./candidate-form.tsx"
 import { CandidateStatusForm } from "./candidate-status-form.tsx"
@@ -112,7 +112,7 @@ export function CandidateList() {
                   {item.interview_date ? format(new Date(item.interview_date), "yyyy-MM-dd HH:mm") : "-"}
                 </TableCell>
                 <TableCell>{getInterviewerName(item.interviewer_id)}</TableCell>
-                <TableCell>{item.status}</TableCell>
+                <TableCell>{getCandidateStatusText(item.status)}</TableCell>
                 <TableCell className="max-w-[200px] truncate" title={item.remark || ""}>
                   {item.remark || "-"}
                 </TableCell>

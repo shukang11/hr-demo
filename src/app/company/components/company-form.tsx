@@ -19,7 +19,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Company, InsertCompany, createOrUpdateCompany } from "@/lib/api/company"
 import { useToast } from "@/hooks/use-toast"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 const formSchema = z.object({
@@ -49,6 +49,23 @@ export function CompanyForm({ open, onOpenChange, onSuccess, initialData }: Comp
       extra_schema_id: initialData?.extra_schema_id,
     },
   })
+
+  // 监听 initialData 变化，重置表单值
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name,
+        extra_value: initialData.extra_value,
+        extra_schema_id: initialData.extra_schema_id,
+      })
+    } else {
+      form.reset({
+        name: "",
+        extra_value: undefined,
+        extra_schema_id: undefined,
+      })
+    }
+  }, [form, initialData])
 
   async function onSubmit(values: CompanyFormValues) {
     try {

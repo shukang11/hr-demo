@@ -13,17 +13,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { updateCandidateStatus, useCandidate } from "@/lib/api/candidate"
+import { updateCandidateStatus, useCandidate, CandidateStatus, getCandidateStatusOptions } from "@/lib/api/candidate"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect } from "react"
 
 const formSchema = z.object({
-  status: z.string().min(1, "请选择状态"),
+  status: z.nativeEnum(CandidateStatus),
   evaluation: z.string().optional().nullable(),
   remark: z.string().optional().nullable(),
 })
@@ -35,26 +35,29 @@ interface Props {
   onSuccess: () => void
 }
 
-const STATUS_OPTIONS = [
-  { value: "待面试", label: "待面试" },
-  { value: "面试通过", label: "面试通过" },
-  { value: "面试未通过", label: "面试未通过" },
-  { value: "已入职", label: "已入职" },
-  { value: "已放弃", label: "已放弃" },
-]
-
 export function CandidateStatusForm({ id, open, onOpenChange, onSuccess }: Props) {
   const { toast } = useToast()
   const { data: candidate } = useCandidate(id)
+  const statusOptions = getCandidateStatusOptions()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      status: candidate?.status || "",
-      evaluation: candidate?.evaluation || "",
-      remark: candidate?.remark || "",
+      status: CandidateStatus.Pending,
+      evaluation: "",
+      remark: "",
     },
   })
+
+  useEffect(() => {
+    if (candidate) {
+      form.reset({
+        status: candidate.status,
+        evaluation: candidate.evaluation || "",
+        remark: candidate.remark || "",
+      })
+    }
+  }, [candidate, form])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!id) return
@@ -95,7 +98,7 @@ export function CandidateStatusForm({ id, open, onOpenChange, onSuccess }: Props
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {STATUS_OPTIONS.map((option) => (
+                      {statusOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
