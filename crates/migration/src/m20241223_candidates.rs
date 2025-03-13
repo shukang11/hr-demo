@@ -218,4 +218,4 @@ pub enum Candidates {
     ExtraSchemaId,
     CreatedAt,
     UpdatedAt,
-} 
+}

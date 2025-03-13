@@ -1,7 +1,9 @@
-use chrono::NaiveDateTime;
-use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
 use chrono::naive::serde::ts_milliseconds_option::deserialize as from_milli_tsopt;
-use lib_entity::entities::employee::{Gender as DbGender, Model as DbEmployee};
+use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
+use chrono::NaiveDateTime;
+use lib_entity::entities::employee::{
+    Gender as DbGender, MaritalStatus as DbMaritalStatus, Model as DbEmployee,
+};
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -37,6 +39,52 @@ impl From<DbGender> for Gender {
             DbGender::Unknown => Gender::Unknown,
         }
     }
+}
+
+/// 婚姻状况枚举
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MaritalStatus {
+    /// 单身
+    Single,
+    /// 已婚
+    Married,
+    /// 离异
+    Divorced,
+    /// 丧偶
+    Widowed,
+}
+
+impl From<MaritalStatus> for DbMaritalStatus {
+    fn from(status: MaritalStatus) -> Self {
+        match status {
+            MaritalStatus::Single => DbMaritalStatus::Single,
+            MaritalStatus::Married => DbMaritalStatus::Married,
+            MaritalStatus::Divorced => DbMaritalStatus::Divorced,
+            MaritalStatus::Widowed => DbMaritalStatus::Widowed,
+        }
+    }
+}
+
+impl From<DbMaritalStatus> for MaritalStatus {
+    fn from(status: DbMaritalStatus) -> Self {
+        match status {
+            DbMaritalStatus::Single => MaritalStatus::Single,
+            DbMaritalStatus::Married => MaritalStatus::Married,
+            DbMaritalStatus::Divorced => MaritalStatus::Divorced,
+            DbMaritalStatus::Widowed => MaritalStatus::Widowed,
+        }
+    }
+}
+
+/// 紧急联系人
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmergencyContact {
+    /// 姓名
+    pub name: String,
+    /// 电话
+    pub phone: String,
+    /// 关系
+    pub relation: String,
 }
 
 /// 员工模型
@@ -89,6 +137,14 @@ pub struct Employee {
     /// 职位ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub position_id: Option<i32>,
+
+    /// 婚姻状况
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub marital_status: Option<MaritalStatus>,
+
+    /// 紧急联系人
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub emergency_contact: Option<EmergencyContact>,
 }
 
 /// 员工数据模型，用于创建和更新
@@ -130,20 +186,43 @@ pub struct InsertEmployee {
     pub extra_value: Option<Value>,
     /// 额外字段模式ID
     pub extra_schema_id: Option<i32>,
+
+    /// 婚姻状况
+    pub marital_status: Option<MaritalStatus>,
+
+    /// 紧急联系人
+    pub emergency_contact: Option<EmergencyContact>,
 }
 
 impl FromQueryResult for Employee {
     fn from_query_result(res: &QueryResult, pre: &str) -> Result<Self, DbErr> {
-        let extra_value: Option<Value> =
-            res.try_get::<String>(pre, "extra_value")
-                .ok()
-                .and_then(|s| serde_json::from_str(&s).ok());
+        let extra_value: Option<Value> = res
+            .try_get::<String>(pre, "extra_value")
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok());
 
         let db_gender = match res.try_get::<String>(pre, "gender")?.as_str() {
             "Male" => DbGender::Male,
             "Female" => DbGender::Female,
             _ => DbGender::Unknown,
         };
+
+        let db_marital_status: Option<DbMaritalStatus> =
+            match res.try_get::<String>(pre, "marital_status") {
+                Ok(s) => Some(match s.as_str() {
+                    "Single" => DbMaritalStatus::Single,
+                    "Married" => DbMaritalStatus::Married,
+                    "Divorced" => DbMaritalStatus::Divorced,
+                    "Widowed" => DbMaritalStatus::Widowed,
+                    _ => DbMaritalStatus::Single,
+                }),
+                Err(_) => None,
+            };
+
+        let emergency_contact: Option<EmergencyContact> = res
+            .try_get::<String>(pre, "emergency_contact")
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok());
 
         Ok(Self {
             id: res.try_get(pre, "id")?,
@@ -160,12 +239,18 @@ impl FromQueryResult for Employee {
             updated_at: Some(res.try_get(pre, "updated_at")?),
             department_id: res.try_get(pre, "department_id").ok(),
             position_id: res.try_get(pre, "position_id").ok(),
+            marital_status: db_marital_status.map(|s| s.into()),
+            emergency_contact,
         })
     }
 }
 
 impl From<DbEmployee> for Employee {
     fn from(model: DbEmployee) -> Self {
+        let emergency_contact: Option<EmergencyContact> = model
+            .emergency_contact
+            .as_ref()
+            .and_then(|s| serde_json::from_value(s.clone()).ok());
         Self {
             id: model.id,
             company_id: model.company_id,
@@ -181,6 +266,8 @@ impl From<DbEmployee> for Employee {
             updated_at: Some(model.updated_at),
             department_id: None,
             position_id: None,
+            marital_status: model.marital_status.map(|s| s.into()),
+            emergency_contact: emergency_contact,
         }
     }
 }

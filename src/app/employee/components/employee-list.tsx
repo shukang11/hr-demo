@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,8 +34,8 @@ function EmployeeRow({ employee, onEdit, onDelete, onManagePositions }: Employee
         {employee.gender === "Male"
           ? "男"
           : employee.gender === "Female"
-          ? "女"
-          : "未知"}
+            ? "女"
+            : "未知"}
       </TableCell>
       <TableCell>{department?.name || "-"}</TableCell>
       <TableCell>{position?.name || "-"}</TableCell>
@@ -78,12 +78,12 @@ export function EmployeeList() {
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const { currentCompany } = useCompanyStore()
-  
+
   const companyId = currentCompany?.id || 0;
 
   const [pageParams, setPageParams] = useState<PageParams>({
     page: 1,
-    limit: 10,
+    limit: 10000,
   })
 
   const { data, error, mutate } = useSWR(

@@ -16,6 +16,20 @@ pub enum Gender {
     Unknown,
 }
 
+// MaritalStatus
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize, Serialize)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]
+pub enum MaritalStatus {
+    #[sea_orm(string_value = "Single")]
+    Single, // 单身
+    #[sea_orm(string_value = "Married")]
+    Married, // 已婚
+    #[sea_orm(string_value = "Divorced")]
+    Divorced, // 离异
+    #[sea_orm(string_value = "Widowed")]
+    Widowed, // 丧偶
+}
+
 #[derive(Copy, Clone, Default, Debug, DeriveEntity)]
 pub struct Entity;
 
@@ -31,22 +45,24 @@ impl EntityName for Entity {
 #[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Deserialize, Serialize)]
 pub struct Model {
     #[serde(skip)]
-    pub id: i32,                      // 主键
-    pub company_id: i32,              // 公司ID
-    pub name: String,                 // 姓名
-    pub email: Option<String>,        // 邮箱
-    pub phone: Option<String>,        // 电话
-    pub birthdate: Option<NaiveDateTime>, // 出生日期
-    pub address: Option<String>,      // 地址
-    pub gender: Gender,               // 性别
-    pub extra_value: Option<Value>,   // 额外JSON数据
-    pub extra_schema_id: Option<i32>, // 额外数据schema ID
+    pub id: i32, // 主键
+    pub company_id: i32,                       // 公司ID
+    pub name: String,                          // 姓名
+    pub email: Option<String>,                 // 邮箱
+    pub phone: Option<String>,                 // 电话
+    pub birthdate: Option<NaiveDateTime>,      // 出生日期
+    pub address: Option<String>,               // 地址
+    pub gender: Gender,                        // 性别
+    pub extra_value: Option<Value>,            // 额外JSON数据
+    pub extra_schema_id: Option<i32>,          // 额外数据schema ID
+    pub marital_status: Option<MaritalStatus>, // 婚姻状况
+    pub emergency_contact: Option<Value>,      // 紧急联系人
     #[serde(skip)]
     #[serde(serialize_with = "to_milli_tsopt")]
-    pub created_at: NaiveDateTime,    // 创建时间
+    pub created_at: NaiveDateTime, // 创建时间
     #[serde(skip)]
     #[serde(serialize_with = "to_milli_tsopt")]
-    pub updated_at: NaiveDateTime,    // 更新时间
+    pub updated_at: NaiveDateTime, // 更新时间
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
@@ -61,6 +77,8 @@ pub enum Column {
     Gender,
     ExtraValue,
     ExtraSchemaId,
+    MaritalStatus,
+    EmergencyContact,
     CreatedAt,
     UpdatedAt,
 }
@@ -91,6 +109,8 @@ impl ColumnTrait for Column {
             Self::Gender => ColumnType::String(StringLen::None).def(),
             Self::ExtraValue => ColumnType::Json.def().nullable(),
             Self::ExtraSchemaId => ColumnType::Integer.def().nullable(),
+            Self::MaritalStatus => ColumnType::String(StringLen::N(16)).def().nullable(),
+            Self::EmergencyContact => ColumnType::Json.def().nullable(),
             Self::CreatedAt => ColumnType::DateTime
                 .def()
                 .default(Expr::current_timestamp()),
@@ -131,4 +151,4 @@ impl Related<super::company::Entity> for Entity {
     }
 }
 
-impl ActiveModelBehavior for ActiveModel {} 
+impl ActiveModelBehavior for ActiveModel {}

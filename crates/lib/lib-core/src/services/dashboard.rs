@@ -1,16 +1,13 @@
-use chrono::{Datelike, Local, NaiveDateTime, NaiveDate};
+use chrono::{Datelike, NaiveDate, NaiveDateTime};
 use lib_entity::{
-    candidate::{self, CandidateStatus, Entity as Candidate}, department::{self, Entity as Department}, employee::{self, Entity as Employee, Gender}, employee_position::{self, Entity as EmployeePosition}, position::{self, Entity as Position}
+    candidate::{self, CandidateStatus, Entity as Candidate},
+    department::{self, Entity as Department},
+    employee::{self, Entity as Employee, Gender},
+    employee_position::{self, Entity as EmployeePosition},
+    position::{self, Entity as Position},
 };
 use lib_schema::models::dashboard::*;
-use sea_orm::{
-    DatabaseConnection, DbErr,
-    EntityTrait, QueryFilter, QuerySelect,
-    Order, QueryOrder,
-    Condition, JoinType,
-    QueryTrait, FromQueryResult,
-    prelude::*, QuerySelect as _, RelationTrait,
-};
+use sea_orm::{prelude::*, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QueryOrder};
 
 /// 年龄范围定义
 const AGE_RANGES: &[(&str, i32, i32)] = &[
@@ -42,13 +39,7 @@ const TENURE_RANGES: [(i64, i64); 5] = [
 ];
 
 /// 入职时长范围名称
-const TENURE_RANGE_NAMES: [&str; 5] = [
-    "1年以下",
-    "1-3年",
-    "3-5年",
-    "5-10年",
-    "10年以上",
-];
+const TENURE_RANGE_NAMES: [&str; 5] = ["1年以下", "1-3年", "3-5年", "5-10年", "10年以上"];
 
 /// 看板服务
 ///
@@ -69,25 +60,19 @@ impl DashboardService {
 
     /// 获取指定月份的起始和结束时间
     fn get_month_range(date: NaiveDateTime) -> (NaiveDateTime, NaiveDateTime) {
-        let start_of_month = NaiveDate::from_ymd_opt(
-            date.year(),
-            date.month(),
-            1,
-        ).unwrap().and_hms_opt(0, 0, 0).unwrap();
+        let start_of_month = NaiveDate::from_ymd_opt(date.year(), date.month(), 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
 
         let next_month = if date.month() == 12 {
-            NaiveDate::from_ymd_opt(
-                date.year() + 1,
-                1,
-                1,
-            )
+            NaiveDate::from_ymd_opt(date.year() + 1, 1, 1)
         } else {
-            NaiveDate::from_ymd_opt(
-                date.year(),
-                date.month() + 1,
-                1,
-            )
-        }.unwrap().and_hms_opt(0, 0, 0).unwrap();
+            NaiveDate::from_ymd_opt(date.year(), date.month() + 1, 1)
+        }
+        .unwrap()
+        .and_hms_opt(0, 0, 0)
+        .unwrap();
 
         (start_of_month, next_month)
     }
@@ -95,41 +80,42 @@ impl DashboardService {
     /// 获取前一个月的日期
     fn get_previous_month(date: NaiveDateTime) -> NaiveDateTime {
         if date.month() == 1 {
-            NaiveDate::from_ymd_opt(
-                date.year() - 1,
-                12,
-                1,
-            )
+            NaiveDate::from_ymd_opt(date.year() - 1, 12, 1)
         } else {
-            NaiveDate::from_ymd_opt(
-                date.year(),
-                date.month() - 1,
-                1,
-            )
-        }.unwrap().and_hms_opt(0, 0, 0).unwrap()
+            NaiveDate::from_ymd_opt(date.year(), date.month() - 1, 1)
+        }
+        .unwrap()
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
     }
 
     /// 获取月度统计数据
-    async fn get_monthly_stats<F>(&self, company_id: i32, date_range: &DateRange, filter: F) -> Result<Vec<MonthlyCount>, DbErr>
+    async fn get_monthly_stats<F>(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+        filter: F,
+    ) -> Result<Vec<MonthlyCount>, DbErr>
     where
         F: Fn(Select<EmployeePosition>) -> Select<EmployeePosition>,
     {
         let mut trend = Vec::new();
-        let months = (date_range.end_time.year() * 12 + date_range.end_time.month() as i32) -
-                    (date_range.start_time.year() * 12 + date_range.start_time.month() as i32);
-        
+        let months = (date_range.end_time.year() * 12 + date_range.end_time.month() as i32)
+            - (date_range.start_time.year() * 12 + date_range.start_time.month() as i32);
+
         let mut current_date = date_range.start_time;
-        
+
         for _ in 0..=months {
             let next_month = if current_date.month() == 12 {
                 NaiveDateTime::new(
                     NaiveDate::from_ymd_opt(current_date.year() + 1, 1, 1).unwrap(),
-                    current_date.time()
+                    current_date.time(),
                 )
             } else {
                 NaiveDateTime::new(
-                    NaiveDate::from_ymd_opt(current_date.year(), current_date.month() + 1, 1).unwrap(),
-                    current_date.time()
+                    NaiveDate::from_ymd_opt(current_date.year(), current_date.month() + 1, 1)
+                        .unwrap(),
+                    current_date.time(),
                 )
             };
 
@@ -149,12 +135,16 @@ impl DashboardService {
 
             current_date = next_month;
         }
-        
+
         Ok(trend)
     }
 
     /// 获取员工总数
-    async fn get_total_employees(&self, company_id: i32, date_range: &DateRange) -> Result<i64, DbErr> {
+    async fn get_total_employees(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<i64, DbErr> {
         Ok(EmployeePosition::find()
             .filter(employee_position::Column::CompanyId.eq(company_id))
             .filter(employee_position::Column::EntryAt.gte(date_range.start_time))
@@ -164,7 +154,11 @@ impl DashboardService {
     }
 
     /// 获取部门分布
-    async fn get_department_distribution(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<DepartmentDistribution>, DbErr> {
+    async fn get_department_distribution(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<DepartmentDistribution>, DbErr> {
         let mut distribution = Vec::new();
         let departments = Department::find()
             .filter(department::Column::CompanyId.eq(company_id))
@@ -191,7 +185,11 @@ impl DashboardService {
     }
 
     /// 获取性别分布
-    async fn get_gender_distribution(&self, company_id: i32, date_range: &DateRange) -> Result<GenderDistribution, DbErr> {
+    async fn get_gender_distribution(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<GenderDistribution, DbErr> {
         let male = Employee::find()
             .inner_join(EmployeePosition)
             .filter(employee_position::Column::CompanyId.eq(company_id))
@@ -227,7 +225,11 @@ impl DashboardService {
     }
 
     /// 获取年龄分布
-    async fn get_age_distribution(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<AgeDistribution>, DbErr> {
+    async fn get_age_distribution(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<AgeDistribution>, DbErr> {
         let mut distribution = Vec::new();
         for (range_name, min_age, max_age) in AGE_RANGES {
             let count = if *min_age == -1 && *max_age == -1 {
@@ -270,7 +272,11 @@ impl DashboardService {
     }
 
     /// 获取候选人状态分布
-    async fn get_candidate_status_distribution(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<CandidateStatusDistribution>, DbErr> {
+    async fn get_candidate_status_distribution(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<CandidateStatusDistribution>, DbErr> {
         let mut distribution = Vec::new();
         for &(status_key, status_name) in CANDIDATE_STATUSES {
             let count = Candidate::find()
@@ -290,7 +296,11 @@ impl DashboardService {
     }
 
     /// 获取面试数量
-    async fn get_monthly_interviews(&self, company_id: i32, date_range: &DateRange) -> Result<i64, DbErr> {
+    async fn get_monthly_interviews(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<i64, DbErr> {
         Ok(Candidate::find()
             .filter(candidate::Column::CompanyId.eq(company_id))
             .filter(candidate::Column::InterviewDate.gte(date_range.start_time))
@@ -300,7 +310,11 @@ impl DashboardService {
     }
 
     /// 计算面试转化率
-    async fn get_conversion_rate(&self, company_id: i32, date_range: &DateRange) -> Result<f32, DbErr> {
+    async fn get_conversion_rate(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<f32, DbErr> {
         let total_interviews = Candidate::find()
             .filter(candidate::Column::CompanyId.eq(company_id))
             .filter(candidate::Column::InterviewDate.is_not_null())
@@ -325,7 +339,11 @@ impl DashboardService {
     }
 
     /// 获取部门招聘需求TOP5
-    async fn get_department_recruitment_top5(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<DepartmentRecruitment>, DbErr> {
+    async fn get_department_recruitment_top5(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<DepartmentRecruitment>, DbErr> {
         let mut recruitment = Vec::new();
         let departments = Department::find()
             .filter(department::Column::CompanyId.eq(company_id))
@@ -355,12 +373,21 @@ impl DashboardService {
     }
 
     /// 获取员工增长趋势（近12个月）
-    async fn get_employee_growth_trend(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<MonthlyCount>, DbErr> {
-        self.get_monthly_stats(company_id, date_range, |query| query).await
+    async fn get_employee_growth_trend(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<MonthlyCount>, DbErr> {
+        self.get_monthly_stats(company_id, date_range, |query| query)
+            .await
     }
 
     /// 获取部门人员变化趋势
-    async fn get_department_growth_trend(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<DepartmentTrend>, DbErr> {
+    async fn get_department_growth_trend(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<DepartmentTrend>, DbErr> {
         let mut trends = Vec::new();
         let departments = Department::find()
             .filter(department::Column::CompanyId.eq(company_id))
@@ -369,9 +396,11 @@ impl DashboardService {
 
         for dept in departments {
             let dept_id = dept.id;
-            let trend = self.get_monthly_stats(company_id, date_range, |query: Select<EmployeePosition>| {
-                query.filter(employee_position::Column::DepartmentId.eq(dept_id))
-            }).await?;
+            let trend = self
+                .get_monthly_stats(company_id, date_range, |query: Select<EmployeePosition>| {
+                    query.filter(employee_position::Column::DepartmentId.eq(dept_id))
+                })
+                .await?;
 
             if trend.iter().any(|m| m.count > 0) {
                 trends.push(DepartmentTrend {
@@ -384,7 +413,11 @@ impl DashboardService {
     }
 
     /// 获取职位分布
-    async fn get_position_distribution(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<PositionDistribution>, DbErr> {
+    async fn get_position_distribution(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<PositionDistribution>, DbErr> {
         let mut distribution = Vec::new();
         let positions = Position::find()
             .filter(position::Column::CompanyId.eq(company_id))
@@ -411,7 +444,11 @@ impl DashboardService {
     }
 
     /// 获取入职时长分布
-    async fn get_tenure_distribution(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<TenureDistribution>, DbErr> {
+    async fn get_tenure_distribution(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<TenureDistribution>, DbErr> {
         let mut distribution = Vec::new();
         let current_date = date_range.end_time;
 
@@ -421,13 +458,12 @@ impl DashboardService {
             } else {
                 current_date - chrono::Duration::days(min_months * 30)
             };
-            
+
             let min_entry_date = if max_months == 360 {
-                NaiveDate::from_ymd_opt(
-                    current_date.year() - 30,
-                    current_date.month(),
-                    1,
-                ).unwrap().and_hms_opt(0, 0, 0).unwrap()
+                NaiveDate::from_ymd_opt(current_date.year() - 30, current_date.month(), 1)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap()
             } else {
                 current_date - chrono::Duration::days(max_months * 30)
             };
@@ -451,55 +487,83 @@ impl DashboardService {
     }
 
     /// 获取人员概览统计
-    /// 
+    ///
     /// 包含：
     /// - 员工总数
     /// - 部门分布
     /// - 性别分布
     /// - 年龄分布
-    pub async fn get_employee_overview(&self, company_id: i32, date_range: &DateRange) -> Result<EmployeeOverview, DbErr> {
+    pub async fn get_employee_overview(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<EmployeeOverview, DbErr> {
         Ok(EmployeeOverview {
             total_employees: self.get_total_employees(company_id, date_range).await?,
-            department_distribution: self.get_department_distribution(company_id, date_range).await?,
+            department_distribution: self
+                .get_department_distribution(company_id, date_range)
+                .await?,
             gender_distribution: self.get_gender_distribution(company_id, date_range).await?,
             age_distribution: self.get_age_distribution(company_id, date_range).await?,
         })
     }
 
     /// 获取招聘概况统计
-    /// 
+    ///
     /// 包含：
     /// - 候选人状态分布
     /// - 本月面试数量
     /// - 面试转化率
     /// - 部门招聘需求TOP5
-    pub async fn get_recruitment_stats(&self, company_id: i32, date_range: &DateRange) -> Result<RecruitmentStats, DbErr> {
+    pub async fn get_recruitment_stats(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<RecruitmentStats, DbErr> {
         Ok(RecruitmentStats {
-            candidate_status_distribution: self.get_candidate_status_distribution(company_id, date_range).await?,
+            candidate_status_distribution: self
+                .get_candidate_status_distribution(company_id, date_range)
+                .await?,
             monthly_interviews: self.get_monthly_interviews(company_id, date_range).await?,
             conversion_rate: self.get_conversion_rate(company_id, date_range).await?,
-            department_recruitment_top5: self.get_department_recruitment_top5(company_id, date_range).await?,
+            department_recruitment_top5: self
+                .get_department_recruitment_top5(company_id, date_range)
+                .await?,
         })
     }
 
     /// 获取组织发展统计
-    /// 
+    ///
     /// 包含：
     /// - 员工增长趋势（近12个月）
     /// - 部门人员变化趋势
     /// - 职位分布
     /// - 入职时长分布
-    pub async fn get_organization_stats(&self, company_id: i32, date_range: &DateRange) -> Result<OrganizationStats, DbErr> {
+    pub async fn get_organization_stats(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<OrganizationStats, DbErr> {
         Ok(OrganizationStats {
-            employee_growth_trend: self.get_employee_growth_trend(company_id, date_range).await?,
-            department_growth_trend: self.get_department_growth_trend(company_id, date_range).await?,
-            position_distribution: self.get_position_distribution(company_id, date_range).await?,
+            employee_growth_trend: self
+                .get_employee_growth_trend(company_id, date_range)
+                .await?,
+            department_growth_trend: self
+                .get_department_growth_trend(company_id, date_range)
+                .await?,
+            position_distribution: self
+                .get_position_distribution(company_id, date_range)
+                .await?,
             tenure_distribution: self.get_tenure_distribution(company_id, date_range).await?,
         })
     }
 
     /// 获取完整的看板统计数据
-    pub async fn get_stats(&self, company_id: i32, date_range: &DateRange) -> Result<DashboardStats, DbErr> {
+    pub async fn get_stats(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<DashboardStats, DbErr> {
         let employee_overview = self.get_employee_overview(company_id, date_range).await?;
         let recruitment_stats = self.get_recruitment_stats(company_id, date_range).await?;
         let organization_stats = self.get_organization_stats(company_id, date_range).await?;
@@ -521,7 +585,11 @@ impl DashboardService {
     }
 
     /// 获取指定时间范围内过生日的员工列表
-    pub async fn get_birthday_employees(&self, company_id: i32, date_range: &DateRange) -> Result<Vec<BirthdayEmployee>, DbErr> {
+    pub async fn get_birthday_employees(
+        &self,
+        company_id: i32,
+        date_range: &DateRange,
+    ) -> Result<Vec<BirthdayEmployee>, DbErr> {
         // 先获取所有员工
         let employees = Employee::find()
             .find_also_related(EmployeePosition)
@@ -546,9 +614,10 @@ impl DashboardService {
                     // 检查生日是否在指定范围内
                     let birthdate = emp.birthdate.unwrap();
                     let birth_month_day = (birthdate.month(), birthdate.day());
-                    let start_month_day = (date_range.start_time.month(), date_range.start_time.day());
+                    let start_month_day =
+                        (date_range.start_time.month(), date_range.start_time.day());
                     let end_month_day = (date_range.end_time.month(), date_range.end_time.day());
-                    
+
                     // 处理跨年的情况
                     let is_in_range = if start_month_day <= end_month_day {
                         // 普通情况：例如 2月1日 到 2月28日
@@ -581,7 +650,7 @@ impl DashboardService {
 mod tests {
     use super::*;
     use crate::test_runner;
-    use chrono::Duration;
+    use chrono::{Duration, Local};
 
     /// 创建测试服务实例
     async fn setup_test_service() -> DashboardService {

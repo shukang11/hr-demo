@@ -1,13 +1,12 @@
 use lib_entity::entities::{
+    candidate::{self, CandidateStatus, Entity as Candidate},
     company, department,
     employee::{self, ActiveModel as EmployeeActive, Entity as Employee},
     employee_position::{self, ActiveModel as EmployeePositionActive, Entity as EmployeePosition},
     position,
-    candidate::{self, Entity as Candidate, CandidateStatus},
 };
-use lib_schema::models::{
-    employee_position::{EmployeePosition as SchemaEmployeePosition, InsertEmployeePosition},
-    candidate::UpdateCandidateStatus,
+use lib_schema::models::employee_position::{
+    EmployeePosition as SchemaEmployeePosition, InsertEmployeePosition,
 };
 use lib_schema::{
     models::employee::{Employee as SchemaEmployee, InsertEmployee},
@@ -44,7 +43,11 @@ impl EmployeeService {
 
         tracing::info!(
             "检查重复员工: company_id={}, id={:?}, name={}, phone={:?}, email={:?}",
-            company_id, id, name, phone, email
+            company_id,
+            id,
+            name,
+            phone,
+            email
         );
 
         let mut query = Employee::find()
@@ -107,13 +110,16 @@ impl EmployeeService {
         }
 
         // 检查是否存在重复员工
-        if self.check_duplicate(
-            params.company_id,
-            params.id,
-            &params.name,
-            &params.phone,
-            &params.email,
-        ).await? {
+        if self
+            .check_duplicate(
+                params.company_id,
+                params.id,
+                &params.name,
+                &params.phone,
+                &params.email,
+            )
+            .await?
+        {
             return Err(DbErr::Custom("该公司已存在相同姓名的员工".to_string()));
         }
 
@@ -164,7 +170,6 @@ impl EmployeeService {
         }
 
         if let Some(_entry_at) = params.entry_date {
-
         } else {
             return Err(DbErr::Custom("entry date cant be nil".to_owned()));
         }
@@ -193,6 +198,10 @@ impl EmployeeService {
                 employee.gender = Set(params.gender.into());
                 employee.extra_value = Set(params.extra_value);
                 employee.extra_schema_id = Set(params.extra_schema_id);
+                employee.marital_status = Set(params.marital_status.map(|s| s.into()));
+                employee.emergency_contact = Set(params
+                    .emergency_contact
+                    .map(|c| serde_json::to_value(c).unwrap()));
 
                 let result = employee
                     .update(&txn)
@@ -267,7 +276,7 @@ impl EmployeeService {
                         candidate_id,
                         result.id
                     );
-                    
+
                     let candidate = Candidate::find_by_id(candidate_id)
                         .one(&txn)
                         .await?
@@ -275,15 +284,15 @@ impl EmployeeService {
 
                     let mut candidate: candidate::ActiveModel = candidate.into();
                     candidate.status = Set(CandidateStatus::Accepted);
-                    
+
                     tracing::info!(
                         "更新候选人状态为已录用: candidate_id={}, new_status={:?}",
                         candidate_id,
                         CandidateStatus::Accepted
                     );
-                    
+
                     candidate.update(&txn).await?;
-                    
+
                     tracing::info!(
                         "候选人状态更新成功: candidate_id={}, employee_id={}",
                         candidate_id,
@@ -746,6 +755,8 @@ mod tests {
             candidate_id: None,
             extra_value: None,
             extra_schema_id: None,
+            marital_status: None,
+            emergency_contact: None,
         };
 
         let result = service.insert(params).await;
@@ -770,6 +781,8 @@ mod tests {
             candidate_id: None,
             extra_value: None,
             extra_schema_id: None,
+            marital_status: None,
+            emergency_contact: None,
         };
 
         let result = service.insert(params).await;
