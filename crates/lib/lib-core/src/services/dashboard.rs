@@ -59,6 +59,7 @@ impl DashboardService {
     }
 
     /// 获取指定月份的起始和结束时间
+
     fn get_month_range(date: NaiveDateTime) -> (NaiveDateTime, NaiveDateTime) {
         let start_of_month = NaiveDate::from_ymd_opt(date.year(), date.month(), 1)
             .unwrap()

@@ -17,6 +17,13 @@ impl MigrationTrait for Migration {
                             .null()
                             .comment("婚姻状况".to_string()),
                     )
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Employee::Table)
                     .add_column_if_not_exists(
                         ColumnDef::new(Employee::EmergencyContact)
                             .string_len(255)
@@ -38,6 +45,14 @@ impl MigrationTrait for Migration {
                 Table::alter()
                     .table(Employee::Table)
                     .drop_column(Employee::MaritalStatus)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Employee::Table)
                     .drop_column(Employee::EmergencyContact)
                     .to_owned(),
             )

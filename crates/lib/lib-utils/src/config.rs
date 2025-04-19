@@ -1,5 +1,5 @@
-use std::net::SocketAddr;
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -12,24 +12,26 @@ pub enum ConfigError {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Settings {
-    pub addr: SocketAddr,
+    pub addr: String,
     pub log_dir: Option<String>,
     pub database_url: String,
+    pub workspace: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            addr: "127.0.0.1:5000".parse().unwrap(),
+            addr: "localhost:5000".to_string(),
             log_dir: None,
             database_url: "sqlite:memory:".to_string(),
+            workspace: "./workspace".to_string(),
         }
     }
 }
 
 impl Settings {
     pub fn with_addr(mut self, addr: impl AsRef<str>) -> Self {
-        self.addr = addr.as_ref().parse().expect("Invalid address format");
+        self.addr = addr.as_ref().to_string();
         self
     }
 
@@ -43,12 +45,12 @@ impl Settings {
         self
     }
 
-    pub fn addr(&self) -> SocketAddr {
-        self.addr
-    }
-
     pub fn log_dir(&self) -> Option<&str> {
         self.log_dir.as_deref()
+    }
+
+    pub fn workspace(&self) -> &str {
+        &self.workspace
     }
 
     pub fn database_url(&self) -> &str {
@@ -67,7 +69,6 @@ mod tests {
             .with_database_url("sqlite:test.db")
             .with_log_dir("logs");
 
-        assert_eq!(config.addr().port(), 8080);
         assert_eq!(config.database_url(), "sqlite:test.db");
         assert_eq!(config.log_dir(), Some("logs"));
     }

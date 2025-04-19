@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query},
-    routing::{get, post, delete},
+    routing::{delete, get, post},
     Extension, Json, Router,
 };
 use lib_core::CompanyService;
@@ -14,10 +14,7 @@ async fn create_or_update(
     app: Extension<Arc<AppState>>,
     Json(params): Json<InsertCompany>,
 ) -> APIResponse<Company> {
-    tracing::info!(
-        "收到创建公司请求: id={:?}, name={}",
-        params.id, params.name
-    );
+    tracing::info!("收到创建公司请求: id={:?}, name={}", params.id, params.name);
 
     let company_service = CompanyService::new(app.pool.clone());
     match company_service.insert(params).await {
@@ -44,6 +41,7 @@ async fn get_list(
     Query(params): Query<PageParams>,
 ) -> APIResponse<PageResult<Company>> {
     let company_service = CompanyService::new(app.pool.clone());
+    tracing::info!("获取公司列表: {:?}", params);
     match company_service.find_all(&params).await {
         Ok(result) => {
             let items = result.items.into_iter().map(Company::from).collect();
@@ -56,7 +54,10 @@ async fn get_list(
             };
             APIResponse::new().with_data(page_result)
         }
-        Err(e) => APIError::Internal(e.into()).into(),
+        Err(e) => {
+            tracing::error!("获取公司列表失败: {}", e);
+            APIError::Internal(e.into()).into()
+        }
     }
 }
 
@@ -96,10 +97,7 @@ async fn get_by_id(
 }
 
 /// 删除公司
-async fn delete_company(
-    app: Extension<Arc<AppState>>,
-    Path(id): Path<i32>,
-) -> APIResponse<()> {
+async fn delete_company(app: Extension<Arc<AppState>>, Path(id): Path<i32>) -> APIResponse<()> {
     let company_service = CompanyService::new(app.pool.clone());
     match company_service.delete(id).await {
         Ok(_) => APIResponse::new(),

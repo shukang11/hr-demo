@@ -104,8 +104,8 @@ export function CompanyList() {
             <TableRow key={company.id}>
               <TableCell>{company.id}</TableCell>
               <TableCell>{company.name}</TableCell>
-              <TableCell>{new Date(company.created_at).toLocaleString()}</TableCell>
-              <TableCell>{new Date(company.updated_at).toLocaleString()}</TableCell>
+              <TableCell>{company.created_at ? new Date(company.created_at).toLocaleString() : '-'}</TableCell>
+              <TableCell>{company.updated_at ? new Date(company.updated_at).toLocaleString() : '-'}</TableCell>
               <TableCell>
                 <div className="space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(company)}>

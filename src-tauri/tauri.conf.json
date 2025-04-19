@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "hr-demo",
+        "title": "HR-APP",
         "width": 800,
         "height": 600
       }
