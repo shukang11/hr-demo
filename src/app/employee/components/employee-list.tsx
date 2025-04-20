@@ -81,7 +81,7 @@ export function EmployeeList() {
 
   const companyId = currentCompany?.id || 0;
 
-  const [pageParams, setPageParams] = useState<PageParams>({
+  const [pageParams,] = useState<PageParams>({
     page: 1,
     limit: 10000,
   })

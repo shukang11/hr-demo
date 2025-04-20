@@ -1,8 +1,15 @@
 workspace = "./workspace"
 
 [database]
-url = "sqlite:data.db"
+# Use the path inside the container, matching the docker-compose volume mount
+url = "sqlite:/app/data/hr-data.sqlite3"
 
 [server]
-host = "localhost"
-port = 3000
+# Listen on all interfaces within the container
+host = "0.0.0.0"
+# Use port 5000 to match docker-compose and frontend proxy
+port = 5000
+
+# Add log directory configuration, matching the docker-compose volume mount
+[log]
+dir = "/app/logs"

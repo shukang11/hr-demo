@@ -11,11 +11,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { useCompanyStore } from "@/hooks/use-company-store"
-import { 
-  Position, 
-  deletePosition, 
-  usePositions, 
-  usePositionSearch 
+import {
+  Position,
+  deletePosition,
+  usePositions,
+  usePositionSearch
 } from "@/lib/api/position"
 import { PositionForm } from "./position-form"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
@@ -43,7 +43,6 @@ export function PositionList() {
   )
 
   const positions = keyword ? searchData?.items : positionData?.items
-  const total = keyword ? searchData?.total : positionData?.total
   const totalPages = keyword ? searchData?.total_pages : positionData?.total_pages
   const isLoading = !positions
 
@@ -125,8 +124,8 @@ export function PositionList() {
                 <TableRow key={position.id}>
                   <TableCell>{position.name}</TableCell>
                   <TableCell>{position.remark || "-"}</TableCell>
-                  <TableCell>{new Date(position.created_at).toLocaleString()}</TableCell>
-                  <TableCell>{new Date(position.updated_at).toLocaleString()}</TableCell>
+                  <TableCell>{position.created_at ? new Date(position.created_at).toLocaleString() : "-"}</TableCell>
+                  <TableCell>{position.updated_at ? new Date(position.updated_at).toLocaleString() : "-"}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
@@ -183,4 +182,4 @@ export function PositionList() {
       />
     </div>
   )
-} 
+}

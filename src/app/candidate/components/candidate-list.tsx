@@ -22,7 +22,7 @@ import { useEmployees } from "@/lib/api/employee"
 export function CandidateList() {
   const { currentCompany } = useCompanyStore()
   const { toast } = useToast()
-  const [page, setPage] = useState(1)
+  const [page,] = useState(1)
   const [selectedId, setSelectedId] = useState<number>()
   const [showForm, setShowForm] = useState(false)
   const [showStatusForm, setShowStatusForm] = useState(false)

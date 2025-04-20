@@ -31,7 +31,7 @@ interface Props {
 export function SelectCandidateDialog({ open, onOpenChange, onSelect }: Props) {
   const { currentCompany } = useCompanyStore()
   const [search, setSearch] = useState("")
-  const [page, setPage] = useState(1)
+  const [page,] = useState(1)
 
   const { data: candidateData } = useCandidateList(currentCompany?.id, {
     page,

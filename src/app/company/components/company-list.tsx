@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 export function CompanyList() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null)
-  const [pageParams, setPageParams] = useState<PageParams>({
+  const [pageParams,] = useState<PageParams>({
     page: 1,
     limit: 10,
   })

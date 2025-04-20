@@ -1,70 +1,71 @@
-import { PageParams, PageResult } from "@/lib/types"
-import { serverAPI, ApiResponse } from "./client"
-import useSWR from 'swr'
-import { dateToTimestamp } from "../utils"
+import { PageParams, PageResult } from "@/lib/types";
+import { serverAPI, ApiResponse } from "./client";
+import useSWR from "swr";
 
-export type Gender = 'Male' | 'Female' | 'Unknown'
+export type Gender = "Male" | "Female" | "Unknown";
 
 export interface Employee {
-  id: number
-  company_id: number
-  name: string
-  email?: string | null
-  phone?: string | null
-  birthdate?: number | null
-  address?: string | null
-  gender: Gender
-  extra_value?: any | null
-  extra_schema_id?: number | null
-  created_at?: number | null
-  updated_at?: number | null
-  department_id?: number | null
-  position_id?: number | null
+  id: number;
+  company_id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  birthdate?: number | null;
+  address?: string | null;
+  gender: Gender;
+  extra_value?: any | null;
+  extra_schema_id?: number | null;
+  created_at?: number | null;
+  updated_at?: number | null;
+  department_id?: number | null;
+  position_id?: number | null;
 }
 
 export interface InsertEmployee {
-  id?: number
-  company_id: number
-  name: string
-  email?: string | null
-  phone?: string | null
-  birthdate?: number | null
-  address?: string | null
-  gender: Gender
-  extra_value?: any | null
-  extra_schema_id?: number | null
-  department_id?: number | null
-  position_id?: number | null
-  entry_date?: number | null
-  candidate_id?: number | null
+  id?: number;
+  company_id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  birthdate?: number | null;
+  address?: string | null;
+  gender: Gender;
+  extra_value?: any | null;
+  extra_schema_id?: number | null;
+  department_id?: number | null;
+  position_id?: number | null;
+  entry_date?: number | null;
+  candidate_id?: number | null;
 }
 
 export interface EmployeePosition {
-  id: number
-  employee_id: number
-  company_id: number
-  department_id: number
-  position_id: number
-  remark?: string | null
-  entry_at?: number | null
+  id: number;
+  employee_id: number;
+  company_id: number;
+  department_id: number;
+  position_id: number;
+  remark?: string | null;
+  entry_at?: number | null;
 }
 
 export interface InsertEmployeePosition {
-  id?: number
-  employee_id: number
-  company_id: number
-  department_id: number
-  position_id: number
-  remark?: string | null
+  id?: number;
+  employee_id: number;
+  company_id: number;
+  department_id: number;
+  position_id: number;
+  remark?: string | null;
 }
 
-const API_PREFIX = "employee"
+const API_PREFIX = "employee";
 
 /**
  * 创建或更新员工
  * @param data 员工数据
  */
-export async function createOrUpdateEmployee(data: InsertEmployee): Promise<Employee> {
+export async function createOrUpdateEmployee(
+  data: InsertEmployee
+): Promise<Employee> {
   const jsonValue = {
     id: data.id || null,
     company_id: data.company_id,
@@ -81,11 +82,13 @@ export async function createOrUpdateEmployee(data: InsertEmployee): Promise<Empl
     entry_date: data.entry_date,
     candidate_id: data.candidate_id || null,
   };
-  console.log('请求体:', JSON.stringify(jsonValue, null, 2));
-  const response = await serverAPI.post(`${API_PREFIX}/insert`, {
-    json: jsonValue
-  }).json<ApiResponse<Employee>>();
-  if (!response.data) throw new Error('No data returned');
+  console.log("请求体:", JSON.stringify(jsonValue, null, 2));
+  const response = await serverAPI
+    .post(`${API_PREFIX}/insert`, {
+      json: jsonValue,
+    })
+    .json<ApiResponse<Employee>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -98,13 +101,15 @@ export async function getEmployeeList(
   companyId: number,
   params: PageParams
 ): Promise<PageResult<Employee>> {
-  const response = await serverAPI.get(`${API_PREFIX}/list/${companyId}`, {
-    searchParams: {
-      page: params.page.toString(),
-      limit: params.limit.toString(),
-    }
-  }).json<ApiResponse<PageResult<Employee>>>();
-  if (!response.data) throw new Error('No data returned');
+  const response = await serverAPI
+    .get(`${API_PREFIX}/list/${companyId}`, {
+      searchParams: {
+        page: params.page.toString(),
+        limit: params.limit.toString(),
+      },
+    })
+    .json<ApiResponse<PageResult<Employee>>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -117,13 +122,15 @@ export async function getEmployeesByDepartment(
   departmentId: number,
   params: PageParams
 ): Promise<PageResult<Employee>> {
-  const response = await serverAPI.get(`${API_PREFIX}/list/department/${departmentId}`, {
-    searchParams: {
-      page: params.page.toString(),
-      limit: params.limit.toString(),
-    }
-  }).json<ApiResponse<PageResult<Employee>>>();
-  if (!response.data) throw new Error('No data returned');
+  const response = await serverAPI
+    .get(`${API_PREFIX}/list/department/${departmentId}`, {
+      searchParams: {
+        page: params.page.toString(),
+        limit: params.limit.toString(),
+      },
+    })
+    .json<ApiResponse<PageResult<Employee>>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -138,14 +145,16 @@ export async function searchEmployees(
   name: string,
   params: PageParams
 ): Promise<PageResult<Employee>> {
-  const response = await serverAPI.get(`${API_PREFIX}/search/${companyId}`, {
-    searchParams: {
-      name,
-      page: params.page.toString(),
-      limit: params.limit.toString(),
-    }
-  }).json<ApiResponse<PageResult<Employee>>>();
-  if (!response.data) throw new Error('No data returned');
+  const response = await serverAPI
+    .get(`${API_PREFIX}/search/${companyId}`, {
+      searchParams: {
+        name,
+        page: params.page.toString(),
+        limit: params.limit.toString(),
+      },
+    })
+    .json<ApiResponse<PageResult<Employee>>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -154,8 +163,10 @@ export async function searchEmployees(
  * @param id 员工ID
  */
 export async function getEmployeeById(id: number): Promise<Employee | null> {
-  const response = await serverAPI.get(`${API_PREFIX}/get/${id}`).json<ApiResponse<Employee | null>>();
-  if (!response.data) throw new Error('No data returned');
+  const response = await serverAPI
+    .get(`${API_PREFIX}/get/${id}`)
+    .json<ApiResponse<Employee | null>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -172,14 +183,17 @@ export async function deleteEmployee(id: number): Promise<void> {
  * @param companyId 公司ID
  * @param params 分页参数
  */
-export function useEmployees(companyId: number | undefined, params: PageParams) {
+export function useEmployees(
+  companyId: number | undefined,
+  params: PageParams
+) {
   return useSWR(
-    companyId ? ['employees', companyId, params] : null,
+    companyId ? ["employees", companyId, params] : null,
     async () => {
-      if (!companyId) return null
-      return await getEmployeeList(companyId, params)
+      if (!companyId) return null;
+      return await getEmployeeList(companyId, params);
     }
-  )
+  );
 }
 
 /**
@@ -187,14 +201,17 @@ export function useEmployees(companyId: number | undefined, params: PageParams) 
  * @param departmentId 部门ID
  * @param params 分页参数
  */
-export function useEmployeesByDepartment(departmentId: number | undefined, params: PageParams) {
+export function useEmployeesByDepartment(
+  departmentId: number | undefined,
+  params: PageParams
+) {
   return useSWR(
-    departmentId ? ['employees', 'department', departmentId, params] : null,
+    departmentId ? ["employees", "department", departmentId, params] : null,
     async () => {
-      if (!departmentId) return null
-      return await getEmployeesByDepartment(departmentId, params)
+      if (!departmentId) return null;
+      return await getEmployeesByDepartment(departmentId, params);
     }
-  )
+  );
 }
 
 /**
@@ -203,14 +220,20 @@ export function useEmployeesByDepartment(departmentId: number | undefined, param
  * @param keyword 搜索关键词
  * @param params 分页参数
  */
-export function useEmployeeSearch(companyId: number | undefined, keyword: string, params: PageParams) {
+export function useEmployeeSearch(
+  companyId: number | undefined,
+  keyword: string,
+  params: PageParams
+) {
   return useSWR(
-    companyId && keyword ? ['employees', 'search', companyId, keyword, params] : null,
+    companyId && keyword
+      ? ["employees", "search", companyId, keyword, params]
+      : null,
     async () => {
-      if (!companyId) return null
-      return await searchEmployees(companyId, keyword, params)
+      if (!companyId) return null;
+      return await searchEmployees(companyId, keyword, params);
     }
-  )
+  );
 }
 
 /**
@@ -218,31 +241,32 @@ export function useEmployeeSearch(companyId: number | undefined, keyword: string
  * @param id 员工ID
  */
 export function useEmployee(id: number | undefined) {
-  return useSWR(
-    id ? ['employee', id] : null,
-    async () => {
-      if (!id) return null
-      return await getEmployeeById(id)
-    }
-  )
+  return useSWR(id ? ["employee", id] : null, async () => {
+    if (!id) return null;
+    return await getEmployeeById(id);
+  });
 }
 
 /**
  * 为员工添加职位
  * @param data 职位关联数据
  */
-export async function addEmployeePosition(data: InsertEmployeePosition): Promise<EmployeePosition> {
-  const response = await serverAPI.post(`${API_PREFIX}/position/add`, {
-    json: {
-      id: data.id || null,
-      employee_id: data.employee_id,
-      company_id: data.company_id,
-      department_id: data.department_id,
-      position_id: data.position_id,
-      remark: data.remark || null
-    }
-  }).json<ApiResponse<EmployeePosition>>();
-  if (!response.data) throw new Error('No data returned');
+export async function addEmployeePosition(
+  data: InsertEmployeePosition
+): Promise<EmployeePosition> {
+  const response = await serverAPI
+    .post(`${API_PREFIX}/position/add`, {
+      json: {
+        id: data.id || null,
+        employee_id: data.employee_id,
+        company_id: data.company_id,
+        department_id: data.department_id,
+        position_id: data.position_id,
+        remark: data.remark || null,
+      },
+    })
+    .json<ApiResponse<EmployeePosition>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -251,17 +275,22 @@ export async function addEmployeePosition(data: InsertEmployeePosition): Promise
  * @param id 职位关联ID
  */
 export async function removeEmployeePosition(id: number): Promise<void> {
-  await serverAPI.post(`${API_PREFIX}/position/remove/${id}`).json<ApiResponse<void>>();
+  await serverAPI
+    .post(`${API_PREFIX}/position/remove/${id}`)
+    .json<ApiResponse<void>>();
 }
 
 /**
  * 获取员工的职位列表
  * @param employeeId 员工ID
  */
-export async function getEmployeePositions(employeeId: number): Promise<EmployeePosition[]> {
-  const response = await serverAPI.get(`${API_PREFIX}/position/list/${employeeId}`)
+export async function getEmployeePositions(
+  employeeId: number
+): Promise<EmployeePosition[]> {
+  const response = await serverAPI
+    .get(`${API_PREFIX}/position/list/${employeeId}`)
     .json<ApiResponse<EmployeePosition[]>>();
-  if (!response.data) throw new Error('No data returned');
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -271,7 +300,7 @@ export async function getEmployeePositions(employeeId: number): Promise<Employee
  */
 export function useEmployeePositions(employeeId: number | undefined) {
   return useSWR(
-    employeeId ? ['employee', 'positions', employeeId] : null,
+    employeeId ? ["employee", "positions", employeeId] : null,
     async () => {
       if (!employeeId) return null;
       return await getEmployeePositions(employeeId);
@@ -283,9 +312,13 @@ export function useEmployeePositions(employeeId: number | undefined) {
  * 获取员工当前职位状态
  * @param id 员工ID
  */
-export async function getEmployeeCurrentPosition(id: number): Promise<EmployeePosition | null> {
-  const response = await serverAPI.get(`${API_PREFIX}/position/${id}`).json<ApiResponse<EmployeePosition | null>>();
-  if (!response.data) throw new Error('No data returned');
+export async function getEmployeeCurrentPosition(
+  id: number
+): Promise<EmployeePosition | null> {
+  const response = await serverAPI
+    .get(`${API_PREFIX}/position/${id}`)
+    .json<ApiResponse<EmployeePosition | null>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
 }
 
@@ -293,8 +326,12 @@ export async function getEmployeeCurrentPosition(id: number): Promise<EmployeePo
  * 获取员工职位历史
  * @param id 员工ID
  */
-export async function getEmployeePositionHistory(id: number): Promise<EmployeePosition[]> {
-  const response = await serverAPI.get(`${API_PREFIX}/position/history/${id}`).json<ApiResponse<EmployeePosition[]>>();
-  if (!response.data) throw new Error('No data returned');
+export async function getEmployeePositionHistory(
+  id: number
+): Promise<EmployeePosition[]> {
+  const response = await serverAPI
+    .get(`${API_PREFIX}/position/history/${id}`)
+    .json<ApiResponse<EmployeePosition[]>>();
+  if (!response.data) throw new Error("No data returned");
   return response.data;
-} 
+}

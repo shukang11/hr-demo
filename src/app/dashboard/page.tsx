@@ -6,7 +6,6 @@ import { OverviewStats } from "./components/overview-stats"
 import { RecruitmentStats } from "./components/recruitment-stats"
 import { OrganizationStats } from "./components/organization-stats"
 import { BirthdayStats } from "./components/birthday-stats"
-import { Skeleton } from "@/components/ui/skeleton"
 
 function LoadingSkeleton() {
   return (
@@ -43,7 +42,7 @@ function RecruitmentStatsSection({ companyId }: { companyId: number }) {
   return (
     <div>
       <h2 className="text-2xl font-bold tracking-tight mb-4">招聘概况</h2>
-      <RecruitmentStats 
+      <RecruitmentStats
         candidateStatusDistribution={candidateStatusDistribution}
         monthlyInterviews={monthlyInterviews}
         conversionRate={conversionRate}

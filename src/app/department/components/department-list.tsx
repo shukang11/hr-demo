@@ -34,11 +34,11 @@ export function DepartmentList({ companyId }: DepartmentListProps) {
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null)
-  const [pageParams, setPageParams] = useState<PageParams>({
+  const [pageParams,] = useState<PageParams>({
     page: 1,
     limit: 10,
   })
-  const [total, setTotal] = useState(0)
+  const [, setTotal] = useState(0)
   const { toast } = useToast()
 
   const loadData = async () => {
