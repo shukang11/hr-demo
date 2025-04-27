@@ -6,6 +6,7 @@ from datetime import datetime
 from libs.models import CompanyInDB, AccountInDB
 
 from _schema import CompanyCreate, CompanyUpdate, CompanySchema
+from services.permission import PermissionService
 
 
 class CompanyService:
@@ -13,8 +14,12 @@ class CompanyService:
     # 表示的是当前登录的用户
     account: AccountInDB
 
+    _permission: PermissionService
+
     def __init__(self, session: Session, account: AccountInDB) -> None:
         self.session = session
+        self.account = account
+        self._permission = PermissionService(session, account)
 
     def query_company_by(
         self, company_id: Optional[int] = None, name: Optional[str] = None
@@ -29,9 +34,14 @@ class CompanyService:
             Optional[CompanyInDB]: 公司对象或None
         """
 
+        if not self._permission.can_view_company(company_id):
+            raise PermissionError("You do not have permission to view this company.")
+
         # 如果公司Id 和 name都没有传入，抛出异常
         if not company_id and not name:
-            raise ValueError("Either company_id or name must be provided.")
+            raise PermissionError(
+                "Either company_id or name must be provided to query a company."
+            )
 
         stmt = select(CompanyInDB).options(joinedload(CompanyInDB.members))
         if company_id:
@@ -50,6 +60,9 @@ class CompanyService:
         Returns:
             Optional[CompanySchema]: 公司对象或None
         """
+        if not self._permission.can_create_company():
+            raise PermissionError("You do not have permission to create a company.")
+        # 检查是否有权限创建公司
         try:
             # 创建新公司记录
             new_company = CompanyInDB(
@@ -79,8 +92,12 @@ class CompanyService:
         Returns:
             Optional[CompanySchema]: 更新后的公司对象或None
         """
+
+        if not self._permission.can_manage_company(company_id):
+            raise PermissionError("You do not have permission to manage this company.")
+
         try:
-            company = self.query_company_by_id(company_id)
+            company = self.query_company_by(company_id=company_id)
             if not company:
                 return None
 
@@ -105,8 +122,11 @@ class CompanyService:
         Returns:
             bool: 删除成功与否
         """
+        if not self._permission.can_manage_company(company_id):
+            raise PermissionError("You do not have permission to manage this company.")
+
         try:
-            company = self.query_company_by_id(company_id)
+            company = self.query_company_by(company_id=company_id)
             if not company:
                 return False
 

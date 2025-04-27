@@ -62,12 +62,16 @@ class AccountCompanyInDB(BaseModel):
     )
 
     # Relationships
-    # 定义与 AccountInDB 的多对一关系 (仍然需要，以便从关联对象访问账户)
-    # 不再需要 back_populates，因为 AccountInDB.companies 现在直接指向 CompanyInDB
-    account: Mapped["AccountInDB"] = db.relationship("AccountInDB")
-    # 定义与 CompanyInDB 的多对一关系 (仍然需要，以便从关联对象访问公司)
-    # 不再需要 back_populates，因为 CompanyInDB.accounts 现在直接指向 AccountInDB
-    company: Mapped["CompanyInDB"] = db.relationship("CompanyInDB")
+    # 定义与 AccountInDB 的多对一关系
+    # back_populates 指向 AccountInDB 模型中名为 'account_companies' 的关系属性
+    account: Mapped["AccountInDB"] = db.relationship(
+        "AccountInDB", back_populates="account_companies"
+    )
+    # 定义与 CompanyInDB 的多对一关系
+    # back_populates 指向 CompanyInDB 模型中名为 'account_companies' 的关系属性
+    company: Mapped["CompanyInDB"] = db.relationship(
+        "CompanyInDB", back_populates="account_companies"
+    )
 
     # 表级约束
     __table_args__ = (

@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 
 # 调整导入路径以匹配项目结构
-from libs.models import PositionInDB
+from libs.models import PositionInDB, AccountInDB
+from services.permission import PermissionService, PermissionError
 
 # 导入职位相关的 Pydantic 模型（用于数据验证和序列化）
 from ._schema import (
@@ -17,10 +18,15 @@ from ._schema import (
 # 定义职位服务类，封装与职位相关的数据库操作
 class PositionService:
     session: Session  # 数据库会话对象，用于执行数据库操作
+    account: AccountInDB  # 当前登录的用户对象
+
+    _permission: PermissionService  # 权限服务对象，用于权限验证
 
     # 初始化方法，接收数据库会话对象
-    def __init__(self, session: Session):  # Removed current_user
+    def __init__(self, session: Session, account: AccountInDB):  # Removed current_user
         self.session = session
+        self.account = account
+        self._permission = PermissionService(session, account)
 
     # 创建新职位的方法
     def create_position(
@@ -35,6 +41,10 @@ class PositionService:
         Returns:
             Optional[PositionSchema]: 成功创建则返回职位信息模型，失败则返回 None
         """
+
+        if not self._permission.can_manage_company(position_data.company_id):
+            raise PermissionError("您没有管理该公司的权限")
+
         # 可选：验证关联的部门是否存在
         # stmt_dep = select(DepartmentInDB).where(DepartmentInDB.id == position_data.department_id)
         # department = self.session.execute(stmt_dep).scalar_one_or_none()
@@ -77,6 +87,7 @@ class PositionService:
         Returns:
             Optional[PositionInDB]: 找到则返回职位数据库模型对象，否则返回 None
         """
+
         # 构建查询语句，选择 PositionInDB 表
         stmt = (
             select(PositionInDB)
@@ -88,27 +99,37 @@ class PositionService:
             .where(PositionInDB.id == position_id)
         )
         # 执行查询并返回单个结果，如果未找到则返回 None
-        return self.session.execute(stmt).scalar_one_or_none()
+        position = self.session.execute(stmt).scalar_one_or_none()
 
-    # 列出职位的方法，可根据公司 ID 过滤
+        # 添加权限检查
+        if position and not self._permission.can_view_company(position.company_id):
+            raise PermissionError("您没有查看该公司职位的权限")
+
+        return position
+
+    # 列出职位的方法，要求必须提供公司 ID
     def list_positions(
-        self, company_id: Optional[int] = None
+        self, company_id: int
     ) -> List[PositionSchema]:  # 返回 PositionSchema 模型列表
         """列出公司的所有职位
 
         Args:
-            company_id (Optional[int]): 公司 ID，如果为 None 则列出所有公司的职位
+            company_id (int): 公司 ID，必须提供
 
         Returns:
             List[PositionSchema]: 包含职位信息的 Pydantic 模型列表
         """
+        # 添加权限检查
+        if not self._permission.can_view_company(company_id):
+            raise PermissionError("您没有查看该公司职位的权限")
+
         # 构建基础查询语句，选择 PositionInDB 表
-        stmt = select(PositionInDB)
-        # 如果提供了 company_id，添加过滤条件
-        if company_id is not None:
-            stmt = stmt.where(PositionInDB.company_id == company_id)
-        # 按 ID 排序结果
-        stmt = stmt.order_by(PositionInDB.id)
+        stmt = (
+            select(PositionInDB)
+            .where(PositionInDB.company_id == company_id)
+            .order_by(PositionInDB.id)
+        )
+
         # 执行查询
         result = self.session.execute(stmt)
         # 获取所有查询结果（数据库模型对象）
@@ -136,6 +157,10 @@ class PositionService:
         # 如果职位不存在，返回 None
         if not position:
             return None
+
+        # 添加权限检查
+        if not self._permission.can_manage_company(position.company_id):
+            raise PermissionError("您没有管理该公司职位的权限")
 
         # 将 Pydantic 模型转换为字典，并排除未设置的字段（只更新传入的字段）
         update_data = position_data.model_dump(exclude_unset=True)
@@ -177,6 +202,10 @@ class PositionService:
         # 如果职位不存在，返回 False
         if not position:
             return False
+
+        # 添加权限检查
+        if not self._permission.can_manage_company(position.company_id):
+            raise PermissionError("您没有管理该公司职位的权限")
 
         try:
             # 在删除前检查依赖关系（例如，是否有员工属于此职位）
