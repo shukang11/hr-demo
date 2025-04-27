@@ -21,14 +21,23 @@ from .department import DepartmentInDB
 from .employee_position import EmployeePositionInDB
 from .position import PositionInDB
 from .json_value import JsonValueInDB
+from .account import AccountInDB, AccountTokenInDB
+from .account_company import AccountCompanyInDB, AccountCompanyRole
 
 __all__ = [
     "BaseModel",
     "JsonSchemaInDB",
+    "JsonValueInDB",
+    # 公司相关模型
     "CompanyInDB",
     "EmployeeInDB",
     "DepartmentInDB",
     "PositionInDB",
     "EmployeePositionInDB",
-    "JsonValueInDB",
+    # 真实账户
+    "AccountInDB",
+    "AccountTokenInDB",
+    # 公司与真实账户关联
+    "AccountCompanyInDB",
+    "AccountCompanyRole",
 ]

@@ -38,7 +38,7 @@ def init_app(app: Flask) -> None:
 
     @login_manager.unauthorized_handler
     def unauthorized() -> Response:
-        from schema.schema.http import ResponseSchema
+        from libs.schema.http import ResponseSchema
 
         return Response(
             ResponseSchema[str].from_error("未登录").model_dump_json(),

@@ -3,15 +3,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
 
-from api.libs.models import CompanyInDB
+from libs.models import CompanyInDB, AccountInDB
 
 from _schema import CompanyCreate, CompanyUpdate, CompanySchema
 
 
 class CompanyService:
     session: Session
+    # 表示的是当前登录的用户
+    account: AccountInDB
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, account: AccountInDB) -> None:
         self.session = session
 
     def query_company_by(

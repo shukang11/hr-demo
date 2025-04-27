@@ -4,6 +4,6 @@ db = SQLAlchemy()
 
 
 def init_app(app):
-    import models  # noqa: F401
+    import libs.models  # noqa: F401
 
     db.init_app(app)

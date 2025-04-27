@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 from extensions.ext_database import db
 from .base import BaseModel
 from sqlalchemy.orm import Mapped
@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from .department import DepartmentInDB
     from .employee_position import PositionInDB
     from .employee import EmployeeInDB
+    from .account import AccountInDB  # 引入 AccountInDB
 
 
 class CompanyInDB(BaseModel):
@@ -23,6 +24,7 @@ class CompanyInDB(BaseModel):
         departments (list): 公司部门列表
         positions (list): 公司职位列表
         schemas (list): 公司拥有的JSON Schema列表
+        accounts (list[AccountInDB]): 与该公司关联的账户列表 (通过 account_company 表建立的多对多关系)。
         description (str): 公司描述
     """
 
@@ -68,4 +70,13 @@ class CompanyInDB(BaseModel):
         "EmployeeInDB",
         secondary="employee_position",  # 关联表
         back_populates="companies",  # 与EmployeeInDB中的companies属性相对应
+    )
+
+    # 定义与 AccountInDB 的多对多关系，通过 account_company 表
+    # secondary 参数指定了连接（中间）表
+    # back_populates 指定了在 AccountInDB 模型中反向关联的属性名 (companies)
+    accounts: Mapped[List["AccountInDB"]] = db.relationship(
+        "AccountInDB",
+        secondary="account_company",  # 指定中间表名
+        back_populates="companies",  # 指向 AccountInDB.companies
     )
