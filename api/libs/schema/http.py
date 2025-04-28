@@ -30,7 +30,13 @@ class ResponseSchema(BaseModel, Generic[T]):
     @classmethod
     def from_error(cls, message: str, status: int = 500) -> "ResponseSchema":
         return cls(data=None, context=ResponseContext(status=status, message=message))
-    
+
+    def with_context(self, status: int = 200, message: str = "") -> "ResponseSchema":
+        self.context.status = status
+        self.context.message = message
+        return self
+
+
 def make_api_response(resp: ResponseSchema, status: Optional[int] = None) -> Response:
     resp_dict = resp.model_dump()
     if status is None:

@@ -1,12 +1,14 @@
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional
 
 from sqlalchemy.orm import Session
-from libs.helper import getmd5
-from libs.models.account import AccountInDB, AccountTokenInDB
-from ._shcema import LoginRequest, LoginResponse, UserInResponse
 from sqlalchemy import select, or_  # 导入 or_ 用于组合查询条件
 from sqlalchemy.orm import joinedload
+
+from libs.models.account import AccountInDB, AccountTokenInDB
+
+from ._schema import LoginRequest, LoginResponse, AccountSchema, AccountCreate
+from ._error import AccountLoginError
 
 
 class AccountService:
@@ -63,10 +65,9 @@ class AccountService:
         return user
 
     def _find_account_by_login_credential(
-        self, credential: str, password: str
+        self, credential: str, password_hashed: str
     ) -> Optional[AccountInDB]:
         """【私有】根据登录凭证（用户名或邮箱）和密码查找账户 (包含令牌)"""
-        hashed_password = getmd5(password)
         session = self.session
         stmt = (
             select(AccountInDB)
@@ -75,7 +76,7 @@ class AccountService:
                 or_(
                     AccountInDB.username == credential, AccountInDB.email == credential
                 ),
-                AccountInDB.password == hashed_password,
+                AccountInDB.password_hashed == password_hashed,
             )
         )
         user = session.execute(stmt).scalar_one_or_none()
@@ -83,62 +84,50 @@ class AccountService:
 
     def register_account(
         self,
-        username: str,
-        password: str,
-        email: str,
-        full_name: Optional[str] = None,
-        phone: Optional[str] = None,
-        is_admin: bool = False,
-        gender: Optional[int] = None,
-    ) -> Tuple[Optional[AccountInDB], Optional[str]]:
+        register_data: AccountCreate,
+    ) -> Optional[AccountInDB]:
         """注册新账户
 
         检查用户名和邮箱是否已被占用，如果未被占用则创建新账户。
 
         Args:
-            username (str): 新账户的用户名。
-            password (str): 新账户的原始密码。
-            email (str): 新账户的电子邮箱。
-            full_name (Optional[str]): 新账户的全名。
-            phone (Optional[str]): 新账户的手机号。
-            is_admin (bool): 新账户是否为管理员。
-            gender (Optional[int]): 新账户的性别。
+            register_data (AccountCreate): 注册请求数据模型，包含用户名、邮箱、密码等信息。
 
         Returns:
-            Tuple[Optional[AccountInDB], Optional[str]]:
-            - AccountInDB: 成功创建的账户对象；如果失败则为 None。
-            - str: 创建失败时的错误信息；如果成功则为 None。
+            Optional[AccountInDB]: 成功创建的账户对象；如果失败则为 None。
         """
         session = self.session
         # 检查用户名或邮箱是否已存在
         stmt_exists = select(AccountInDB.id).where(
-            or_(AccountInDB.username == username, AccountInDB.email == email)
+            or_(
+                AccountInDB.username == register_data.username,
+                AccountInDB.email == register_data.email,
+            )
         )
-        existing_user_id = session.execute(stmt_exists).scalar_one_or_none()
+        existing_user_id: Optional[int] = session.execute(
+            stmt_exists
+        ).scalar_one_or_none()
         if existing_user_id:
             # 可以更具体地判断是用户名还是邮箱冲突，但通常返回统一错误
-            return None, "用户名或邮箱已被注册"
+            return None
 
         account = AccountInDB(
-            username=username,
-            email=email,
-            full_name=full_name,
-            phone=phone,
-            gender=gender,
-            is_admin=is_admin,
-            is_active=True,  # 新账户默认为激活状态
-            password=getmd5(password),
+            username=register_data.username,
+            email=register_data.email,
+            password=register_data.password_hashed,
+            full_name=register_data.full_name,
+            phone=register_data.phone,
         )
 
         session.add(account)
         try:
             session.flush()  # 尝试写入数据库以捕获唯一约束等错误，并获取 ID
-            return account, None
+            return account
         except Exception as _e:
             # 捕获可能的数据库层面的错误（虽然理论上上面的检查已覆盖唯一性）
             session.rollback()  # 出错时回滚
             # log e
-            return None, "创建账户时发生错误"
+            return None
 
     def _update_account_token(self, account: AccountInDB) -> str:
         """【私有】更新或创建账户的令牌。
@@ -163,9 +152,7 @@ class AccountService:
         # self.session.flush()
         return new_token_value
 
-    def process_login(
-        self, login_data: LoginRequest
-    ) -> Tuple[Optional[LoginResponse], Optional[str], int]:
+    def process_login(self, login_data: LoginRequest) -> LoginResponse:
         """处理用户登录请求
 
         验证用户凭证，检查账户状态，更新令牌和最后登录时间，并返回登录响应或错误信息。
@@ -174,23 +161,22 @@ class AccountService:
             login_data (LoginRequest): 包含登录凭证（用户名/邮箱）和密码的请求数据模型。
 
         Returns:
-            Tuple[Optional[LoginResponse], Optional[str], int]:
-            - LoginResponse: 登录成功时，包含令牌和用户信息的响应对象；失败时为 None。
-            - str: 登录失败时的错误信息；成功时为 None。
-            - int: HTTP 状态码 (200 表示成功, 400 表示请求错误, 401 表示认证失败, 403 表示禁止访问)。
+            LoginResponse: 登录成功时，包含令牌和用户信息的响应对象；失败时会抛出异常。
         """
         credential = login_data.username or login_data.email
         if not credential:
-            return None, "用户名或邮箱不能为空", 400
+            raise AccountLoginError("用户名或邮箱不能为空")
 
         # 使用私有方法查找用户
-        user = self._find_account_by_login_credential(credential, login_data.password)
+        user = self._find_account_by_login_credential(
+            credential, login_data.password_hashed
+        )
 
         if not user:
-            return None, "用户名/邮箱或密码错误", 401
+            raise AccountLoginError(f"用户名或邮箱或密码错误: {credential}")
 
         if not user.is_active:
-            return None, "账户已被禁用", 403
+            raise AccountLoginError("账户未激活")
 
         # 登录成功，更新令牌和最后登录时间
         # 使用私有方法更新/创建令牌
@@ -201,13 +187,14 @@ class AccountService:
 
         response_data = LoginResponse(
             token=token_value,
-            user=UserInResponse(
+            user=AccountSchema(
                 id=str(user.id),
                 username=user.username,
                 email=user.email,
                 full_name=user.full_name or "",
                 is_admin=user.is_admin,
+                last_login_at=user.last_login_at,
             ),
         )
 
-        return response_data, None, 200
+        return response_data

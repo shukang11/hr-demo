@@ -1,3 +1,4 @@
+from typing import Optional
 import logging
 import os
 import sys
@@ -16,7 +17,7 @@ def init_app(app: Flask):
     if not shared_config.LOG_FILE:
         return
 
-    log_file = shared_config.LOG_FILE
+    log_file: Optional[str] = shared_config.LOG_FILE
 
     if log_file:
         log_dir = os.path.dirname(log_file)

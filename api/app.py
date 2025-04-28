@@ -6,7 +6,7 @@ from flask import Flask
 from flask_cors import CORS
 
 from configs import shared_config, AppConfig
-from extensions import ext_database, ext_login, ext_migrate
+from extensions import ext_database, ext_login, ext_migrate, ext_logging
 from extensions.ext_database import db
 
 if not shared_config.DEBUG:
@@ -19,6 +19,7 @@ os.environ["TZ"] = "UTC"
 def init_extensions(app: Flask) -> None:
     ext_database.init_app(app)
     ext_login.init_app(app)
+    ext_logging.init_app(app)
     ext_migrate.init_app(app, db)
 
 
@@ -54,12 +55,10 @@ def create_app(specific_config: Optional[AppConfig] = None) -> Flask:
 
     # app.secret_key = app.config["SECRET_KEY"]
 
-    logging.basicConfig(level=config.LOG_LEVEL)
-
     init_extensions(app)
     register_blueprints(app)
     register_commands(app)
-
+    app.logger.info("App initialized with config: %s", app.config)
     return app
 
 

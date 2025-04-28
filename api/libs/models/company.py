@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from .department import DepartmentInDB
     from .employee_position import PositionInDB
     from .employee import EmployeeInDB
+    from .account_company import AccountCompanyInDB  # 引入 AccountCompanyInDB
     from .account import AccountInDB  # 引入 AccountInDB
 
 
@@ -72,6 +73,13 @@ class CompanyInDB(BaseModel):
         back_populates="companies",  # 与EmployeeInDB中的companies属性相对应
     )
 
+    # 添加与 AccountCompanyInDB 的一对多关系
+    account_companies: Mapped[list["AccountCompanyInDB"]] = db.relationship(
+        "AccountCompanyInDB",
+        back_populates="company",  # 与 AccountCompanyInDB.company 对应
+        cascade="all, delete-orphan",
+        overlaps="accounts",  # 与 accounts 关系重叠
+    )
     # 定义与 AccountInDB 的多对多关系，通过 account_company 表
     # secondary 参数指定了连接（中间）表
     # back_populates 指定了在 AccountInDB 模型中反向关联的属性名 (companies)
@@ -79,4 +87,5 @@ class CompanyInDB(BaseModel):
         "AccountInDB",
         secondary="account_company",  # 指定中间表名
         back_populates="companies",  # 指向 AccountInDB.companies
+        overlaps="account_companies",  # 与 account_companies 关系重叠
     )

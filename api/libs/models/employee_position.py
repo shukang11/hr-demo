@@ -58,10 +58,15 @@ class EmployeePositionInDB(BaseModel):
 
     # 关联关系
     employee: Mapped["EmployeeInDB"] = db.relationship(
-        "EmployeeInDB", back_populates="positions"
+        "EmployeeInDB",
+        back_populates="positions",
+        overlaps="companies,members",  # 添加这个参数
     )
 
-    company: Mapped["CompanyInDB"] = db.relationship("CompanyInDB")
+    company: Mapped["CompanyInDB"] = db.relationship(
+        "CompanyInDB",
+        overlaps="companies,members",  # 添加这个参数
+    )
 
     department: Mapped["DepartmentInDB"] = db.relationship(
         "DepartmentInDB", back_populates="employee_positions"

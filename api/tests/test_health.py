@@ -19,7 +19,7 @@ def test_ping_get(client):
     """Test GET request to /health/ping endpoint"""
     response = client.get("/health/ping")
     assert response.status_code == 200
-    assert response.json == {"ping": "pong"}
+    assert response.json["data"] == {"ping": "pong"}
 
 
 def test_ping_response_format(client):
@@ -27,5 +27,5 @@ def test_ping_response_format(client):
     response = client.get("/health/ping")
     assert response.is_json
     assert isinstance(response.json, dict)
-    assert "ping" in response.json
-    assert response.json["ping"] == "pong"
+    assert "ping" in response.json["data"]
+    assert response.json["data"]["ping"] == "pong"

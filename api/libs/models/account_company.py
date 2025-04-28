@@ -65,12 +65,16 @@ class AccountCompanyInDB(BaseModel):
     # 定义与 AccountInDB 的多对一关系
     # back_populates 指向 AccountInDB 模型中名为 'account_companies' 的关系属性
     account: Mapped["AccountInDB"] = db.relationship(
-        "AccountInDB", back_populates="account_companies"
+        "AccountInDB",
+        back_populates="account_companies",
+        overlaps="accounts,companies",  # 添加这个参数
     )
     # 定义与 CompanyInDB 的多对一关系
     # back_populates 指向 CompanyInDB 模型中名为 'account_companies' 的关系属性
     company: Mapped["CompanyInDB"] = db.relationship(
-        "CompanyInDB", back_populates="account_companies"
+        "CompanyInDB",
+        back_populates="account_companies",
+        overlaps="accounts,companies",  # 添加这个参数
     )
 
     # 表级约束

@@ -40,7 +40,6 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
 def get_current_time() -> int:
     return int(time.time() * 1000)
 
-    
 
 def get_unix_time_tuple(date=datetime.datetime.now(), millisecond: bool = False) -> str:
     """get time tuple
@@ -96,6 +95,23 @@ def getmd5(code: str) -> Optional[str]:
     if code:
         md5string = hashlib.md5(code.encode("utf-8"))
         return md5string.hexdigest()
+    return None
+
+
+def get_sha256(code: str) -> Optional[str]:
+    """return sha256 value of incoming code
+
+    get sha256 from code
+
+    Args:
+        code: str value
+
+    Return:
+        return sha256 value of code
+    """
+    if code:
+        sha256string = hashlib.sha256(code.encode("utf-8"))
+        return sha256string.hexdigest()
     return None
 
 

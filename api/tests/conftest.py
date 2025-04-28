@@ -7,8 +7,13 @@ from sqlalchemy.orm import Session
 from configs import shared_config, AppConfig
 from app import create_app
 from extensions.ext_database import db
-from models.account import AccountInDB
-from libs.helper import getmd5
+from libs.helper import get_sha256
+from services.account import AccountService, AccountSchema, AccountCreate
+from libs.schema.http import ResponseSchema
+from tests.fixtures.account_data import TEST_USER
+
+# We should install the package in development mode instead of modifying sys.path
+# Run: pip install -e . from the api directory
 
 
 @pytest.fixture
@@ -53,23 +58,43 @@ def test_session(app: Flask) -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def test_user(client: Flask, test_session: Session) -> AccountInDB:
+def test_user(
+    client: Flask,
+    test_session: Session,
+) -> AccountSchema:
     """创建测试用户"""
 
-    user = AccountInDB(
-        username="test_user",
-        email="test@example.com",
-        password=getmd5("password123"),
-        full_name="Test User",
-        is_active=True,
-        is_admin=False,
+    service = AccountService(session=test_session)
+    test_user = TEST_USER
+    account = service._find_account_by_login_credential(
+        test_user["username"], get_sha256(test_user["password"])
     )
-    test_session.add(user)
-    test_session.commit()
-    login_data = {"username": user.username, "password": "password123"}
 
+    if not account:
+        # 如果用户不存在，创建一个新用户
+        _ = service.register_account(
+            AccountCreate(
+                username=test_user["username"],
+                email=test_user["email"],
+                password_hashed=get_sha256(test_user["password"]),
+                full_name=test_user["full_name"],
+            )
+        )
+
+    req = {
+        "username": test_user["username"],
+        "password_hashed": get_sha256(test_user["password"]),
+    }
     response = client.post(
-        "/api/auth/login", data=json.dumps(login_data), content_type="application/json"
+        "/api/auth/login",
+        json=req,
+        content_type="application/json",
     )
-    assert response.status_code == 200
-    return user
+
+    info = client.get(
+        "/api/auth/info",
+        headers={"Authorization": f"Bearer {response.json['data']['token']}"},
+    )
+
+    assert info.status_code == 200
+    return AccountSchema.model_validate(info.json["data"])

@@ -2,7 +2,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
-class UserBase(BaseModel):
+class AccountBase(BaseModel):
     """用户基础信息模型
 
     包含用户的基本属性，用作其他用户相关模型的基类。
@@ -11,27 +11,28 @@ class UserBase(BaseModel):
 
     username: str = Field(..., description="用户名，对应 AccountInDB.username")
     email: EmailStr = Field(..., description="电子邮箱，对应 AccountInDB.email")
+    phone: Optional[str] = Field(None, description="手机号码，对应 AccountInDB.phone")
     full_name: str = Field(..., description="用户全名，对应 AccountInDB.full_name")
     is_admin: bool = Field(
         default=False, description="是否是管理员，对应 AccountInDB.is_admin"
     )
 
 
-class UserCreate(UserBase):
+class AccountCreate(AccountBase):
     """用户创建模型
 
     用于创建新用户时的请求数据验证。
-    继承自 `UserBase`，并添加了密码字段。
+    继承自 `AccountBase`，并添加了密码字段。
     """
 
-    password: str = Field(
+    password_hashed: str = Field(
         ...,
         min_length=6,
-        description="用户密码，至少6个字符，对应 AccountInDB.password (创建时需要)",
+        description="用户密码[哈希值]，至少6个字符，对应 AccountInDB.password (创建时需要)",
     )
 
 
-class UserUpdate(BaseModel):
+class AccountUpdate(BaseModel):
     """用户更新模型
 
     用于更新用户信息时的请求数据验证，所有字段都是可选的。
@@ -47,19 +48,14 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(
         None, description="用户全名，对应 AccountInDB.full_name"
     )
-    password: Optional[str] = Field(
-        None,
-        min_length=6,
-        description="用户密码，至少6个字符，对应 AccountInDB.password (更新时可选)",
-    )
     # 注意：is_admin 通常不应通过此接口更新，需要单独的权限管理接口
 
 
-class UserInResponse(UserBase):
+class AccountSchema(AccountBase):
     """用户响应模型
 
     用于序列化返回给客户端的用户信息，不包含敏感信息（如密码）。
-    继承自 `UserBase`，并添加了用户 ID。
+    继承自 `AccountBase`，并添加了用户 ID。
     """
 
     id: str = Field(
@@ -78,8 +74,10 @@ class LoginRequest(BaseModel):
     email: Optional[EmailStr] = Field(
         None, description="电子邮箱，与用户名至少提供一个"
     )
-    password: str = Field(
-        ..., min_length=6, description="密码，对应 AccountInDB.password (需要验证)"
+    password_hashed: str = Field(
+        ...,
+        min_length=6,
+        description="密码（已哈希 sha256），对应 AccountInDB.password (需要验证)",
     )
 
     @model_validator(mode="before")
@@ -100,4 +98,3 @@ class LoginResponse(BaseModel):
     """
 
     token: str = Field(..., description="用户认证令牌，对应 AccountTokenInDB.token")
-    user: UserInResponse = Field(..., description="用户信息，使用 UserInResponse 模型")

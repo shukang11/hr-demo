@@ -9,6 +9,7 @@ from .json_schema import JsonSchemaInDB
 if TYPE_CHECKING:
     from .department import DepartmentInDB
     from .employee_position import EmployeePositionInDB
+    from .company import CompanyInDB
 
 
 class EmployeeInDB(BaseModel):
@@ -81,8 +82,17 @@ class EmployeeInDB(BaseModel):
     positions: Mapped[list["EmployeePositionInDB"]] = db.relationship(
         "EmployeePositionInDB",
         back_populates="employee",  # 与EmployeePositionInDB中的employee属性相对应
+        overlaps="members",  # 添加这个参数
     )
     led_departments: Mapped[list["DepartmentInDB"]] = db.relationship(
         "DepartmentInDB",
         back_populates="leader",  # 与DepartmentInDB中的leader属性相对应
+    )
+
+    # 添加缺失的多对多关系定义
+    companies: Mapped[list["CompanyInDB"]] = db.relationship(
+        "CompanyInDB",
+        secondary="employee_position",  # 指定中间表
+        back_populates="members",  # 与CompanyInDB.members对应
+        overlaps="positions",  # 添加这个参数
     )

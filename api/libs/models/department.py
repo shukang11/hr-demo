@@ -58,12 +58,6 @@ class DepartmentInDB(BaseModel):
         comment="备注信息",
     )
 
-    # 关系定义
-    parent: Mapped[Optional["DepartmentInDB"]] = db.relationship(
-        "DepartmentInDB",
-        remote_side=[id],  # 指定远程侧为id，用于自引用关系
-        backref="children",  # 反向引用为children，表示子部门列表
-    )
     company: Mapped["CompanyInDB"] = db.relationship(
         "CompanyInDB",
         back_populates="departments",  # 与CompanyInDB中的departments属性相对应

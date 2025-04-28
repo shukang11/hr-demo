@@ -15,7 +15,6 @@ dependencies = [
     "gunicorn>=22.0.0",
     "gevent>=24.2.1",
     "flask-cors>=5.0.0",
-    "flask-pydantic>=0.12.0",
     "pydantic-settings>=2.6.1",
     "flask-compress>=1.17",
     "pytz>=2024.2",
@@ -27,6 +26,9 @@ dev = ["pytest-mock>=3.14.0", "pytest>=8.3.4", "yapf>=0.43.0"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
+
+[tool.setuptools]
+packages = ["libs", "routes", "configs", "services", "extensions"]
 
 [[tool.uv.index]]
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"

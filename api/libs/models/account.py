@@ -18,8 +18,8 @@ from libs.helper import getmd5
 if TYPE_CHECKING:
     # 引入 AccountCompanyInDB 用于类型提示，避免循环导入
     from .company import CompanyInDB
-    # 不再需要直接从 Account 访问 AccountCompanyInDB 列表，但 AccountCompanyInDB 内部仍需引用 AccountInDB
-    # from .account_company import AccountCompanyInDB
+
+    from .account_company import AccountCompanyInDB
 
 
 class AccountInDB(BaseModel, UserMixin):
@@ -60,7 +60,9 @@ class AccountInDB(BaseModel, UserMixin):
         nullable=True,  # 允许为空，性别是可选的
         comment="性别，0-未知，1-男，2-女",
     )
-    password: Mapped[str] = Column(String(255), nullable=False, comment="密码哈希值")
+    password_hashed: Mapped[str] = Column(
+        String(255), nullable=False, comment="密码哈希值"
+    )
     full_name: Mapped[Optional[str]] = Column(
         String(255), nullable=True, comment="用户全名"
     )
@@ -91,6 +93,14 @@ class AccountInDB(BaseModel, UserMixin):
         back_populates="account",
         cascade="all, delete-orphan",
     )
+
+    # 添加与AccountCompanyInDB的关系
+    account_companies: Mapped[list["AccountCompanyInDB"]] = db.relationship(
+        "AccountCompanyInDB",
+        back_populates="account",
+        cascade="all, delete-orphan",
+        overlaps="companies",  # 添加这个参数
+    )
     # 定义与 CompanyInDB 的多对多关系，通过 account_company 表
     # secondary 参数指定了连接（中间）表
     # back_populates 指定了在 CompanyInDB 模型中反向关联的属性名 (accounts)
@@ -99,7 +109,42 @@ class AccountInDB(BaseModel, UserMixin):
         secondary="account_company",  # 指定中间表名
         back_populates="accounts",  # 指向 CompanyInDB.accounts
         cascade="all, delete",  # 根据需要调整级联操作，通常不需要 delete-orphan
+        overlaps="account_companies",  # 添加这个参数
     )
+
+    def __init__(
+        self,
+        username: str,
+        email: str,
+        password: str,
+        full_name: Optional[str] = None,
+        phone: Optional[str] = None,
+        gender: Optional[int] = None,
+        is_active: Optional[bool] = True,
+        is_admin: Optional[bool] = False,
+        last_login_at: Optional[datetime] = None,
+    ) -> None:
+        """初始化账户对象
+
+        Args:
+            username (str): 用户名，唯一且不为空。
+            email (str): 电子邮箱，唯一且不为空。
+            password (str): 密码，未加密的明文密码。
+            full_name (Optional[str]): 用户全名或昵称，可选。
+            phone (Optional[str]): 手机号码，可选。
+
+        """
+        super().__init__()
+        self.username = username
+        self.email = email
+        self.password_hashed = password
+        self.full_name = full_name
+        self.phone = phone
+        self.gender = gender
+        self.is_active = is_active
+        self.is_admin = is_admin
+        self.last_login_at = last_login_at
+        self.token = None
 
     def make_new_token_value(self, salt: str) -> str:
         """生成一个新的、唯一的令牌字符串值。

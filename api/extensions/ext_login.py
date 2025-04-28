@@ -1,4 +1,3 @@
-import json
 from typing import Optional
 
 from flask import Flask, Request, Response
@@ -10,7 +9,7 @@ login_manager = LoginManager()
 def init_app(app: Flask) -> None:
     login_manager.init_app(app)
 
-    from managers.account_manager import AccountService
+    from services.account import AccountService
 
     @login_manager.request_loader
     def load_user_from_request(request: Request):
