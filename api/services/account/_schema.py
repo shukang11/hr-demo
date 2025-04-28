@@ -58,7 +58,7 @@ class AccountSchema(AccountBase):
     继承自 `AccountBase`，并添加了用户 ID。
     """
 
-    id: str = Field(
+    id: str | int = Field(
         ..., description="用户唯一标识符，对应 AccountInDB.id (通常转为字符串)"
     )
 

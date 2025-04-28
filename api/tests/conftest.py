@@ -61,13 +61,14 @@ def test_session(app: Flask) -> Generator[Session, None, None]:
 def test_user(
     client: Flask,
     test_session: Session,
-) -> AccountSchema:
+) -> dict:
     """创建测试用户"""
 
     service = AccountService(session=test_session)
     test_user = TEST_USER
+    hashed_password = get_sha256(test_user["password"])
     account = service._find_account_by_login_credential(
-        test_user["username"], get_sha256(test_user["password"])
+        test_user["username"], hashed_password
     )
 
     if not account:
@@ -76,14 +77,14 @@ def test_user(
             AccountCreate(
                 username=test_user["username"],
                 email=test_user["email"],
-                password_hashed=get_sha256(test_user["password"]),
+                password_hashed=hashed_password,
                 full_name=test_user["full_name"],
             )
         )
 
     req = {
         "username": test_user["username"],
-        "password_hashed": get_sha256(test_user["password"]),
+        "password_hashed": hashed_password,
     }
     response = client.post(
         "/api/auth/login",
@@ -91,10 +92,16 @@ def test_user(
         content_type="application/json",
     )
 
+    token = response.json["data"]["token"]
+
     info = client.get(
         "/api/auth/info",
-        headers={"Authorization": f"Bearer {response.json['data']['token']}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert info.status_code == 200
-    return AccountSchema.model_validate(info.json["data"])
+    # 测试用户，合并 token 信息
+    return TEST_USER | {
+        "token": token,
+        "password_hashed": hashed_password,
+    }

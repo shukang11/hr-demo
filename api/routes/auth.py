@@ -10,6 +10,7 @@ from services.account import (
     AccountSchema,
     AccountLoginError,
 )
+from libs.models.account import AccountInDB
 
 # 创建认证相关的蓝图
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -40,17 +41,18 @@ def login() -> Response:
                 data=response_data,
             )
         )
-    except ValidationError as e:
+    except ValidationError as _e:
         return make_api_response(
             ResponseSchema[LoginResponse].from_error(
-                message=f"无效的请求数据: {e}", status=400
-            )
+                message="无效的请求数据", status=400
+            ),
+            400,  # 确保HTTP状态码也设置为400
         )
     except AccountLoginError as e:
         current_app.logger.error(f"Login failed: {e}")
         return make_api_response(
             ResponseSchema[LoginResponse].from_error(message=str(e), status=401),
-            400,
+            401,  # 修正状态码为401，与message保持一致
         )
     except ValueError as e:
         current_app.logger.error(f"Invalid login data: {e}")
@@ -92,8 +94,17 @@ def info() -> Response:
             ResponseSchema[None].from_error(message="未登录", status=401)
         )
 
-    # 获取当前用户信息
-    account = AccountSchema.model_validate(current_user)
+    # 获取当前用户信息 - 从LocalProxy转为实际的对象
+    user: AccountInDB = current_user._get_current_object()
+
+    # 创建AccountSchema实例而不是使用model_validate
+    account = AccountSchema(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        phone=user.phone,
+        full_name=user.full_name,
+    )
 
     return make_api_response(
         ResponseSchema[AccountSchema](data=account),
