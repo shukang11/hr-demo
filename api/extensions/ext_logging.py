@@ -14,11 +14,8 @@ def init_app(app: Flask):
 
     log_handlers = []
 
-    if not shared_config.LOG_FILE:
-        return
-
+    # 如果设置了日志文件，添加文件处理器
     log_file: Optional[str] = shared_config.LOG_FILE
-
     if log_file:
         log_dir = os.path.dirname(log_file)
         os.makedirs(log_dir, exist_ok=True)
@@ -30,7 +27,7 @@ def init_app(app: Flask):
             )
         )
 
-    # Always add StreamHandler to log to console
+    # 总是添加控制台处理器，不再依赖于LOG_FILE的存在
     log_handlers.append(logging.StreamHandler(sys.stdout))
 
     logging.basicConfig(

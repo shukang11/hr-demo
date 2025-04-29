@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+import logging
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, or_  # 导入 or_ 用于组合查询条件
@@ -9,6 +10,9 @@ from libs.models.account import AccountInDB, AccountTokenInDB
 
 from ._schema import LoginRequest, LoginResponse, AccountSchema, AccountCreate
 from ._error import AccountLoginError
+
+# 获取日志记录器
+logger = logging.getLogger(__name__)
 
 
 class AccountService:
@@ -55,9 +59,11 @@ class AccountService:
             Optional[AccountInDB]: 找到的账户数据库模型对象 (预加载 token)，如果未找到则返回 None。
         """
         session = self.session
+        
+        # 修复查询语句，使用单次连接和正确的条件
         stmt = (
             select(AccountInDB)
-            .join(AccountInDB.token)
+            .join(AccountInDB.token)  # 只使用一次连接
             .options(joinedload(AccountInDB.token))
             .where(AccountTokenInDB.token == token)
         )

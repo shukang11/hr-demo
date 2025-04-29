@@ -121,3 +121,6 @@ class LoginResponse(BaseModel):
     """
 
     token: str = Field(..., description="用户认证令牌，对应 AccountTokenInDB.token")
+    user: AccountSchema = Field(
+        ..., description="用户信息，包含用户的基本属性和ID"
+    )

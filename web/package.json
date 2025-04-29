@@ -10,7 +10,6 @@
     "preview": "vite preview",
     "tauri": "tauri"
   },
-  "proxy": "http://localhost:5001",
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-alert-dialog": "^1.1.4",

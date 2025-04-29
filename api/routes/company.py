@@ -85,7 +85,7 @@ def insert_company() -> Response:
         )
 
 
-@bp.route("/list", methods=["GET"])
+@bp.route("/list/", methods=["GET"])
 @login_required
 def get_company_list() -> Response:
     """获取公司列表

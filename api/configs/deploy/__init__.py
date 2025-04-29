@@ -1,6 +1,6 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
+from libs.helper import get_sha256
 
 class DeploymentConfig(BaseSettings):
     """
@@ -19,4 +19,9 @@ class DeploymentConfig(BaseSettings):
 
     TESTING: bool = Field(
         description="Enable testing mode for running automated tests", default=False
+    )
+
+    SECRET_KEY: str = Field(
+        description="Secret key for signing cookies and other cryptographic operations",
+        default_factory=lambda: get_sha256("random_secret_key"),
     )

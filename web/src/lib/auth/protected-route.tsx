@@ -11,11 +11,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     const { isAuthenticated, loading, checkAuth } = useAuth();
     const location = useLocation();
 
+    // 修复：只在初次加载和非认证状态下检查认证，避免无限循环
     useEffect(() => {
+        // 只有当用户未认证且不在加载状态时，才检查认证状态
         if (!isAuthenticated && !loading) {
-            checkAuth();
+            // 使用立即执行的异步函数包装checkAuth调用
+            const verifyAuth = async () => {
+                await checkAuth();
+            };
+            verifyAuth();
         }
-    }, [isAuthenticated, checkAuth, loading]);
+    }, [/* 移除依赖项，只在组件挂载时执行一次 */]);
 
     if (loading) {
         return (

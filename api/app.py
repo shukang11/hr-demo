@@ -1,8 +1,7 @@
-import logging
 import os
 from typing import Optional
 
-from flask import Flask
+from flask import Flask, make_response, request
 from flask_cors import CORS
 
 from configs import shared_config, AppConfig
@@ -40,25 +39,37 @@ def create_app(specific_config: Optional[AppConfig] = None) -> Flask:
     app = Flask(__name__)
     config = specific_config or shared_config
 
+    # 增强 CORS 配置，解决预检请求问题
     CORS(
         app,
-        resources={
-            r"/*": {
-                "origins": "*",
-                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                "allow_headers": ["Content-Type", "Authorization"],
-            }
-        },
+        origins=["http://localhost:1420", "http://127.0.0.1:1420"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        supports_credentials=True,
     )
 
-    app.config.from_object(config)
+    # 添加全局 OPTIONS 请求处理器
+    # @app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+    # @app.route('/<path:path>', methods=['OPTIONS'])
+    # def handle_options(path):
+    #     response = make_response()
+    #     response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+    #     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+    #     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    #     response.headers.add('Access-Control-Allow-Credentials', 'true')
+    #     response.headers.add('Access-Control-Max-Age', '3600')
+    #     return response
 
-    # app.secret_key = app.config["SECRET_KEY"]
+    app.config.from_object(config)
+    
+    # 设置 secret_key，这对于会话功能是必需的
+    # 如果配置中已有密钥，则使用配置中的，否则生成一个随机密钥
+    if not app.secret_key:
+        app.secret_key = config.SECRET_KEY
 
     init_extensions(app)
     register_blueprints(app)
     register_commands(app)
-    app.logger.info("App initialized with config: %s", app.config)
     return app
 
 
@@ -70,4 +81,5 @@ if app.config["TESTING"]:
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
+    # 修改端口为 5001
+    app.run(host="0.0.0.0", port=5001, debug=True)

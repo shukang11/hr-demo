@@ -1,5 +1,5 @@
 from flask import Blueprint, Response, current_app, request
-from flask_login import login_user, login_required, current_user
+from flask_login import login_user, login_required, current_user, logout_user
 from pydantic import ValidationError
 from libs.schema.http import ResponseSchema, make_api_response
 from extensions.ext_database import db
@@ -30,18 +30,32 @@ def login() -> Response:
     try:
         parameters: LoginRequest = LoginRequest.model_validate(request.json)
         service = AccountService(session=db.session)
+        
+        # 日志记录请求内容，帮助调试
+        current_app.logger.info(f"Login request: username/email={parameters.username or parameters.email}")
+        
         response_data: LoginResponse = service.process_login(parameters)
-
+        
+        # 关键修复：确保事务提交，将令牌保存到数据库
+        db.session.commit()
+        
         # 在Flask-Login中记录用户登录状态
         user = service.find_account_by_token(response_data.token)
+        
         if user:
+            current_app.logger.info(f"User found with token, logging in: user_id={user.id}, username={user.username}")
             login_user(user)  # 确保这里调用了 login_user
+        else:
+            # 这不应该发生，因为我们刚刚生成了令牌
+            current_app.logger.error(f"User not found with newly generated token: {response_data.token}")
+            
         return make_api_response(
             ResponseSchema[LoginResponse](
                 data=response_data,
             )
         )
-    except ValidationError as _e:
+    except ValidationError as e:
+        current_app.logger.error(f"Invalid request data, req: {request.json} {e}")
         return make_api_response(
             ResponseSchema[LoginResponse].from_error(
                 message="无效的请求数据", status=400
@@ -73,8 +87,6 @@ def logout() -> Response:
         Response: 包含登出响应数据的JSON响应和HTTP状态码
     """
     # 清除用户登录状态
-    from flask_login import logout_user
-
     logout_user()
 
     return make_api_response(ResponseSchema[None](data=None))
@@ -97,7 +109,6 @@ def info() -> Response:
     # 获取当前用户信息 - 从LocalProxy转为实际的对象
     user: AccountInDB = current_user._get_current_object()
 
-    print(f"当前用户: {user}")
     # 创建AccountSchema实例而不是使用model_validate
     account = AccountSchema.from_entity(user)
 

@@ -1,6 +1,7 @@
 import { User, AuthState } from "../types";
 import { createContext, useContext, useEffect, useState } from "react";
-import { AuthApi, clearToken, getToken, setToken } from "../api/client";
+import { clearToken, getToken, setToken } from "../api/client";
+import { AuthApi } from "../api/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     localStorage.removeItem(REMEMBER_ME_KEY);
                 }
 
+                // 首先更新状态，设置 isAuthenticated 为 true
                 setState({
                     isAuthenticated: true,
                     user,
@@ -54,11 +56,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     error: null,
                 });
 
-                navigate('/dashboard');
+                // 显示成功提示
                 toast({
                     title: "登录成功",
                     description: `欢迎回来，${user.username}！`,
                 });
+
+                // 使用 setTimeout 避免立即导航引起的渲染冲突
+                setTimeout(() => {
+                    // 获取之前保存的路径或默认导航到 dashboard
+                    navigate('/dashboard');
+                }, 0);
             }
         } catch (error: any) {
             setState(prev => ({
@@ -98,7 +106,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 error: null,
             });
 
-            navigate('/login');
+            // 同样使用 setTimeout 延迟导航
+            setTimeout(() => {
+                navigate('/login');
+            }, 0);
         }
     };
 

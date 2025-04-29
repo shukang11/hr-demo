@@ -1,8 +1,7 @@
 import ky from "ky";
-import MD5 from "crypto-js/md5";
 
 // API基础配置
-const API_BASE_URL = "http://localhost:5000/";
+const API_BASE_URL = "http://localhost:5001/api/"; // 调整为后端实际运行的端口 5001
 const TOKEN_KEY = "hr_auth_token";
 
 // API响应接口
@@ -49,6 +48,7 @@ export const serverAPI = ky.create({
       (request) => {
         // 添加认证令牌到请求头
         const token = getToken();
+        console.log(`接口: ${request.url} 添加认证信息: ${token}`);
         if (token) {
           request.headers.set("Authorization", `Bearer ${token}`);
         }
@@ -114,45 +114,3 @@ export const serverAPI = ky.create({
   },
   retry: 0,
 });
-
-// 认证相关 API
-export class AuthApi {
-  static async login(username: string, password_hashed: string) {
-    const response = await serverAPI
-      .post("auth/login", {
-        json: { username, password_hashed },
-      })
-      .json<ApiResponse<{ token: string; user: any }>>();
-
-    if (response.data?.token) {
-      setToken(response.data.token);
-    }
-
-    return response;
-  }
-
-  static async logout() {
-    try {
-      await serverAPI.post("auth/logout").json();
-    } finally {
-      clearToken();
-    }
-  }
-
-  static async getUserInfo() {
-    return await serverAPI.get("auth/info").json<ApiResponse<any>>();
-  }
-
-  static async isAuthenticated(): Promise<boolean> {
-    const token = getToken();
-    if (!token) return false;
-
-    try {
-      await this.getUserInfo();
-      return true;
-    } catch (error) {
-      clearToken();
-      return false;
-    }
-  }
-}
