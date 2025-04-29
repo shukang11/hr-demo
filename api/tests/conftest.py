@@ -78,7 +78,6 @@ def test_user(
                 username=test_user["username"],
                 email=test_user["email"],
                 password_hashed=hashed_password,
-                full_name=test_user["full_name"],
             )
         )
 

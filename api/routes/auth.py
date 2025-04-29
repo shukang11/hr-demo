@@ -97,14 +97,9 @@ def info() -> Response:
     # 获取当前用户信息 - 从LocalProxy转为实际的对象
     user: AccountInDB = current_user._get_current_object()
 
+    print(f"当前用户: {user}")
     # 创建AccountSchema实例而不是使用model_validate
-    account = AccountSchema(
-        id=user.id,
-        username=user.username,
-        email=user.email,
-        phone=user.phone,
-        full_name=user.full_name,
-    )
+    account = AccountSchema.from_entity(user)
 
     return make_api_response(
         ResponseSchema[AccountSchema](data=account),

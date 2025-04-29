@@ -41,14 +41,7 @@ class PermissionService:
         Returns:
             bool: 如果用户有权限则返回 True，否则返回 False。
         """
-        # 1. 检查是否为全局管理员
-        if self.account.is_admin:
-            log.debug(
-                f"User '{self.account.username}' (Admin) has permission for company {company_id}."
-            )
-            return True
-
-        # 2. 检查用户是否是该公司的所有者或管理员
+        # 检查用户是否是该公司的所有者或管理员
         stmt = select(
             exists().where(
                 AccountCompanyInDB.account_id == self.account.id,
@@ -74,7 +67,7 @@ class PermissionService:
     def can_view_company(self, company_id: int) -> bool:
         """
         检查当前用户是否有权查看指定的公司。
-        管理员、公司所有者、公司管理员以及公司普通成员都可以查看公司。
+        公司所有者、公司管理员以及公司普通成员都可以查看公司。
 
         Args:
             company_id (int): 目标公司的 ID。
@@ -82,14 +75,7 @@ class PermissionService:
         Returns:
             bool: 如果用户有权限则返回 True，否则返回 False。
         """
-        # 1. 检查是否为全局管理员
-        if self.account.is_admin:
-            log.debug(
-                f"User '{self.account.username}' (Admin) can view company {company_id}."
-            )
-            return True
-
-        # 2. 检查用户是否与该公司有关联（任何角色）
+        # 检查用户是否与该公司有关联（任何角色）
         stmt = select(
             exists().where(
                 AccountCompanyInDB.account_id == self.account.id,
@@ -107,4 +93,20 @@ class PermissionService:
         log.info(
             f"User '{self.account.username}' lacks permission to view company {company_id}."
         )
+        return False
+        
+    def can_create_company(self) -> bool:
+        """
+        检查当前用户是否有权创建新的公司。
+        所有激活状态的用户都可以创建公司。
+
+        Returns:
+            bool: 如果用户有权限则返回 True，否则返回 False。
+        """
+        # 检查用户是否处于激活状态
+        if self.account.is_active:
+            log.debug(f"User '{self.account.username}' can create a company.")
+            return True
+
+        log.warning(f"User '{self.account.username}' is inactive and cannot create a company.")
         return False

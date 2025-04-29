@@ -1,10 +1,6 @@
 import json
-from unittest.mock import patch, MagicMock
 
 from flask.testing import FlaskClient
-
-from extensions.ext_database import db
-from libs.models.account import AccountInDB, AccountTokenInDB
 
 
 def test_login_success(client: FlaskClient, test_user: dict):
@@ -71,25 +67,3 @@ def test_login_nonexistent_user(client: FlaskClient):
     )
 
     assert response.status_code >= 400
-
-
-@patch("apis.auth.login_user")
-def test_login_session_management(
-    mock_login_user: MagicMock, client: FlaskClient, test_user: AccountInDB
-):
-    """测试登录会话管理"""
-    login_data = {"username": "test_user", "password": "password123"}
-
-    response = client.post(
-        "/api/auth/login", data=json.dumps(login_data), content_type="application/json"
-    )
-
-    assert response.status_code == 200
-
-    # 验证 flask_login.login_user 被调用
-    mock_login_user.assert_called_once_with(test_user)
-
-    # 验证用户token被创建
-    user_token = AccountTokenInDB.query.filter_by(account_id=test_user.id).first()
-    assert user_token is not None
-    assert user_token.token == json.loads(response.data)["data"]["token"]

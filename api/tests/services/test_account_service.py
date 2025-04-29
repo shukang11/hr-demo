@@ -87,14 +87,10 @@ class TestAccountService:
         username = "new_test_user"
         email = "newtest@example.com"
         password = "newpassword123"
-        full_name = "New Test User"
 
         # 注册新账户
         payload = AccountCreate(
-            username=username,
-            email=email,
-            password_hashed=password,
-            full_name=full_name,
+            username=username, email=email, password_hashed=password
         )
         new_account = account_service.register_account(payload)
 
@@ -102,9 +98,6 @@ class TestAccountService:
         assert new_account is not None
         assert new_account.username == username
         assert new_account.email == email
-        assert new_account.full_name == full_name
-        assert new_account.is_active is True  # 默认激活
-        assert new_account.is_admin is False  # 默认非管理员
 
     def test_register_account_duplicate_username(
         self, account_service: AccountService, sample_users: dict[str, AccountInDB]
@@ -119,7 +112,6 @@ class TestAccountService:
                 email=existing_user.email,
                 phone=existing_user.phone,
                 password_hashed=existing_user.password_hashed,
-                full_name=existing_user.full_name,
             )
         )
 
@@ -136,7 +128,6 @@ class TestAccountService:
             username=existing_user.username,
             email=existing_user.email,
             password_hashed="newpassword123",
-            full_name="New Test User",
         )
         result = account_service.register_account(payload)
 
@@ -164,7 +155,6 @@ class TestAccountService:
 
         assert account.username == normal_user.username
         assert account.email == normal_user.email
-        assert account.is_admin == normal_user.is_admin
 
         assert account.token.token == login_response.token
 

@@ -1,11 +1,12 @@
-from typing import Optional
-from sqlalchemy import select
+from typing import Optional, List, Dict, Any, Tuple
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
 
-from libs.models import CompanyInDB, AccountInDB
+from libs.models import CompanyInDB, AccountInDB, AccountCompanyInDB
+from libs.models.account_company import AccountCompanyRole
 
-from _schema import CompanyCreate, CompanyUpdate, CompanySchema
+from ._schema import CompanyCreate, CompanyUpdate, CompanySchema
 from services.permission import PermissionService
 
 
@@ -51,6 +52,122 @@ class CompanyService:
 
         return self.session.execute(stmt).scalar_one_or_none()
 
+    def is_company_owner(self, account_id: int, company_id: Optional[int] = None) -> bool:
+        """检查用户是否是公司的所有者
+        
+        Args:
+            account_id: 用户ID
+            company_id: 公司ID，如果为None则检查用户是否是任何公司的所有者
+            
+        Returns:
+            bool: 是否是公司所有者
+        """
+        stmt = select(AccountCompanyInDB).where(
+            AccountCompanyInDB.account_id == account_id,
+            AccountCompanyInDB.role == AccountCompanyRole.OWNER
+        )
+        if company_id:
+            stmt = stmt.where(AccountCompanyInDB.company_id == company_id)
+        
+        result = self.session.execute(stmt).first()
+        return result is not None
+
+    def get_companies_paginated(
+        self, page: int = 1, limit: int = 10
+    ) -> Tuple[List[CompanySchema], int]:
+        """获取分页的公司列表
+
+        只返回当前用户有权限查看的公司
+
+        Args:
+            page: 页码，从1开始
+            limit: 每页显示数量
+
+        Returns:
+            Tuple[List[CompanySchema], int]: 公司列表和总数
+        """
+        # 检查用户是否是任何公司的所有者
+        is_owner = self.is_company_owner(self.account.id)
+        
+        # 如果是公司所有者，查询与用户关联的公司
+        # 普通用户只能查看自己有关联的公司
+        stmt = (
+            select(CompanyInDB)
+            .join(AccountCompanyInDB, CompanyInDB.id == AccountCompanyInDB.company_id)
+            .where(AccountCompanyInDB.account_id == self.account.id)
+        )
+        count_stmt = (
+            select(func.count())
+            .select_from(CompanyInDB)
+            .join(AccountCompanyInDB, CompanyInDB.id == AccountCompanyInDB.company_id)
+            .where(AccountCompanyInDB.account_id == self.account.id)
+        )
+
+        # 计算总数
+        total = self.session.execute(count_stmt).scalar() or 0
+
+        # 分页查询
+        stmt = stmt.offset((page - 1) * limit).limit(limit)
+        
+        # 执行查询
+        companies = self.session.execute(stmt).scalars().all()
+        
+        # 转换为API响应模型
+        result = [CompanySchema.model_validate(c) for c in companies]
+        
+        return result, total
+
+    def search_companies_by_name(
+        self, name: str, page: int = 1, limit: int = 10
+    ) -> Tuple[List[CompanySchema], int]:
+        """按名称搜索公司，支持分页
+
+        只返回当前用户有权限查看的公司
+
+        Args:
+            name: 公司名称（模糊匹配）
+            page: 页码，从1开始
+            limit: 每页显示数量
+
+        Returns:
+            Tuple[List[CompanySchema], int]: 匹配的公司列表和总数
+        """
+        # 构建模糊搜索条件
+        search_pattern = f"%{name}%"
+        
+        # 普通用户只能查看自己有关联的公司
+        stmt = (
+            select(CompanyInDB)
+            .join(AccountCompanyInDB, CompanyInDB.id == AccountCompanyInDB.company_id)
+            .where(
+                AccountCompanyInDB.account_id == self.account.id,
+                CompanyInDB.name.like(search_pattern)
+            )
+        )
+        count_stmt = (
+            select(func.count())
+            .select_from(CompanyInDB)
+            .join(AccountCompanyInDB, CompanyInDB.id == AccountCompanyInDB.company_id)
+            .where(
+                AccountCompanyInDB.account_id == self.account.id,
+                CompanyInDB.name.like(search_pattern)
+            )
+        )
+
+        # 计算总数
+        total = self.session.execute(count_stmt).scalar() or 0
+
+        # 分页查询
+        stmt = stmt.offset((page - 1) * limit).limit(limit)
+        
+        # 执行查询
+        companies = self.session.execute(stmt).scalars().all()
+        
+        # 转换为API响应模型
+        result = [CompanySchema.model_validate(c) for c in companies]
+        
+        return result, total
+
     def insert_company(self, company_data: CompanyCreate) -> Optional[CompanySchema]:
         """创建新公司
 
@@ -74,6 +191,16 @@ class CompanyService:
                 updated_at=datetime.now(datetime.timezone.utc),
             )
             self.session.add(new_company)
+            self.session.flush()  # 获取ID
+
+            # 为当前用户添加与新公司的关联，设置为公司拥有者
+            company_relation = AccountCompanyInDB(
+                account_id=self.account.id,
+                company_id=new_company.id,
+                role=AccountCompanyRole.OWNER,
+            )
+            self.session.add(company_relation)
+            
             self.session.commit()
             return CompanySchema.model_validate(new_company)
         except Exception as _e:
@@ -102,10 +229,16 @@ class CompanyService:
                 return None
 
             # 更新公司信息
-            company.name = company_data.name
-            company.extra_value = company_data.extra_value
-            company.extra_schema_id = company_data.extra_schema_id
-            company.description = company_data.description
+            if company_data.name is not None:
+                company.name = company_data.name
+            if company_data.extra_value is not None:
+                company.extra_value = company_data.extra_value
+            if company_data.extra_schema_id is not None:
+                company.extra_schema_id = company_data.extra_schema_id
+            if company_data.description is not None:
+                company.description = company_data.description
+                
+            company.updated_at = datetime.now(datetime.timezone.utc)
 
             self.session.commit()
             return CompanySchema.model_validate(company)

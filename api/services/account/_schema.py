@@ -1,5 +1,20 @@
+from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, model_validator
+from libs.models import AccountInDB
+
+
+class Gender(int, Enum):
+    """性别枚举类
+
+    定义了用户的性别选项。
+    """
+
+    UNKNOWN = 0
+    # 男性
+    FEMALE = 1
+    # 女性
+    MALE = 2
 
 
 class AccountBase(BaseModel):
@@ -12,9 +27,10 @@ class AccountBase(BaseModel):
     username: str = Field(..., description="用户名，对应 AccountInDB.username")
     email: EmailStr = Field(..., description="电子邮箱，对应 AccountInDB.email")
     phone: Optional[str] = Field(None, description="手机号码，对应 AccountInDB.phone")
-    full_name: str = Field(..., description="用户全名，对应 AccountInDB.full_name")
-    is_admin: bool = Field(
-        default=False, description="是否是管理员，对应 AccountInDB.is_admin"
+    gender: Gender = Field(
+        ...,
+        default_factory=lambda: Gender.UNKNOWN,
+        description="用户性别，对应 AccountInDB.gender",
     )
 
 
@@ -45,10 +61,6 @@ class AccountUpdate(BaseModel):
     email: Optional[EmailStr] = Field(
         None, description="电子邮箱，对应 AccountInDB.email"
     )
-    full_name: Optional[str] = Field(
-        None, description="用户全名，对应 AccountInDB.full_name"
-    )
-    # 注意：is_admin 通常不应通过此接口更新，需要单独的权限管理接口
 
 
 class AccountSchema(AccountBase):
@@ -61,6 +73,17 @@ class AccountSchema(AccountBase):
     id: str | int = Field(
         ..., description="用户唯一标识符，对应 AccountInDB.id (通常转为字符串)"
     )
+
+    @classmethod
+    def from_entity(cls, entity: "AccountInDB") -> "AccountSchema":
+        """从数据库实体转换为响应模型"""
+        return cls(
+            id=entity.id,
+            username=entity.username,
+            email=entity.email,
+            gender=entity.gender,
+            phone=entity.phone,
+        )
 
 
 class LoginRequest(BaseModel):

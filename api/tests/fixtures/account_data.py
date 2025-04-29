@@ -16,8 +16,6 @@ def create_test_user(
     username: str = "test_user",
     email: str = "test@example.com",
     password: str = "password123",
-    full_name: str = "Test User",
-    is_admin: bool = False,
     is_active: bool = True,
     with_token: bool = False,
 ) -> AccountInDB:
@@ -29,8 +27,6 @@ def create_test_user(
         username: 用户名
         email: 邮箱
         password: 密码（将被自动哈希）
-        full_name: 全名
-        is_admin: 是否为管理员
         is_active: 是否激活账户
         with_token: 是否创建关联的令牌
 
@@ -41,9 +37,7 @@ def create_test_user(
         username=username,
         email=email,
         password=get_sha256(password),
-        full_name=full_name,
         is_active=is_active,
-        is_admin=is_admin,
         last_login_at=datetime.now() if is_active else None,
     )
     session.add(user)
@@ -68,8 +62,6 @@ ADMIN_USER = {
     "username": "admin_user",
     "email": "admin@example.com",
     "password": "admin123",
-    "full_name": "Admin User",
-    "is_admin": True,
     "is_active": True,
 }
 
@@ -77,8 +69,6 @@ NORMAL_USER = {
     "username": "normal_user",
     "email": "user@example.com",
     "password": "user123",
-    "full_name": "Normal User",
-    "is_admin": False,
     "is_active": True,
 }
 
@@ -86,8 +76,6 @@ INACTIVE_USER = {
     "username": "inactive_user",
     "email": "inactive@example.com",
     "password": "inactive123",
-    "full_name": "Inactive User",
-    "is_admin": False,
     "is_active": False,
 }
 
@@ -95,8 +83,6 @@ TEST_USER = {
     "username": "test_user",
     "email": "test@example.com",
     "password": "password123",
-    "full_name": "Test User",
-    "is_admin": False,
     "is_active": True,
 }
 

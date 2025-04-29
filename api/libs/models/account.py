@@ -33,9 +33,7 @@ class AccountInDB(BaseModel, UserMixin):
         phone (str): 手机号码，可选。
         gender (Optional[int]): 性别，0-未知, 1-男, 2-女，可选。
         password (str): 存储加密后的用户密码哈希值，不为空。
-        full_name (Optional[str]): 用户全名或昵称，可选。
         is_active (bool): 账户是否激活，默认为 True。未激活账户无法登录。
-        is_admin (bool): 是否为系统级管理员，默认为 False。系统管理员拥有特殊权限。
         last_login_at (Optional[datetime]): 用户最后一次成功登录的时间，可选。
         token (Optional[AccountTokenInDB]): 与账户关联的 API 令牌对象 (一对一关系)。
         companies (list[CompanyInDB]): 账户所属或管理的公司列表 (通过 account_company 表建立的多对多关系)。
@@ -55,28 +53,20 @@ class AccountInDB(BaseModel, UserMixin):
         String(20), nullable=True, comment="手机号码"
     )  # Made explicitly nullable=True for clarity
 
-    gender: Mapped[Optional[int]] = Column(
+    gender: Mapped[int] = Column(
         SMALLINT,
         nullable=True,  # 允许为空，性别是可选的
+        default=0,
         comment="性别，0-未知，1-男，2-女",
     )
     password_hashed: Mapped[str] = Column(
         String(255), nullable=False, comment="密码哈希值"
-    )
-    full_name: Mapped[Optional[str]] = Column(
-        String(255), nullable=True, comment="用户全名"
     )
     is_active: Mapped[bool] = Column(
         Boolean,
         default=True,
         nullable=False,
         comment="账户是否激活 (True: 激活, False: 禁用)",
-    )  # Added nullable=False for clarity
-    is_admin: Mapped[bool] = Column(
-        Boolean,
-        default=False,
-        nullable=False,
-        comment="是否为系统管理员 (True: 是, False: 否)",
     )  # Added nullable=False for clarity
     last_login_at: Mapped[Optional[datetime]] = Column(
         DateTime, nullable=True, comment="最后登录时间"
@@ -117,11 +107,9 @@ class AccountInDB(BaseModel, UserMixin):
         username: str,
         email: str,
         password: str,
-        full_name: Optional[str] = None,
         phone: Optional[str] = None,
         gender: Optional[int] = None,
         is_active: Optional[bool] = True,
-        is_admin: Optional[bool] = False,
         last_login_at: Optional[datetime] = None,
     ) -> None:
         """初始化账户对象
@@ -130,7 +118,6 @@ class AccountInDB(BaseModel, UserMixin):
             username (str): 用户名，唯一且不为空。
             email (str): 电子邮箱，唯一且不为空。
             password (str): 密码，未加密的明文密码。
-            full_name (Optional[str]): 用户全名或昵称，可选。
             phone (Optional[str]): 手机号码，可选。
 
         """
@@ -138,11 +125,9 @@ class AccountInDB(BaseModel, UserMixin):
         self.username = username
         self.email = email
         self.password_hashed = password
-        self.full_name = full_name
         self.phone = phone
-        self.gender = gender
+        self.gender = gender or 0  # 默认性别为未知
         self.is_active = is_active
-        self.is_admin = is_admin
         self.last_login_at = last_login_at
         self.token = None
 
