@@ -23,7 +23,7 @@ from .position import PositionInDB
 from .json_value import JsonValueInDB
 from .account import AccountInDB, AccountTokenInDB
 from .account_company import AccountCompanyInDB, AccountCompanyRole
-
+from .candidate import CandidateInDB, CandidateStatus
 __all__ = [
     "BaseModel",
     "JsonSchemaInDB",
@@ -40,4 +40,7 @@ __all__ = [
     # 公司与真实账户关联
     "AccountCompanyInDB",
     "AccountCompanyRole",
+    # 候选人相关模型
+    "CandidateInDB",
+    "CandidateStatus",
 ]
