@@ -40,7 +40,7 @@ function EmployeeRow({ employee, onEdit, onDelete, onManagePositions }: Employee
       <TableCell>{department?.name || "-"}</TableCell>
       <TableCell>{position?.name || "-"}</TableCell>
       <TableCell>
-        {timestampToDateString(currentPosition?.entry_at) || "-"}
+        {timestampToDateString(currentPosition?.start_date) || "-"}
       </TableCell>
       <TableCell className="text-right space-x-2">
         <Button

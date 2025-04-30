@@ -18,6 +18,7 @@ class EmployeeInDB(BaseModel):
 
     属性:
         name (str): 员工姓名，必填
+        company_id (int): 所属公司ID，必填
         email (str): 电子邮箱地址
         phone (str): 联系电话
         birthdate (date): 出生日期
@@ -32,6 +33,12 @@ class EmployeeInDB(BaseModel):
 
     __tablename__ = "employee"  # 表名
 
+    company_id: Mapped[int] = Column(
+        Integer,
+        ForeignKey("company.id"),
+        nullable=False,  # 不允许为空，员工必须属于某个公司
+        comment="所属公司ID",
+    )
     name: Mapped[str] = Column(
         String(255),
         nullable=False,  # 不允许为空，员工必须有姓名

@@ -77,6 +77,7 @@ def upgrade():
     )
     op.create_table('employee',
     sa.Column('name', sa.String(length=255), nullable=False, comment='员工姓名'),
+    sa.Column('company_id', sa.Integer(), nullable=False, comment='所属公司ID'),
     sa.Column('email', sa.String(length=255), nullable=True, comment='电子邮箱地址'),
     sa.Column('phone', sa.String(length=20), nullable=True, comment='联系电话'),
     sa.Column('birthdate', sa.Date(), nullable=True, comment='出生日期'),
@@ -87,6 +88,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.ForeignKeyConstraint(['company_id'], ['company.id'], ),
     sa.ForeignKeyConstraint(['extra_schema_id'], ['json_schemas.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

@@ -28,7 +28,7 @@ export async function createOrUpdateCompany(
   data: InsertCompany
 ): Promise<Company> {
   const response = await serverAPI
-    .post(`${API_PREFIX}/insert`, {
+    .post(`${API_PREFIX}/insert/`, {
       json: data,
     })
     .json<ApiResponse<Company>>();
@@ -45,7 +45,7 @@ export async function getCompanyList(
 ): Promise<PageResult<Company>> {
   console.log("getCompanyList", params);
   const response = await serverAPI
-    .get(`${API_PREFIX}/list`, {
+    .get(`${API_PREFIX}/list/`, {
       searchParams: {
         page: params.page.toString(),
         limit: params.limit.toString(),
@@ -66,7 +66,7 @@ export async function searchCompanies(
   params: PageParams
 ): Promise<PageResult<Company>> {
   const response = await serverAPI
-    .get(`${API_PREFIX}/search`, {
+    .get(`${API_PREFIX}/search/`, {
       searchParams: {
         name,
         page: params.page.toString(),

@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS "employee_position" (
     "company_id" INTEGER NOT NULL,
     "department_id" INTEGER NOT NULL,
     "position_id" INTEGER NOT NULL,
-    "entry_at" DATETIME,
+    "start_date" DATETIME,
     "remark" TEXT,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

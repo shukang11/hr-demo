@@ -225,9 +225,10 @@ def create_employees(session: Session, company: 'CompanyInDB'):
         # 根据gender字段定义修改性别值为整数
         gender_value = random.randint(1, 2)  # 1-男, 2-女
         
-        # 创建员工基本信息 - 移除company_id字段
+        # 创建员工基本信息 - 添加company_id字段
         employee = EmployeeInDB(
             name=full_name,
+            company_id=company.id,  # 添加company_id字段
             email=f"{full_name}{i+1}@example.com",
             phone=f"138{random.randint(10000000, 99999999)}",
             birthdate=birthdate,
@@ -244,7 +245,7 @@ def create_employees(session: Session, company: 'CompanyInDB'):
             dept = random.choice(departments)
             position = random.choice(positions)
             
-            # 创建员工-职位关系 - 修改entry_at为start_date
+            # 创建员工-职位关系
             emp_position = EmployeePositionInDB(
                 employee_id=employee.id,
                 company_id=company.id,

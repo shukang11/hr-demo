@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, relationship
 from extensions.ext_database import db
 from .base import BaseModel
 
@@ -29,6 +29,13 @@ class DepartmentInDB(BaseModel):
 
     __tablename__ = "department"  # 表名
 
+    id: Mapped[int] = Column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,  # 自增主键
+        comment="部门ID",
+    )
+
     parent_id: Mapped[Optional[int]] = Column(
         Integer,
         ForeignKey("department.id"),
@@ -56,6 +63,21 @@ class DepartmentInDB(BaseModel):
         String(255),
         nullable=True,  # 允许为空，备注是可选的
         comment="备注信息",
+    )
+
+    # 添加父部门和子部门的自引用关系
+    parent: Mapped[Optional["DepartmentInDB"]] = relationship(
+        "DepartmentInDB",
+        remote_side=[id],
+        back_populates="children",
+        foreign_keys=[parent_id],
+        uselist=False,  # 设置为False表示这是单一对象关系
+    )
+    children: Mapped[List["DepartmentInDB"]] = relationship(
+        "DepartmentInDB",
+        back_populates="parent",
+        foreign_keys=[parent_id],
+        cascade="all, delete-orphan",
     )
 
     company: Mapped["CompanyInDB"] = db.relationship(
