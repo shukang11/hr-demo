@@ -9,6 +9,7 @@ def init_app(app: "Flask") -> None:
     from .company import bp as company_bp  # 导入公司路由蓝图
     from .department import department_bp  # 导入部门路由蓝图
     from .employee import employee_bp  # 导入员工路由蓝图
+    from .customfield import bp as customfield_bp  # 导入自定义字段路由蓝图
 
     api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -18,6 +19,7 @@ def init_app(app: "Flask") -> None:
     api_bp.register_blueprint(company_bp)  # 注册公司路由蓝图
     api_bp.register_blueprint(department_bp)  # 注册部门路由蓝图
     api_bp.register_blueprint(employee_bp)  # 注册员工路由蓝图
+    api_bp.register_blueprint(customfield_bp)  # 注册自定义字段路由蓝图
 
     app.register_blueprint(health_bp)
     app.register_blueprint(api_bp)

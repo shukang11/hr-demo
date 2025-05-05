@@ -1,20 +1,51 @@
-from typing import Optional
-from sqlalchemy.orm import Mapped
-from sqlalchemy import Column, String, JSON
+from typing import Optional, TYPE_CHECKING
+from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy import Column, String, JSON, Integer, ForeignKey
+from extensions.ext_database import db
 from .base import BaseModel
+
+if TYPE_CHECKING:
+    from .json_schema import JsonSchemaInDB
 
 
 class JsonValueInDB(BaseModel):
+    """JSON值存储模型，用于存储自定义字段的值
+
+    属性:
+        schema_id (int): 关联的 JSON Schema ID
+        entity_id (int): 关联的实体ID，如员工ID、候选人ID等
+        entity_type (str): 关联的实体类型，如"employee"、"candidate"等
+        value (dict): JSON格式的数据值
+        remark (str): 备注信息
+        schema (JsonSchemaInDB): 关联的JSON Schema对象
+    """
+
     __tablename__ = "json_values"
 
-    value: Mapped[dict] = Column(
-        JSON,
-        nullable=False,  # 不允许为空，值是必填的
-        comment="JSON值",
+    schema_id: Mapped[int] = Column(
+        Integer,
+        ForeignKey("json_schemas.id"),
+        nullable=False,
+        comment="关联的JSON Schema ID",
+    )
+    entity_id: Mapped[int] = Column(
+        Integer, nullable=False, comment="关联的实体ID，如员工ID、候选人ID等"
+    )
+    entity_type: Mapped[str] = Column(
+        String(50),
+        nullable=False,
+        comment="关联的实体类型，如'employee'、'candidate'等",
+    )
+    value: Mapped[dict] = Column(JSON, nullable=False, comment="JSON值")
+    remark: Mapped[Optional[str]] = Column(
+        String(255), nullable=True, comment="备注信息"
     )
 
-    remark: Mapped[Optional[str]] = Column(
-        String(255),
-        nullable=True,  # 允许为空，备注是可选的
-        comment="备注信息",
+    # 关系定义
+    schema = relationship("JsonSchemaInDB", foreign_keys=[schema_id])
+
+    # 索引以优化查询性能
+    __table_args__ = (
+        db.Index("ix_json_value_entity", "entity_type", "entity_id"),
+        db.Index("ix_json_value_schema", "schema_id"),
     )

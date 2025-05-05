@@ -8,6 +8,10 @@ import enum
 
 if TYPE_CHECKING:
     from .json_schema import JsonSchemaInDB
+    from .company import CompanyInDB
+    from .position import PositionInDB
+    from .department import DepartmentInDB
+    from .employee import EmployeeInDB
 
 
 # 候选人状态枚举
@@ -89,6 +93,18 @@ class CandidateInDB(BaseModel):
     )
 
     # 关系定义
+    company: Mapped["CompanyInDB"] = db.relationship(
+        "CompanyInDB", foreign_keys=[company_id]
+    )
+    position: Mapped["PositionInDB"] = db.relationship(
+        "PositionInDB", foreign_keys=[position_id]
+    )
+    department: Mapped["DepartmentInDB"] = db.relationship(
+        "DepartmentInDB", foreign_keys=[department_id]
+    )
+    interviewer: Mapped[Optional["EmployeeInDB"]] = db.relationship(
+        "EmployeeInDB", foreign_keys=[interviewer_id]
+    )
     extra_schema: Mapped[Optional["JsonSchemaInDB"]] = db.relationship(
         "JsonSchemaInDB", foreign_keys=[extra_schema_id]
     )

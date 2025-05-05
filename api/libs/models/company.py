@@ -89,3 +89,11 @@ class CompanyInDB(BaseModel):
         back_populates="companies",  # 指向 AccountInDB.companies
         overlaps="account_companies",  # 与 account_companies 关系重叠
     )
+
+    # 添加公司拥有的所有JSON Schema
+    schemas: Mapped[list["JsonSchemaInDB"]] = db.relationship(
+        "JsonSchemaInDB",
+        foreign_keys="JsonSchemaInDB.company_id",
+        back_populates="company",  # 与JsonSchemaInDB中的company属性对应
+        cascade="all, delete-orphan",  # 当公司被删除时，级联删除其所有Schema
+    )

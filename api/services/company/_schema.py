@@ -36,5 +36,4 @@ class CompanySchema(CompanyBase):
     updated_at: datetime = Field(..., description="更新时间")
 
     class Config:
-        orm_mode = True
         from_attributes = True
