@@ -95,7 +95,7 @@ export function SchemaSelector({
 
     // 处理选择变更
     const handleChange = (value: string) => {
-        const schemaId = value ? parseInt(value) : null;
+        const schemaId = value === "null" ? null : parseInt(value);
         onChange?.(schemaId);
     };
 
@@ -105,7 +105,7 @@ export function SchemaSelector({
     return (
         <div className="flex items-center gap-2">
             <Select
-                value={value?.toString() || ""}
+                value={value?.toString() || "null"}
                 onValueChange={handleChange}
                 disabled={disabled || isLoading}
             >
@@ -120,7 +120,7 @@ export function SchemaSelector({
                     )}
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">无</SelectItem>
+                    <SelectItem value="null">无</SelectItem>
                     {schemas.map((schema) => (
                         <SelectItem key={schema.id} value={schema.id.toString()}>
                             {schema.name}

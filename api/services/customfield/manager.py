@@ -60,7 +60,7 @@ class CustomFieldService:
         # 创建Schema数据库模型实例
         schema = JsonSchemaInDB(
             name=schema_data.name,
-            schema=schema_data.schema,
+            schema=schema_data.schema_value,
             entity_type=schema_data.entity_type,
             ui_schema=schema_data.ui_schema,
             company_id=schema_data.company_id,
@@ -114,11 +114,14 @@ class CustomFieldService:
             raise PermissionError("您没有修改系统Schema的权限")
 
         # 创建新版本Schema
-        if schema_data.schema is not None and schema_data.schema != schema.schema:
+        if (
+            schema_data.schema_value is not None
+            and schema_data.schema_value != schema.schema
+        ):
             # Schema内容发生变化，创建新版本
             new_schema = JsonSchemaInDB(
                 name=schema_data.name or schema.name,
-                schema=schema_data.schema,
+                schema=schema_data.schema_value,
                 entity_type=schema.entity_type,
                 ui_schema=schema_data.ui_schema
                 if schema_data.ui_schema is not None

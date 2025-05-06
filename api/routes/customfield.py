@@ -322,10 +322,17 @@ def list_json_schemas(entity_type: str) -> Response:
         company_id = int(company_id_str) if company_id_str else None
         include_system = include_system_str.lower() == "true"
 
+        # 添加详细日志
+        current_app.logger.debug(
+            f"列出JSON Schema，参数: entity_type={entity_type}, page={page}, limit={limit}, company_id={company_id}, include_system={include_system}"
+        )
+
         # 验证实体类型
         try:
             schema_entity_type = SchemaEntityType(entity_type)
+            current_app.logger.debug(f"实体类型验证通过: {schema_entity_type}")
         except ValueError:
+            current_app.logger.error(f"无效的实体类型: {entity_type}")
             return make_api_response(
                 ResponseSchema[PageResponse].from_error(
                     message=f"无效的实体类型: {entity_type}", status=400
@@ -336,14 +343,44 @@ def list_json_schemas(entity_type: str) -> Response:
         # 创建自定义字段服务实例
         service = CustomFieldService(session=db.session, account=user)
 
+        # 获取数据库表结构信息
+        try:
+            # 检查json_schemas表结构 - 使用text()函数包装SQL语句
+            from sqlalchemy import text
+
+            result = db.session.execute(
+                text("PRAGMA table_info(json_schemas)")
+            ).fetchall()
+            columns = [row[1] for row in result]  # 第二个元素是列名
+            current_app.logger.debug(f"json_schemas表的列: {columns}")
+
+            if "entity_type" not in columns:
+                current_app.logger.error(
+                    "数据库中缺少entity_type列。这可能是数据库迁移未完成导致的问题。"
+                )
+                # 返回错误响应，避免执行后续查询
+                return make_api_response(
+                    ResponseSchema[PageResponse].from_error(
+                        message="数据库结构不完整，请联系管理员运行数据库迁移",
+                        status=500,
+                    ),
+                    500,
+                )
+        except Exception as table_error:
+            current_app.logger.error(f"检查表结构出错: {table_error}")
+
         # 获取JSON Schema列表
-        schemas, total = service.get_schemas_by_entity_type(
-            entity_type=schema_entity_type,
-            company_id=company_id,
-            page=page,
-            limit=limit,
-            include_system=include_system,
-        )
+        try:
+            schemas, total = service.get_schemas_by_entity_type(
+                entity_type=schema_entity_type,
+                company_id=company_id,
+                page=page,
+                limit=limit,
+                include_system=include_system,
+            )
+        except Exception as query_error:
+            current_app.logger.error(f"查询失败详情: {query_error}")
+            raise query_error
 
         # 计算总页数
         total_page = (total + limit - 1) // limit if total > 0 else 1

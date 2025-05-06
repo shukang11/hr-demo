@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional, Union
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 
 from libs.models.json_schema import SchemaEntityType
@@ -10,12 +10,12 @@ class JsonSchemaBase(BaseModel):
 
     name: str = Field(..., description="Schema名称")
     entity_type: SchemaEntityType = Field(..., description="适用的实体类型")
-    schema: Dict[str, Any] = Field(..., description="JSON Schema定义")
+    schema_value: Dict[str, Any] = Field(..., description="JSON Schema定义")
     ui_schema: Optional[Dict[str, Any]] = Field(None, description="UI展示相关的配置")
     remark: Optional[str] = Field(None, max_length=255, description="备注信息")
 
-    @validator("schema")
-    def validate_schema(cls, v):
+    @field_validator("schema_value")
+    def validate_schema_value(cls, v):
         """验证JSON Schema格式"""
         # 简单验证，确保包含基本properties字段
         if not isinstance(v, dict) or "properties" not in v:
@@ -34,12 +34,12 @@ class JsonSchemaUpdate(BaseModel):
     """更新JSON Schema的请求模型"""
 
     name: Optional[str] = Field(None, description="Schema名称")
-    schema: Optional[Dict[str, Any]] = Field(None, description="JSON Schema定义")
+    schema_value: Optional[Dict[str, Any]] = Field(None, description="JSON Schema定义")
     ui_schema: Optional[Dict[str, Any]] = Field(None, description="UI展示相关的配置")
     remark: Optional[str] = Field(None, max_length=255, description="备注信息")
 
-    @validator("schema")
-    def validate_schema(cls, v):
+    @field_validator("schema_value")
+    def validate_schema_value(cls, v):
         """验证JSON Schema格式"""
         if v is not None:
             if not isinstance(v, dict) or "properties" not in v:
