@@ -38,6 +38,12 @@ class JsonSchemaInDB(BaseModel):
 
     __tablename__ = "json_schemas"
 
+    id: Mapped[int] = Column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+        comment="ID",
+    )
     name: Mapped[str] = Column(String(255), nullable=False, comment="Schema 名称")
     schema: Mapped[dict] = Column(JSON, nullable=False, comment="JSON Schema 定义")
     entity_type: Mapped[SchemaEntityType] = Column(
@@ -71,7 +77,9 @@ class JsonSchemaInDB(BaseModel):
     )
 
     # 关系定义
-    company = relationship("CompanyInDB", back_populates="schemas")
+    company = relationship("CompanyInDB", foreign_keys=[company_id], back_populates="schemas")
     parent_schema = relationship(
-        "JsonSchemaInDB", remote_side=[id], backref="child_schemas"
+        "JsonSchemaInDB", 
+        remote_side=lambda: [JsonSchemaInDB.id],  # 使用lambda延迟计算
+        backref="child_schemas"
     )

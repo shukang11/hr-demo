@@ -1,6 +1,5 @@
 {
   "folders": [
-    { "path": "document", "name": "Documents" },
     {
       "path": "api",
       "name": "API"
@@ -9,6 +8,7 @@
       "path": "web",
       "name": "Web"
     },
+    { "path": "document", "name": "Documents" },
     { "path": ".", "name": "Root" }
   ]
 }

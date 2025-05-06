@@ -9,13 +9,16 @@ import {
 } from "@/components/ui/table"
 import { useState } from "react"
 import { CompanyForm } from "./company-form"
+import { CompanyDetail } from "./company-detail" // 导入公司详情组件
 import { Company, deleteCompany, useCompanies } from "@/lib/api/company"
 import { PageParams } from "@/lib/types"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { useToast } from "@/hooks/use-toast"
+import { Eye, PencilIcon, Trash2 } from "lucide-react" // 导入图标
 
 export function CompanyList() {
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isDetailOpen, setIsDetailOpen] = useState(false) // 新增状态：详情对话框是否打开
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null)
   const [pageParams,] = useState<PageParams>({
     page: 1,
@@ -24,6 +27,13 @@ export function CompanyList() {
   const { data, error, isLoading, mutate } = useCompanies(pageParams)
   const { toast } = useToast()
 
+  // 处理查看详情
+  const handleViewDetail = (company: Company) => {
+    setCurrentCompany(company)
+    setIsDetailOpen(true)
+  }
+
+  // 处理编辑（可从详情页或列表直接编辑）
   const handleEdit = (company: Company) => {
     setCurrentCompany(company)
     setIsFormOpen(true)
@@ -59,6 +69,11 @@ export function CompanyList() {
   const handleFormSuccess = () => {
     handleFormClose()
     mutate() // 刷新数据
+  }
+
+  const handleDetailClose = () => {
+    setIsDetailOpen(false)
+    setCurrentCompany(null)
   }
 
   if (isLoading) {
@@ -107,8 +122,13 @@ export function CompanyList() {
               <TableCell>{company.created_at ? new Date(company.created_at).toLocaleString() : '-'}</TableCell>
               <TableCell>{company.updated_at ? new Date(company.updated_at).toLocaleString() : '-'}</TableCell>
               <TableCell>
-                <div className="space-x-2">
+                <div className="flex items-center space-x-2">
+                  <Button variant="ghost" size="sm" onClick={() => handleViewDetail(company)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    查看
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(company)}>
+                    <PencilIcon className="h-4 w-4 mr-1" />
                     编辑
                   </Button>
                   <Button
@@ -116,6 +136,7 @@ export function CompanyList() {
                     size="sm"
                     onClick={() => handleDelete(company.id)}
                   >
+                    <Trash2 className="h-4 w-4 mr-1" />
                     删除
                   </Button>
                 </div>
@@ -125,12 +146,24 @@ export function CompanyList() {
         </TableBody>
       </Table>
 
+      {/* 公司表单对话框 */}
       <CompanyForm
         open={isFormOpen}
         onOpenChange={handleFormClose}
         onSuccess={handleFormSuccess}
         initialData={currentCompany}
       />
+
+      {/* 公司详情对话框 */}
+      <CompanyDetail
+        open={isDetailOpen}
+        onOpenChange={handleDetailClose}
+        data={currentCompany}
+        onEdit={() => {
+          setIsDetailOpen(false);
+          setIsFormOpen(true);
+        }}
+      />
     </div>
   )
-} 
+}

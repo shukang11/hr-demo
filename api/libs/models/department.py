@@ -66,9 +66,10 @@ class DepartmentInDB(BaseModel):
     )
 
     # 添加父部门和子部门的自引用关系
+    # 使用lambda延迟计算，确保类完全定义后再引用其属性
     parent: Mapped[Optional["DepartmentInDB"]] = relationship(
         "DepartmentInDB",
-        remote_side=[id],
+        remote_side=lambda: [DepartmentInDB.id],
         back_populates="children",
         foreign_keys=[parent_id],
         uselist=False,  # 设置为False表示这是单一对象关系
