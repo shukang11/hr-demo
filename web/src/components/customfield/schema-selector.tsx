@@ -3,9 +3,7 @@
  * 
  * 允许用户从可用的Schema列表中选择一个Schema应用到实体。
  */
-import { useState, useEffect } from "react";
 import {
-    JsonSchemaSchema,
     useSchemaList
 } from "@/lib/api/customfield";
 import {
@@ -86,7 +84,7 @@ export function SchemaSelector({
     disabled = false,
 }: SchemaSelectorProps) {
     // 获取Schema列表
-    const { data, error, isLoading } = useSchemaList(
+    const { data, isLoading } = useSchemaList(
         entityType,
         { page: 1, limit: 100 },
         companyId,
@@ -100,7 +98,7 @@ export function SchemaSelector({
     };
 
     // 获取Schema列表
-    const schemas = data?.data || [];
+    const schemas = data?.items || [];
 
     return (
         <div className="flex items-center gap-2">

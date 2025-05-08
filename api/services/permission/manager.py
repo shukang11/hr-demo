@@ -94,7 +94,7 @@ class PermissionService:
             f"User '{self.account.username}' lacks permission to view company {company_id}."
         )
         return False
-        
+
     def can_create_company(self) -> bool:
         """
         检查当前用户是否有权创建新的公司。
@@ -108,5 +108,29 @@ class PermissionService:
             log.debug(f"User '{self.account.username}' can create a company.")
             return True
 
-        log.warning(f"User '{self.account.username}' is inactive and cannot create a company.")
+        log.warning(
+            f"User '{self.account.username}' is inactive and cannot create a company."
+        )
         return False
+
+    def is_super_admin(self, company_id: int = None) -> bool:
+        """
+        检查用户是否为超级管理员。
+        在此实现中，我们使用can_manage_company方法作为判断依据。
+
+        Args:
+            company_id (int, optional): 公司ID，如果提供将检查用户是否为该公司的管理员。
+                                       如果不提供，则默认根据用户的公司关联判断。
+
+        Returns:
+            bool: 如果用户是超级管理员则返回True，否则返回False。
+        """
+        if company_id is None:
+            # 如果未提供company_id，记录警告并默认返回False
+            log.warning(
+                f"is_super_admin called without company_id by user '{self.account.username}'"
+            )
+            return False
+
+        # 使用can_manage_company方法判断用户是否有管理该公司的权限
+        return self.can_manage_company(company_id)

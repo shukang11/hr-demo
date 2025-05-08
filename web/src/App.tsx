@@ -19,6 +19,7 @@ const PositionPage = lazy(() => import("@/app/position/page"))
 const CompanyPage = lazy(() => import("@/app/company/page"))
 const AboutPage = lazy(() => import("@/app/about/page"))
 const LoginPage = lazy(() => import("@/app/auth/login/page"))
+const CustomFieldPage = lazy(() => import("@/app/customfield/page"))
 
 // 创建加载包装组件
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -101,6 +102,14 @@ function App() {
                   element={
                     <PageWrapper>
                       <CompanyPage />
+                    </PageWrapper>
+                  }
+                />
+                <Route
+                  path="customfield"
+                  element={
+                    <PageWrapper>
+                      <CustomFieldPage />
                     </PageWrapper>
                   }
                 />
