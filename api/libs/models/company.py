@@ -19,6 +19,7 @@ class CompanyInDB(BaseModel):
 
     属性:
         name (str): 公司名称，必填
+        parent_id (int): 父公司ID，用于树形结构
         extra_value (JSON): 附加JSON格式数据
         extra_schema_id (int): 关联的JSON Schema ID
         extra_schema (JsonSchemaInDB): 关联的JSON Schema对象
@@ -27,6 +28,8 @@ class CompanyInDB(BaseModel):
         schemas (list): 公司拥有的JSON Schema列表
         accounts (list[AccountInDB]): 与该公司关联的账户列表 (通过 account_company 表建立的多对多关系)。
         description (str): 公司描述
+        parent (CompanyInDB): 父公司对象
+        subsidiaries (list): 子公司列表
     """
 
     __tablename__ = "company"  # 表名
@@ -51,6 +54,12 @@ class CompanyInDB(BaseModel):
         Text,
         nullable=True,
         comment="公司描述",
+    )
+    parent_id: Mapped[Optional[int]] = Column(
+        Integer,
+        ForeignKey("company.id"),
+        nullable=True,  # 允许为空，表示顶级公司没有父公司
+        comment="父公司ID",
     )
 
     # 关系定义
@@ -96,4 +105,19 @@ class CompanyInDB(BaseModel):
         foreign_keys="JsonSchemaInDB.company_id",
         back_populates="company",  # 与JsonSchemaInDB中的company属性对应
         cascade="all, delete-orphan",  # 当公司被删除时，级联删除其所有Schema
+    )
+
+    # 添加父公司和子公司的自引用关系
+    parent: Mapped[Optional["CompanyInDB"]] = db.relationship(
+        "CompanyInDB",
+        remote_side=lambda: [CompanyInDB.id],
+        back_populates="subsidiaries",
+        foreign_keys=[parent_id],
+        uselist=False,  # 一个公司只有一个父公司
+    )
+    subsidiaries: Mapped[list["CompanyInDB"]] = db.relationship(
+        "CompanyInDB",
+        back_populates="parent",
+        foreign_keys=[parent_id],
+        cascade="all, delete-orphan",  # 当父公司被删除时，级联删除其所有子公司
     )

@@ -14,7 +14,8 @@ import { Company, deleteCompany, useCompanies } from "@/lib/api/company"
 import { PageParams } from "@/lib/types"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { useToast } from "@/hooks/use-toast"
-import { Eye, PencilIcon, Trash2 } from "lucide-react" // 导入图标
+import { Eye, PencilIcon, Trash2, ExternalLink } from "lucide-react" // 导入图标
+import { Link } from "react-router-dom" // 导入React Router的链接组件
 
 export function CompanyList() {
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -121,25 +122,29 @@ export function CompanyList() {
               <TableCell>{company.name}</TableCell>
               <TableCell>{company.created_at ? new Date(company.created_at).toLocaleString() : '-'}</TableCell>
               <TableCell>{company.updated_at ? new Date(company.updated_at).toLocaleString() : '-'}</TableCell>
-              <TableCell>
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm" onClick={() => handleViewDetail(company)}>
-                    <Eye className="h-4 w-4 mr-1" />
-                    查看
+              <TableCell>                <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" onClick={() => handleViewDetail(company)}>
+                  <Eye className="h-4 w-4 mr-1" />
+                  查看
+                </Button>                <Link to={`/company/${company.id}`}>
+                  <Button variant="ghost" size="sm">
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    详情页
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(company)}>
-                    <PencilIcon className="h-4 w-4 mr-1" />
-                    编辑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(company.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    删除
-                  </Button>
-                </div>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={() => handleEdit(company)}>
+                  <PencilIcon className="h-4 w-4 mr-1" />
+                  编辑
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(company.id)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  删除
+                </Button>
+              </div>
               </TableCell>
             </TableRow>
           ))}

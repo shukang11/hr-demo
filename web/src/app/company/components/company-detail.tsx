@@ -10,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Company } from "@/lib/api/company";
+import { Company, useCompanyDetail } from "@/lib/api/company";
 import { DynamicFormViewer } from "@/components/customfield";
 import { useSchema } from "@/lib/api/customfield";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,14 @@ export function CompanyDetail({ open, onOpenChange, data, onEdit }: CompanyDetai
 
                             <div className="text-sm text-muted-foreground">公司ID</div>
                             <div className="text-sm font-medium">{data?.id || '---'}</div>
+
+                            <div className="text-sm text-muted-foreground">公司描述</div>
+                            <div className="text-sm font-medium">{data?.description || '---'}</div>
+
+                            <div className="text-sm text-muted-foreground">父公司</div>
+                            <div className="text-sm font-medium">
+                                {data?.parent_id ? `ID: ${data.parent_id}` : '无（为主公司）'}
+                            </div>
 
                             <div className="text-sm text-muted-foreground">创建时间</div>
                             <div className="text-sm font-medium">

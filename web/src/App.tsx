@@ -17,6 +17,7 @@ const EmployeePage = lazy(() => import("@/app/employee/page"))
 const DepartmentPage = lazy(() => import("@/app/department/page"))
 const PositionPage = lazy(() => import("@/app/position/page"))
 const CompanyPage = lazy(() => import("@/app/company/page"))
+const CompanyDetailPage = lazy(() => import("@/app/company/detail/page"))
 const AboutPage = lazy(() => import("@/app/about/page"))
 const LoginPage = lazy(() => import("@/app/auth/login/page"))
 const CustomFieldPage = lazy(() => import("@/app/customfield/page"))
@@ -102,6 +103,14 @@ function App() {
                   element={
                     <PageWrapper>
                       <CompanyPage />
+                    </PageWrapper>
+                  }
+                />
+                <Route
+                  path="company/:id"
+                  element={
+                    <PageWrapper>
+                      <CompanyDetailPage />
                     </PageWrapper>
                   }
                 />
