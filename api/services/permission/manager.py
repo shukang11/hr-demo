@@ -134,3 +134,37 @@ class PermissionService:
 
         # 使用can_manage_company方法判断用户是否有管理该公司的权限
         return self.can_manage_company(company_id)
+
+    def can_view_subsidiary_data(self, parent_company_id: int) -> bool:
+        """
+        检查当前用户是否有权查看指定母公司的子公司聚合数据。
+        用户必须是母公司的所有者或管理员才能查看其子公司数据。
+
+        Args:
+            parent_company_id (int): 目标母公司的 ID。
+
+        Returns:
+            bool: 如果用户有权限则返回 True，否则返回 False。
+        """
+        # 检查用户是否是该母公司的所有者或管理员
+        stmt = select(
+            exists().where(
+                AccountCompanyInDB.account_id == self.account.id,
+                AccountCompanyInDB.company_id == parent_company_id,
+                AccountCompanyInDB.role.in_(
+                    [AccountCompanyRole.OWNER, AccountCompanyRole.ADMIN]
+                ),
+            )
+        )
+        has_permission = self.session.execute(stmt).scalar()
+
+        if has_permission:
+            log.debug(
+                f"User '{self.account.username}' has permission to view data for subsidiaries of company {parent_company_id}."
+            )
+            return True
+
+        log.warning(
+            f"User '{self.account.username}' lacks permission to view subsidiary data for company {parent_company_id}."
+        )
+        return False

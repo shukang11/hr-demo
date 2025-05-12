@@ -52,10 +52,15 @@ class CustomFieldService:
         Raises:
             PermissionError: 当用户没有权限创建Schema时
         """
+        # 添加调试输出，查看传入的schema_data内容
+        print(f"DEBUG - create_json_schema 接收到的数据: {schema_data}")
+        print(f"DEBUG - schema_value的内容: {schema_data.schema_value}")
+        print(f"DEBUG - schema_value的类型: {type(schema_data.schema_value)}")
+
         # 如果有公司ID，检查权限
         if schema_data.company_id:
             if not self._permission.can_manage_company(schema_data.company_id):
-                raise PermissionError("您没有在该公司创建自定义字段的权限")
+                raise PermissionError("您没有在此公司创建自定义字段的权限")
 
         # 创建Schema数据库模型实例
         schema = JsonSchemaInDB(
@@ -76,8 +81,23 @@ class CustomFieldService:
             self.session.commit()
             # 刷新对象，获取生成的ID等
             self.session.refresh(schema)
-            # 将数据库模型转换为API响应模型
-            return JsonSchemaSchema.model_validate(schema)
+
+            # 添加调试输出，查看数据库对象
+            print(f"DEBUG - 创建的数据库对象: {schema}")
+            print(f"DEBUG - schema.schema字段: {schema.schema}")
+
+            try:
+                # 将数据库模型转换为API响应模型
+                result = JsonSchemaSchema.model_validate(schema)
+                print(f"DEBUG - 成功转换为API模型: {result}")
+                return result
+            except Exception as e:
+                print(f"ERROR - 模型转换失败: {e}")
+                import traceback
+
+                print(traceback.format_exc())
+                return None
+
         except IntegrityError:
             # 处理数据库完整性错误
             self.session.rollback()

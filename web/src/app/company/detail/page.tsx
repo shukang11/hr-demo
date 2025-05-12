@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CompanyDetail as CompanyDetailType, getCompanyDetail } from "@/lib/api/company";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { BarChart } from "lucide-react";
 import { SubsidiaryList } from "../components/subsidiary-list";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
@@ -72,6 +74,22 @@ export default function CompanyDetailPage() {
                 { label: companyDetail.name },
             ]}
         >
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">{companyDetail.name}</h2>
+                <div className="flex gap-2">
+                    {companyDetail.subsidiaries && companyDetail.subsidiaries.length > 0 && (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate(`/dashboard/group-view/${companyDetail.id}`)}
+                        >
+                            <BarChart className="h-4 w-4 mr-2" />
+                            集团数据视图
+                        </Button>
+                    )}
+                </div>
+            </div>
+
             <div className="rounded-xl bg-muted/50 p-4">
                 <Tabs defaultValue="info" className="w-full">
                     <TabsList>

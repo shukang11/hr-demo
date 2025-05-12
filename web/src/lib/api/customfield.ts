@@ -31,7 +31,7 @@ export interface JsonSchemaSchema {
   /** 适用的实体类型，如"Employee"、"Company"等 */
   entity_type: string;
   /** JSON Schema定义，遵循JSON Schema规范 */
-  schema: Record<string, any>;
+  schema_value: Record<string, any>;
   /** UI展示相关配置，可选，用于指导前端如何渲染表单 */
   ui_schema?: Record<string, any> | null;
   /** 关联的公司ID，null表示系统级Schema */
@@ -61,7 +61,7 @@ export interface JsonSchemaCreate {
   /** 适用的实体类型，如"Employee"、"Company"等 */
   entity_type: string;
   /** JSON Schema定义，遵循JSON Schema规范 */
-  schema: Record<string, any>;
+  schema_value: Record<string, any>; // 修改处
   /** UI展示相关配置，可选 */
   ui_schema?: Record<string, any>;
   /** 关联的公司ID，可选，不提供则为系统级Schema */
@@ -81,7 +81,7 @@ export interface JsonSchemaUpdate {
   /** Schema名称，可选 */
   name?: string;
   /** JSON Schema定义，可选，更新此字段会创建新版本 */
-  schema?: Record<string, any>;
+  schema_value?: Record<string, any>; // 修改处
   /** UI展示相关配置，可选 */
   ui_schema?: Record<string, any>;
   /** 备注信息，可选 */

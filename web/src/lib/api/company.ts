@@ -220,3 +220,41 @@ export function useSubsidiaries(parentId: number | undefined) {
     }
   );
 }
+
+/**
+ * 使用子公司选择器专用的子公司列表Hook
+ * @param parentId 父公司ID
+ */
+export function useCompanySubsidiaries(parentId: number | undefined) {
+  return useSWR(
+    parentId ? ["company", "subsidiaries-info", parentId] : null,
+    async () => {
+      if (!parentId) return [];
+      const subs = await getSubsidiaries(parentId);
+      return subs.map((sub) => ({
+        id: sub.id,
+        name: sub.name,
+      }));
+    }
+  );
+}
+
+/**
+ * 获取公司名称
+ * @param id 公司ID
+ */
+export async function getCompanyName(id: number): Promise<string> {
+  const company = await getCompanyById(id);
+  return company?.name || `未知公司 (ID: ${id})`;
+}
+
+/**
+ * 使用 SWR 获取公司名称
+ * @param id 公司ID
+ */
+export function useCompanyName(id: number | undefined) {
+  return useSWR(id ? ["company", "name", id] : null, async () => {
+    if (!id) return null;
+    return await getCompanyName(id);
+  });
+}

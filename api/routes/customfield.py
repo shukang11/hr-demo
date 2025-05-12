@@ -72,9 +72,25 @@ def create_json_schema() -> Response:
 
         # 验证请求数据
         schema_data = JsonSchemaCreate.model_validate(request.json)
+        current_app.logger.debug(f"创建JSON Schema，参数: {schema_data}")
+
+        # 添加详细调试信息
+        current_app.logger.debug(
+            f"JsonSchemaCreate模型详情: schema_value={schema_data.schema_value}"
+        )
+        current_app.logger.debug(f"请求JSON原始数据: {request.json}")
 
         # 创建JSON Schema
         result = service.create_json_schema(schema_data)
+
+        # 添加结果调试信息
+        if result:
+            current_app.logger.debug(f"创建成功，返回数据: {result}")
+            current_app.logger.debug(f"返回数据模型类型: {type(result)}")
+            current_app.logger.debug(
+                f"返回的schema_value: {getattr(result, 'schema_value', '字段不存在')}"
+            )
+
         if not result:
             return make_api_response(
                 ResponseSchema[JsonSchemaSchema].from_error(

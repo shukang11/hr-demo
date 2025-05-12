@@ -175,7 +175,7 @@ export function SchemaEditor({
             setName(schema.name);
             setEntityType(schema.entity_type);
             setRemark(schema.remark || "");
-            setSchemaJson(JSON.stringify(schema.schema, null, 2));
+            setSchemaJson(JSON.stringify(schema.schema_value, null, 2));
             setUiSchemaJson(JSON.stringify(schema.ui_schema || {}, null, 2));
         } else {
             setName("");
@@ -246,7 +246,7 @@ export function SchemaEditor({
                 // 更新Schema
                 const updateData: JsonSchemaUpdate = {
                     name,
-                    schema: JSON.parse(schemaJson),
+                    schema_value: JSON.parse(schemaJson), // 修改处
                     ui_schema: uiSchemaJson ? JSON.parse(uiSchemaJson) : undefined,
                     remark: remark || undefined,
                 };
@@ -261,13 +261,15 @@ export function SchemaEditor({
                 const createData: JsonSchemaCreate = {
                     name,
                     entity_type: entityType,
-                    schema: JSON.parse(schemaJson),
+                    schema_value: JSON.parse(schemaJson), // 修改处
                     ui_schema: uiSchemaJson ? JSON.parse(uiSchemaJson) : undefined,
                     remark: remark || undefined,
                     is_system: false,
                     // 公司拥有者模式：为自定义字段指定公司ID
                     company_id: defaultCompanyId,
                 };
+
+                console.log("Frontend: createData to be sent:", JSON.stringify(createData, null, 2));
 
                 await createJsonSchema(createData);
                 toast({

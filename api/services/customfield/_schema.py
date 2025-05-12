@@ -10,9 +10,14 @@ class JsonSchemaBase(BaseModel):
 
     name: str = Field(..., description="Schema名称")
     entity_type: SchemaEntityType = Field(..., description="适用的实体类型")
-    schema_value: Dict[str, Any] = Field(..., description="JSON Schema定义")
+    schema_value: Dict[str, Any] = Field(
+        ..., alias="schema", description="JSON Schema定义"
+    )
     ui_schema: Optional[Dict[str, Any]] = Field(None, description="UI展示相关的配置")
     remark: Optional[str] = Field(None, max_length=255, description="备注信息")
+
+    class Config:
+        populate_by_name = True  # 让Pydantic同时支持属性名和别名
 
     @field_validator("schema_value")
     def validate_schema_value(cls, v):
@@ -95,9 +100,13 @@ class JsonSchemaSchema(JsonSchemaBase):
     parent_schema_id: Optional[int] = Field(None, description="父Schema ID")
     created_at: Optional[datetime] = Field(None, description="创建时间")
     updated_at: Optional[datetime] = Field(None, description="更新时间")
+    schema_value: Dict[str, Any] = Field(
+        ..., alias="schema", description="JSON Schema定义"
+    )
 
     class Config:
         from_attributes = True
+        populate_by_name = True  # 让Pydantic同时支持属性名和别名
 
 
 class JsonValueSchema(JsonValueBase):

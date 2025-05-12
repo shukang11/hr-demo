@@ -12,6 +12,7 @@ import { ProtectedRoute } from "./lib/auth/protected-route"
 
 // 懒加载导入所有功能页面组件
 const DashboardPage = lazy(() => import("@/app/dashboard/page"))
+const GroupDashboardPage = lazy(() => import("@/app/dashboard/group-view/page"))
 const CandidatePage = lazy(() => import("@/app/candidate/page"))
 const EmployeePage = lazy(() => import("@/app/employee/page"))
 const DepartmentPage = lazy(() => import("@/app/department/page"))
@@ -63,6 +64,14 @@ function App() {
                   element={
                     <PageWrapper>
                       <DashboardPage />
+                    </PageWrapper>
+                  }
+                />
+                <Route
+                  path="dashboard/group-view/:parentId"
+                  element={
+                    <PageWrapper>
+                      <GroupDashboardPage />
                     </PageWrapper>
                   }
                 />
