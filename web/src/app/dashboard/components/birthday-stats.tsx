@@ -10,107 +10,118 @@ interface BirthdayStatsProps {
 }
 
 export function BirthdayStats({ companyId }: BirthdayStatsProps) {
-  // 获取本月范围
-  const thisMonth = getMonthRange()
-  const { data: thisMonthEmployees } = useBirthdayEmployees(
+  // 获取当前月份和下个月的时间范围
+  const currentMonth = new Date()
+  const nextMonth = new Date()
+  nextMonth.setMonth(currentMonth.getMonth() + 1)
+
+  const currentMonthRange = getMonthRange(currentMonth)
+  const nextMonthRange = getMonthRange(nextMonth)
+
+  // 获取当前月份的生日员工数据
+  const { data: currentMonthBirthdays, isLoading: isCurrentLoading } = useBirthdayEmployees(
     companyId,
-    thisMonth.startTime,
-    thisMonth.endTime
+    currentMonthRange.startTime,
+    currentMonthRange.endTime
   )
 
-  // 获取下个月范围
-  const nextMonth = getMonthRange(new Date(thisMonth.endTime + 24 * 60 * 60 * 1000))
-  const { data: nextMonthEmployees } = useBirthdayEmployees(
+  // 获取下个月的生日员工数据
+  const { data: nextMonthBirthdays, isLoading: isNextLoading } = useBirthdayEmployees(
     companyId,
-    nextMonth.startTime,
-    nextMonth.endTime
+    nextMonthRange.startTime,
+    nextMonthRange.endTime
   )
+
+  // 获取月份名称
+  const currentMonthName = new Intl.DateTimeFormat('zh-CN', { month: 'long' }).format(currentMonth)
+  const nextMonthName = new Intl.DateTimeFormat('zh-CN', { month: 'long' }).format(nextMonth)
+
+  // 格式化生日日期
+  const formatBirthday = (timestamp: number) => {
+    const date = new Date(timestamp)
+    return `${date.getMonth() + 1}月${date.getDate()}日`
+  }
+
+  // 获取姓名首字母作为头像
+  const getNameInitial = (name: string) => {
+    return name.charAt(0).toUpperCase()
+  }
 
   return (
-    <Card className="col-span-3">
+    <Card className="col-span-1">
       <CardHeader>
-        <CardTitle>员工生日提醒</CardTitle>
+        <CardTitle>员工生日</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="this-month">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="this-month">
-              本月过生日 ({thisMonthEmployees?.length || 0})
+        <Tabs defaultValue="current">
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value="current">
+              本月 ({currentMonthBirthdays?.length || 0})
             </TabsTrigger>
-            <TabsTrigger value="next-month">
-              下月过生日 ({nextMonthEmployees?.length || 0})
+            <TabsTrigger value="next">
+              下月 ({nextMonthBirthdays?.length || 0})
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="this-month">
-            <ScrollArea className="h-[300px] pr-4">
-              <div className="space-y-4 mt-4">
-                {thisMonthEmployees?.map((employee) => (
-                  <div
-                    key={employee.id}
-                    className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted"
-                  >
-                    <Avatar>
-                      <AvatarFallback>
-                        {employee.name.slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {employee.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {employee.department} · {employee.position}
-                      </p>
+
+          <TabsContent value="current">
+            <ScrollArea className="h-[280px] pr-4">
+              {isCurrentLoading ? (
+                <div className="flex justify-center items-center h-full">加载中...</div>
+              ) : currentMonthBirthdays && currentMonthBirthdays.length > 0 ? (
+                <div className="space-y-4">
+                  {currentMonthBirthdays.map((employee) => (
+                    <div key={employee.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback>{getNameInitial(employee.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between">
+                          <span className="font-medium">{employee.name}</span>
+                          <span className="text-sm text-muted-foreground">{formatBirthday(employee.birthdate)}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">{employee.department} · {employee.position}</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(employee.birthdate).getDate()}日
-                    </div>
-                  </div>
-                ))}
-                {thisMonthEmployees?.length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    本月暂无员工过生日
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex justify-center items-center h-full text-muted-foreground">
+                  本月无员工生日
+                </div>
+              )}
             </ScrollArea>
           </TabsContent>
-          <TabsContent value="next-month">
-            <ScrollArea className="h-[300px] pr-4">
-              <div className="space-y-4 mt-4">
-                {nextMonthEmployees?.map((employee) => (
-                  <div
-                    key={employee.id}
-                    className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted"
-                  >
-                    <Avatar>
-                      <AvatarFallback>
-                        {employee.name.slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {employee.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {employee.department} · {employee.position}
-                      </p>
+
+          <TabsContent value="next">
+            <ScrollArea className="h-[280px] pr-4">
+              {isNextLoading ? (
+                <div className="flex justify-center items-center h-full">加载中...</div>
+              ) : nextMonthBirthdays && nextMonthBirthdays.length > 0 ? (
+                <div className="space-y-4">
+                  {nextMonthBirthdays.map((employee) => (
+                    <div key={employee.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback>{getNameInitial(employee.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between">
+                          <span className="font-medium">{employee.name}</span>
+                          <span className="text-sm text-muted-foreground">{formatBirthday(employee.birthdate)}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">{employee.department} · {employee.position}</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(employee.birthdate).getDate()}日
-                    </div>
-                  </div>
-                ))}
-                {nextMonthEmployees?.length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    下月暂无员工过生日
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex justify-center items-center h-full text-muted-foreground">
+                  下月无员工生日
+                </div>
+              )}
             </ScrollArea>
           </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
   )
-} 
+}

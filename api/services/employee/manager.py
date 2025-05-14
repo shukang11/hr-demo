@@ -15,7 +15,6 @@ from ._schema import (
     EmployeeSchema,
     EmployeePositionCreate,
     EmployeePositionSchema,
-    Gender,
 )
 
 
@@ -138,14 +137,19 @@ class EmployeeService:
             self.session.refresh(employee)
 
             # 如果提供了部门和职位信息，更新或创建员工职位关联
-            if employee_data.department_id is not None and employee_data.position_id is not None:
+            if (
+                employee_data.department_id is not None
+                and employee_data.position_id is not None
+            ):
                 # 获取当前职位关联
                 current_position = self.get_employee_current_position(employee_id)
-                
+
                 if current_position:
                     # 如果部门或职位发生变化，创建新的职位关联
-                    if (current_position.department_id != employee_data.department_id or
-                        current_position.position_id != employee_data.position_id):
+                    if (
+                        current_position.department_id != employee_data.department_id
+                        or current_position.position_id != employee_data.position_id
+                    ):
                         position = EmployeePositionInDB(
                             employee_id=employee.id,
                             company_id=employee.company_id,
@@ -174,10 +178,7 @@ class EmployeeService:
             self.session.rollback()
             return None
 
-    def query_employee_by_id(
-        self,
-        employee_id: int
-    ) -> Optional[EmployeeInDB]:
+    def query_employee_by_id(self, employee_id: int) -> Optional[EmployeeInDB]:
         """根据ID查询员工信息
 
         Args:
@@ -194,7 +195,7 @@ class EmployeeService:
             select(EmployeeInDB)
             .options(
                 joinedload(EmployeeInDB.positions),
-                joinedload(EmployeeInDB.extra_schema)
+                joinedload(EmployeeInDB.extra_schema),
             )
             .where(EmployeeInDB.id == employee_id)
         )
@@ -209,10 +210,7 @@ class EmployeeService:
         return employee
 
     def get_employee_list(
-        self,
-        company_id: int,
-        page: int = 1,
-        limit: int = 10
+        self, company_id: int, page: int = 1, limit: int = 10
     ) -> Tuple[List[EmployeeSchema], int]:
         """获取指定公司的员工列表，支持分页
 
@@ -232,10 +230,7 @@ class EmployeeService:
             raise PermissionError("您没有查看该公司员工的权限")
 
         # 构建基础查询
-        stmt = (
-            select(EmployeeInDB)
-            .where(EmployeeInDB.company_id == company_id)
-        )
+        stmt = select(EmployeeInDB).where(EmployeeInDB.company_id == company_id)
 
         # 计数查询
         count_stmt = (
@@ -248,12 +243,7 @@ class EmployeeService:
         total = self.session.execute(count_stmt).scalar() or 0
 
         # 添加分页
-        stmt = (
-            stmt
-            .order_by(EmployeeInDB.id)
-            .offset((page - 1) * limit)
-            .limit(limit)
-        )
+        stmt = stmt.order_by(EmployeeInDB.id).offset((page - 1) * limit).limit(limit)
 
         # 执行查询
         employees = self.session.execute(stmt).scalars().all()
@@ -264,10 +254,7 @@ class EmployeeService:
         return result, total
 
     def get_employees_by_department(
-        self,
-        department_id: int,
-        page: int = 1,
-        limit: int = 10
+        self, department_id: int, page: int = 1, limit: int = 10
     ) -> Tuple[List[EmployeeSchema], int]:
         """获取指定部门的员工列表，支持分页
 
@@ -285,7 +272,10 @@ class EmployeeService:
         # 使用部门ID查询员工
         stmt = (
             select(EmployeeInDB)
-            .join(EmployeePositionInDB, EmployeeInDB.id == EmployeePositionInDB.employee_id)
+            .join(
+                EmployeePositionInDB,
+                EmployeeInDB.id == EmployeePositionInDB.employee_id,
+            )
             .where(EmployeePositionInDB.department_id == department_id)
             .group_by(EmployeeInDB.id)  # 对员工ID分组，避免重复
         )
@@ -297,7 +287,7 @@ class EmployeeService:
             .limit(1)
         )
         company_id_result = self.session.execute(check_stmt).first()
-        
+
         if company_id_result:
             company_id = company_id_result[0]
             # 检查权限
@@ -311,7 +301,10 @@ class EmployeeService:
         count_stmt = (
             select(func.count(func.distinct(EmployeeInDB.id)))
             .select_from(EmployeeInDB)
-            .join(EmployeePositionInDB, EmployeeInDB.id == EmployeePositionInDB.employee_id)
+            .join(
+                EmployeePositionInDB,
+                EmployeeInDB.id == EmployeePositionInDB.employee_id,
+            )
             .where(EmployeePositionInDB.department_id == department_id)
         )
 
@@ -319,12 +312,7 @@ class EmployeeService:
         total = self.session.execute(count_stmt).scalar() or 0
 
         # 添加分页
-        stmt = (
-            stmt
-            .order_by(EmployeeInDB.id)
-            .offset((page - 1) * limit)
-            .limit(limit)
-        )
+        stmt = stmt.order_by(EmployeeInDB.id).offset((page - 1) * limit).limit(limit)
 
         # 执行查询
         employees = self.session.execute(stmt).scalars().all()
@@ -335,11 +323,7 @@ class EmployeeService:
         return result, total
 
     def search_employees(
-        self,
-        company_id: int,
-        name: str,
-        page: int = 1,
-        limit: int = 10
+        self, company_id: int, name: str, page: int = 1, limit: int = 10
     ) -> Tuple[List[EmployeeSchema], int]:
         """搜索员工
 
@@ -361,12 +345,9 @@ class EmployeeService:
 
         # 构建模糊搜索条件
         search_pattern = f"%{name}%"
-        stmt = (
-            select(EmployeeInDB)
-            .where(
-                EmployeeInDB.company_id == company_id,
-                EmployeeInDB.name.like(search_pattern)
-            )
+        stmt = select(EmployeeInDB).where(
+            EmployeeInDB.company_id == company_id,
+            EmployeeInDB.name.like(search_pattern),
         )
 
         # 计数查询
@@ -375,7 +356,7 @@ class EmployeeService:
             .select_from(EmployeeInDB)
             .where(
                 EmployeeInDB.company_id == company_id,
-                EmployeeInDB.name.like(search_pattern)
+                EmployeeInDB.name.like(search_pattern),
             )
         )
 
@@ -383,12 +364,7 @@ class EmployeeService:
         total = self.session.execute(count_stmt).scalar() or 0
 
         # 添加分页
-        stmt = (
-            stmt
-            .order_by(EmployeeInDB.id)
-            .offset((page - 1) * limit)
-            .limit(limit)
-        )
+        stmt = stmt.order_by(EmployeeInDB.id).offset((page - 1) * limit).limit(limit)
 
         # 执行查询
         employees = self.session.execute(stmt).scalars().all()
@@ -398,10 +374,7 @@ class EmployeeService:
 
         return result, total
 
-    def delete_employee(
-        self,
-        employee_id: int
-    ) -> bool:
+    def delete_employee(self, employee_id: int) -> bool:
         """删除员工
 
         Args:
@@ -424,9 +397,8 @@ class EmployeeService:
 
         try:
             # 删除相关职位关联
-            position_stmt = (
-                select(EmployeePositionInDB)
-                .where(EmployeePositionInDB.employee_id == employee_id)
+            position_stmt = select(EmployeePositionInDB).where(
+                EmployeePositionInDB.employee_id == employee_id
             )
             positions = self.session.execute(position_stmt).scalars().all()
             for position in positions:
@@ -443,8 +415,7 @@ class EmployeeService:
     # 员工职位关联相关方法
 
     def add_employee_position(
-        self,
-        position_data: EmployeePositionCreate
+        self, position_data: EmployeePositionCreate
     ) -> Optional[EmployeePositionSchema]:
         """为员工添加职位
 
@@ -462,12 +433,9 @@ class EmployeeService:
             raise PermissionError("您没有管理该公司员工职位的权限")
 
         # 验证员工是否属于该公司
-        emp_stmt = (
-            select(EmployeeInDB)
-            .where(
-                EmployeeInDB.id == position_data.employee_id,
-                EmployeeInDB.company_id == position_data.company_id
-            )
+        emp_stmt = select(EmployeeInDB).where(
+            EmployeeInDB.id == position_data.employee_id,
+            EmployeeInDB.company_id == position_data.company_id,
         )
         employee = self.session.execute(emp_stmt).scalar_one_or_none()
         if not employee:
@@ -492,10 +460,7 @@ class EmployeeService:
             self.session.rollback()
             return None
 
-    def remove_employee_position(
-        self,
-        position_id: int
-    ) -> bool:
+    def remove_employee_position(self, position_id: int) -> bool:
         """移除员工职位关联
 
         Args:
@@ -508,9 +473,8 @@ class EmployeeService:
             PermissionError: 当用户没有权限管理指定员工的职位时
         """
         # 查询职位关联
-        stmt = (
-            select(EmployeePositionInDB)
-            .where(EmployeePositionInDB.id == position_id)
+        stmt = select(EmployeePositionInDB).where(
+            EmployeePositionInDB.id == position_id
         )
         position = self.session.execute(stmt).scalar_one_or_none()
 
@@ -529,10 +493,7 @@ class EmployeeService:
             self.session.rollback()
             return False
 
-    def get_employee_positions(
-        self,
-        employee_id: int
-    ) -> List[EmployeePositionSchema]:
+    def get_employee_positions(self, employee_id: int) -> List[EmployeePositionSchema]:
         """获取员工的职位列表
 
         Args:
@@ -570,8 +531,7 @@ class EmployeeService:
         return [EmployeePositionSchema.model_validate(p) for p in positions]
 
     def get_employee_current_position(
-        self,
-        employee_id: int
+        self, employee_id: int
     ) -> Optional[EmployeePositionInDB]:
         """获取员工当前职位
 
@@ -610,8 +570,7 @@ class EmployeeService:
         return position
 
     def get_employee_position_history(
-        self,
-        employee_id: int
+        self, employee_id: int
     ) -> List[EmployeePositionSchema]:
         """获取员工职位历史
 

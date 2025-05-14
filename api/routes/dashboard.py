@@ -3,6 +3,7 @@ from flask_login import current_user, login_required
 from typing import List, Optional
 
 from libs.schema.http import ResponseSchema, make_api_response
+from libs.helper import get_date_from_time_tuple
 from extensions.ext_database import db
 from services.dashboard import (
     DashboardService,
@@ -278,7 +279,22 @@ def get_birthday_employees(company_id: int) -> Response:
 
         # 获取过生日员工列表
         employees = service.get_birthday_employees(company_id, start_time, end_time)
-
+        try:
+            start_time_str = get_date_from_time_tuple(str(start_time))
+            end_time_str = get_date_from_time_tuple(str(end_time))
+            employee_infos = [
+                {
+                    "name": employee.name,
+                    "birthday_ts": employee.birthdate,
+                    "birthday": get_date_from_time_tuple(str(employee.birthdate)),
+                }
+                for employee in employees
+            ]
+            current_app.logger.info(
+                f"获取过生日的员工列表，参数: company_id={company_id}, start_time={start_time_str}, end_time={end_time_str} employees={employee_infos}"
+            )
+        except Exception as e:
+            current_app.logger.error(f"获取过生日的员工列表失败: {e}")
         # 返回成功响应
         return make_api_response(
             ResponseSchema[list[BirthdayEmployee]].from_success(

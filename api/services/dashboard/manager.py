@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any
-from sqlalchemy import select, func, case, extract, text, exists
+from sqlalchemy import select, func, case, extract, text, exists, Integer
 from sqlalchemy.orm import Session, joinedload
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
@@ -479,43 +479,93 @@ class DashboardService:
         start_date = datetime.fromtimestamp(start_time / 1000)
         end_date = datetime.fromtimestamp(end_time / 1000)
 
-        # 提取出生日的月份和日期，用于查询在指定时间范围内过生日的员工
-        # SQLite 版本：使用 strftime 函数代替 MySQL 的 MONTH 和 DAY 函数
-        stmt = text("""
-            SELECT e.id, e.name, d.name as department, p.name as position, 
-                   strftime('%s', e.birthdate) * 1000 as birthdate
-            FROM employee e
-            LEFT JOIN employee_position ep ON e.id = ep.employee_id
-            LEFT JOIN department d ON ep.department_id = d.id
-            LEFT JOIN position p ON ep.position_id = p.id
-            WHERE e.company_id = :company_id
-            AND e.birthdate IS NOT NULL
-            AND (
-                (strftime('%m', e.birthdate) > strftime('%m', :start_date) OR 
-                 (strftime('%m', e.birthdate) = strftime('%m', :start_date) AND strftime('%d', e.birthdate) >= strftime('%d', :start_date)))
-                OR
-                (strftime('%m', e.birthdate) < strftime('%m', :end_date) OR 
-                 (strftime('%m', e.birthdate) = strftime('%m', :end_date) AND strftime('%d', e.birthdate) <= strftime('%d', :end_date)))
-            )
-            ORDER BY strftime('%m', e.birthdate), strftime('%d', e.birthdate)
-        """)
+        # 导入员工职位模型
+        from libs.models.employee_position import EmployeePositionInDB
 
-        result = self.session.execute(
-            stmt,
-            {"company_id": company_id, "start_date": start_date, "end_date": end_date},
+        # 提取月日对比值 (月*100+日)
+        start_md = start_date.month * 100 + start_date.day
+        end_md = end_date.month * 100 + end_date.day
+
+        # 使用子查询来处理月份和日期
+        query = (
+            self.session.query(
+                EmployeeInDB.id,
+                EmployeeInDB.name,
+                DepartmentInDB.name.label("department"),
+                PositionInDB.name.label("position"),
+                EmployeeInDB.birthdate,
+            )
+            .outerjoin(
+                EmployeePositionInDB,
+                EmployeeInDB.id == EmployeePositionInDB.employee_id,
+            )
+            .outerjoin(
+                DepartmentInDB, EmployeePositionInDB.department_id == DepartmentInDB.id
+            )
+            .outerjoin(
+                PositionInDB, EmployeePositionInDB.position_id == PositionInDB.id
+            )
+            .filter(EmployeeInDB.company_id == company_id)
+            .filter(EmployeeInDB.birthdate.isnot(None))
         )
 
+        # 将查询结果转为列表，并在Python中过滤
+        employees = query.all()
         birthday_employees = []
-        for row in result:
-            birthday_employees.append(
-                BirthdayEmployee(
-                    id=row[0],
-                    name=row[1],
-                    department=row[2] if row[2] else "未分配",
-                    position=row[3] if row[3] else "未分配",
-                    birthdate=row[4],
+
+        for employee in employees:
+            # 提取生日的月和日
+            birth_month = employee.birthdate.month
+            birth_day = employee.birthdate.day
+            birth_md = birth_month * 100 + birth_day
+
+            # 判断是否在范围内
+            is_in_range = False
+            if start_md <= end_md:  # 日期范围不跨年
+                if start_md <= birth_md <= end_md:
+                    is_in_range = True
+            else:  # 日期范围跨年 (例如 12月至次年2月)
+                if birth_md >= start_md or birth_md <= end_md:
+                    is_in_range = True
+
+            if is_in_range:
+                # 计算正确的时间戳 (使用生日的月日与当前年份组合)
+                # 修复: 处理date对象，将其转换为datetime后再获取时间戳
+                current_year = datetime.now().year
+                if isinstance(employee.birthdate, date) and not isinstance(
+                    employee.birthdate, datetime
+                ):
+                    # 如果是date对象，转换为datetime
+                    from datetime import time as dt_time
+
+                    birthday_date = datetime.combine(
+                        employee.birthdate.replace(year=current_year), dt_time()
+                    )
+                else:
+                    # 如果已经是datetime对象
+                    birthday_date = employee.birthdate.replace(year=current_year)
+
+                timestamp = int(birthday_date.timestamp() * 1000)
+
+                birthday_employees.append(
+                    BirthdayEmployee(
+                        id=employee.id,
+                        name=employee.name,
+                        department=employee.department
+                        if employee.department
+                        else "未分配",
+                        position=employee.position if employee.position else "未分配",
+                        birthdate=timestamp,
+                    )
                 )
+
+        # 按照生日排序 (先按月，再按日)
+        birthday_employees.sort(
+            key=lambda x: (
+                datetime.fromtimestamp(x.birthdate / 1000).month,
+                datetime.fromtimestamp(x.birthdate / 1000).day,
             )
+        )
 
         return birthday_employees
 

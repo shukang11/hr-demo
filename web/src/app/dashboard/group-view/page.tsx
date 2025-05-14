@@ -7,9 +7,8 @@ import {
     CardTitle
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from '@/hooks/use-auth';
 import { useParams, useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BarChart, Loader2 } from 'lucide-react';
@@ -38,8 +37,6 @@ import { TenureDistribution } from '@/components/charts/tenure-distribution';
 export default function GroupDashboardPage() {
     const params = useParams();
     const navigate = useNavigate();
-    const { toast } = useToast();
-    const { user } = useAuth();
     const [selectedSubsidiaries, setSelectedSubsidiaries] = useState<number[]>([]);
 
     // 转换parentId为数字
@@ -70,14 +67,6 @@ export default function GroupDashboardPage() {
     const handleBack = () => {
         navigate(`/company/${parentIdNum}`);
     };
-
-    if (!user) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
 
     return (
         <div className="p-6 space-y-4">

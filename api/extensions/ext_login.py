@@ -29,13 +29,11 @@ def init_app(app: Flask) -> None:
             return None
 
         if token.startswith("Bearer "):
-            original_token = token
             token = token.removeprefix("Bearer ")
-            current_app.logger.info(f"处理 Bearer 令牌: 从 {original_token} 提取为 {token}")
-        
+
         account_service = AccountService(session=db.session)
         account = account_service.find_account_by_token(token)
-        
+
         return account
 
     @login_manager.user_loader
@@ -44,12 +42,16 @@ def init_app(app: Flask) -> None:
         try:
             account = AccountService(session=db.session).find_account_by_id(user_id)
             if account:
-                current_app.logger.info(f"通过ID成功加载用户: id={user_id}, username={account.username}")
+                current_app.logger.info(
+                    f"通过ID成功加载用户: id={user_id}, username={account.username}"
+                )
             else:
                 current_app.logger.warning(f"未找到ID为 {user_id} 的用户")
             return account
         except Exception as e:
-            current_app.logger.error(f"通过ID加载用户时发生异常: {str(e)}", exc_info=True)
+            current_app.logger.error(
+                f"通过ID加载用户时发生异常: {str(e)}", exc_info=True
+            )
             return None
 
     @login_manager.unauthorized_handler

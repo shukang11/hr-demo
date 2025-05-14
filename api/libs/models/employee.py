@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 from datetime import date
 from sqlalchemy.orm import Mapped
-from sqlalchemy import Column, Integer, SMALLINT, String, ForeignKey
+from sqlalchemy import Column, Integer, SMALLINT, String, ForeignKey, Date, JSON
 from extensions.ext_database import db
 from .base import BaseModel
 from .json_schema import JsonSchemaInDB
@@ -55,7 +55,7 @@ class EmployeeInDB(BaseModel):
         comment="联系电话",
     )
     birthdate: Mapped[Optional[date]] = Column(
-        db.Date,
+        Date,
         nullable=True,  # 允许为空，出生日期是可选的
         comment="出生日期",
     )
@@ -70,7 +70,7 @@ class EmployeeInDB(BaseModel):
         comment="性别，0-未知，1-男，2-女",
     )
     extra_value: Mapped[Optional[dict]] = Column(
-        db.JSON,
+        JSON,
         nullable=True,  # 允许为空，附加数据是可选的
         comment="附加JSON格式数据",
     )

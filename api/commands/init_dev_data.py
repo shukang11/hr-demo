@@ -323,9 +323,27 @@ def create_employees(session: Session, company: "CompanyInDB"):
         # 随机生成姓名
         full_name = random.choice(surnames) + random.choice(names)
 
-        # 随机选择出生日期 (20-50岁)
+        # 随机选择出生日期 (20-50岁)，保留月日信息
+        current_year = datetime.now().year
         age = random.randint(20, 50)
-        birthdate = datetime.now() - timedelta(days=age * 365)
+        # 随机生成月和日
+        month = random.randint(1, 12)
+        # 根据月份确定天数上限，考虑闰年情况
+        if month == 2:
+            max_day = (
+                29
+                if (current_year - age) % 4 == 0
+                and ((current_year - age) % 100 != 0 or (current_year - age) % 400 == 0)
+                else 28
+            )
+        elif month in [4, 6, 9, 11]:
+            max_day = 30
+        else:
+            max_day = 31
+        day = random.randint(1, max_day)
+
+        # 创建生日日期
+        birthdate = datetime(current_year - age, month, day)
 
         # 根据gender字段定义修改性别值为整数
         gender_value = random.randint(1, 2)  # 1-男, 2-女
@@ -364,7 +382,7 @@ def create_employees(session: Session, company: "CompanyInDB"):
             session.add(emp_position)
 
             click.echo(
-                f"创建员工成功: 公司={company.name}, 员工={employee.name}, 部门={dept.name}, 职位={position.name}"
+                f"创建员工成功: 公司={company.name}, 员工={employee.name}, 部门={dept.name}, 职位={position.name} 出生日期={employee.birthdate}"
             )
         else:
             click.echo(f"创建员工成功: 公司={company.name}, 员工={employee.name}")
