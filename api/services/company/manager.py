@@ -40,6 +40,8 @@ class CompanyService:
         Returns:
             Optional[CompanyInDB]: 公司对象或None
         """
+        if not company_id:
+            raise ValueError("company_id must be provided to query a company.")
 
         if not self._permission.can_view_company(company_id):
             raise PermissionError("You do not have permission to view this company.")
@@ -195,8 +197,6 @@ class CompanyService:
                 extra_value=company_data.extra_value,
                 extra_schema_id=company_data.extra_schema_id,
                 description=company_data.description,
-                created_at=datetime.now(datetime.timezone.utc),
-                updated_at=datetime.now(datetime.timezone.utc),
             )
             self.session.add(new_company)
             self.session.flush()  # 获取ID
@@ -246,7 +246,7 @@ class CompanyService:
             if company_data.description is not None:
                 company.description = company_data.description
 
-            company.updated_at = datetime.now(datetime.timezone.utc)
+            company.updated_at = datetime.now()
 
             self.session.commit()
             return CompanySchema.model_validate(company)
@@ -277,134 +277,6 @@ class CompanyService:
         except Exception as _e:
             self.session.rollback()
             return False
-
-    def get_company_detail(self, company_id: int) -> Optional[CompanyDetailSchema]:
-        """获取公司详情，包括父公司和子公司信息
-
-        Args:
-            company_id: 公司ID
-
-        Returns:
-            Optional[CompanyDetailSchema]: 详细的公司信息或None
-        """
-        if not self._permission.can_view_company(company_id):
-            raise PermissionError("You do not have permission to view this company.")
-
-        # 使用 joinedload 加载关联的父公司和子公司信息
-        stmt = (
-            select(CompanyInDB)
-            .options(
-                joinedload(CompanyInDB.parent), joinedload(CompanyInDB.subsidiaries)
-            )
-            .where(CompanyInDB.id == company_id)
-        )
-
-        company = self.session.execute(stmt).scalar_one_or_none()
-        if not company:
-            return None
-
-        # 构建详细响应
-        result = CompanyDetailSchema(
-            id=company.id,
-            name=company.name,
-            description=company.description,
-            parent_id=company.parent_id,
-            extra_value=company.extra_value,
-            extra_schema_id=company.extra_schema_id,
-            created_at=company.created_at,
-            updated_at=company.updated_at,
-            subsidiaries=[
-                SubsidiaryInfo(id=sub.id, name=sub.name) for sub in company.subsidiaries
-            ],
-        )
-
-        # 如果有父公司，添加父公司信息
-        if company.parent:
-            result.parent_company = CompanySchema(
-                id=company.parent.id,
-                name=company.parent.name,
-                description=company.parent.description,
-                parent_id=company.parent.parent_id,
-                extra_value=company.parent.extra_value,
-                extra_schema_id=company.parent.extra_schema_id,
-                created_at=company.parent.created_at,
-                updated_at=company.parent.updated_at,
-            )
-
-        return result
-
-    def get_subsidiaries(self, company_id: int) -> List[CompanySchema]:
-        """获取公司的子公司列表
-
-        Args:
-            company_id: 公司ID
-
-        Returns:
-            List[CompanySchema]: 子公司列表
-        """
-        if not self._permission.can_view_company(company_id):
-            raise PermissionError("You do not have permission to view this company.")
-
-        # 检查公司是否存在
-        company = self.query_company_by(company_id=company_id)
-        if not company:
-            return []
-
-        # 查询所有子公司
-        stmt = select(CompanyInDB).where(CompanyInDB.parent_id == company_id)
-        subsidiaries = self.session.execute(stmt).scalars().all()
-
-        # 转换为API响应模型
-        result = [CompanySchema.model_validate(c) for c in subsidiaries]
-
-        return result
-
-    def add_subsidiary(
-        self, parent_id: int, company_data: CompanyCreate
-    ) -> Optional[CompanySchema]:
-        """添加子公司
-
-        Args:
-            parent_id: 父公司ID
-            company_data: 子公司数据
-
-        Returns:
-            Optional[CompanySchema]: 新创建的子公司信息或None
-        """
-        if not self._permission.can_manage_company(parent_id):
-            raise PermissionError("You do not have permission to manage this company.")
-
-        # 检查父公司是否存在
-        parent_company = self.query_company_by(company_id=parent_id)
-        if not parent_company:
-            return None
-
-        try:
-            # 创建子公司
-            new_company = CompanyInDB(
-                name=company_data.name,
-                description=company_data.description,
-                parent_id=parent_id,  # 设置父公司ID
-                extra_value=company_data.extra_value,
-                extra_schema_id=company_data.extra_schema_id,
-                created_at=datetime.now(datetime.timezone.utc),
-                updated_at=datetime.now(datetime.timezone.utc),
-            )
-            self.session.add(new_company)
-
-            # 创建用户与子公司的关系
-            relation = AccountCompanyInDB(
-                account_id=self.account.id,
-                company_id=new_company.id,
-                role=AccountCompanyRole.OWNER,
-            )
-            self.session.add(relation)
-
-            self.session.commit()
-            return CompanySchema.model_validate(new_company)
-        except Exception as e:
-            self.session.rollback()
-            raise e
 
     def get_company_detail(self, company_id: int) -> Optional[CompanyDetailSchema]:
         """获取公司详情，包括父公司和子公司信息
@@ -500,8 +372,6 @@ class CompanyService:
                 extra_value=company_data.extra_value,
                 extra_schema_id=company_data.extra_schema_id,
                 parent_id=parent_id,  # 设置父公司ID
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
             )
 
             self.session.add(subsidiary)

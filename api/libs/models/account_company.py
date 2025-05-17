@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from extensions.ext_database import db
 from .base import BaseModel
 from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, MappedColumn
 
 if TYPE_CHECKING:
     from .company import CompanyInDB
@@ -45,19 +45,19 @@ class AccountCompanyInDB(BaseModel):
 
     __tablename__ = "account_company"
 
-    account_id: Mapped[int] = Column(
+    account_id: Mapped[int] = MappedColumn(
         Integer,
         ForeignKey("accounts.id"),
         nullable=False,
         comment="账户ID，关联 accounts.id",
     )
-    company_id: Mapped[int] = Column(
+    company_id: Mapped[int] = MappedColumn(
         Integer,
         ForeignKey("company.id"),
         nullable=False,
         comment="公司ID，关联 company.id",
     )
-    role: Mapped[AccountCompanyRole] = Column(
+    role: Mapped[AccountCompanyRole] = MappedColumn(
         String(32), nullable=False, comment="账户在该公司中的角色 (owner, admin, user)"
     )
 
@@ -68,14 +68,14 @@ class AccountCompanyInDB(BaseModel):
         "AccountInDB",
         back_populates="account_companies",
         overlaps="accounts,companies",  # 添加这个参数
-    )
+    )  # type: ignore
     # 定义与 CompanyInDB 的多对一关系
     # back_populates 指向 CompanyInDB 模型中名为 'account_companies' 的关系属性
     company: Mapped["CompanyInDB"] = db.relationship(
         "CompanyInDB",
         back_populates="account_companies",
         overlaps="accounts,companies",  # 添加这个参数
-    )
+    )  # type: ignore
 
     # 表级约束
     __table_args__ = (
@@ -83,3 +83,21 @@ class AccountCompanyInDB(BaseModel):
         UniqueConstraint("account_id", "company_id", name="uix_account_company"),
         {"comment": "账户与公司的关联表，定义账户在公司中的角色"},  # 添加表注释
     )
+
+    def __init__(
+        self,
+        account_id: int,
+        company_id: int,
+        role: AccountCompanyRole,
+    ) -> None:
+        """初始化账户-公司关联模型
+
+        Args:
+            account_id (int): 账户ID
+            company_id (int): 公司ID
+            role (AccountCompanyRole): 账户在公司中的角色
+        """
+        super().__init__()
+        self.account_id = account_id
+        self.company_id = company_id
+        self.role = role

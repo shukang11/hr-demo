@@ -12,7 +12,6 @@ from services.company import (
     CompanyUpdate,
     CompanySchema,
     CompanyDetailSchema,
-    SubsidiaryInfo,
 )
 from services.permission import PermissionError
 
@@ -41,10 +40,10 @@ def insert_company() -> Response:
         user = current_user._get_current_object()
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 获取请求数据
-        request_data = request.json
+        request_data: dict = request.json  # type: ignore
         company_id = request_data.get("id")
 
         if company_id:
@@ -117,7 +116,7 @@ def get_company_list() -> Response:
         limit = int(request.args.get("limit", 10))
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 使用新的分页查询方法
         items, total = service.get_companies_paginated(page=page, limit=limit)
@@ -171,7 +170,7 @@ def search_companies() -> Response:
         limit = int(request.args.get("limit", 10))
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 使用新的搜索方法
         items, total = service.search_companies_by_name(
@@ -220,7 +219,7 @@ def get_company_detail(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 查询公司
         company = service.query_company_by(company_id=company_id)
@@ -268,7 +267,7 @@ def delete_company_endpoint(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 删除公司
         success = service.delete_company(company_id=company_id)
@@ -314,7 +313,7 @@ def get_company_detail_endpoint(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 获取公司详情
         company_detail = service.get_company_detail(company_id=company_id)
@@ -364,7 +363,7 @@ def get_subsidiaries_endpoint(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 获取子公司列表
         subsidiaries = service.get_subsidiaries(company_id=company_id)
@@ -405,7 +404,7 @@ def add_subsidiary_endpoint(parent_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建公司服务实例
-        service = CompanyService(session=db.session, account=user)
+        service = CompanyService(session=db.session, account=user)  # type: ignore
 
         # 解析请求数据
         try:

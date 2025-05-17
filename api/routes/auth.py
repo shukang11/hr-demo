@@ -29,26 +29,32 @@ def login() -> Response:
 
     try:
         parameters: LoginRequest = LoginRequest.model_validate(request.json)
-        service = AccountService(session=db.session)
-        
+        service = AccountService(session=db.session)  # type: ignore
+
         # 日志记录请求内容，帮助调试
-        current_app.logger.info(f"Login request: username/email={parameters.username or parameters.email}")
-        
+        current_app.logger.info(
+            f"Login request: username/email={parameters.username or parameters.email}"
+        )
+
         response_data: LoginResponse = service.process_login(parameters)
-        
+
         # 关键修复：确保事务提交，将令牌保存到数据库
         db.session.commit()
-        
+
         # 在Flask-Login中记录用户登录状态
         user = service.find_account_by_token(response_data.token)
-        
+
         if user:
-            current_app.logger.info(f"User found with token, logging in: user_id={user.id}, username={user.username}")
+            current_app.logger.info(
+                f"User found with token, logging in: user_id={user.id}, username={user.username}"
+            )
             login_user(user)  # 确保这里调用了 login_user
         else:
             # 这不应该发生，因为我们刚刚生成了令牌
-            current_app.logger.error(f"User not found with newly generated token: {response_data.token}")
-            
+            current_app.logger.error(
+                f"User not found with newly generated token: {response_data.token}"
+            )
+
         return make_api_response(
             ResponseSchema[LoginResponse](
                 data=response_data,
@@ -107,7 +113,7 @@ def info() -> Response:
         )
 
     # 获取当前用户信息 - 从LocalProxy转为实际的对象
-    user: AccountInDB = current_user._get_current_object()
+    user: AccountInDB = current_user._get_current_object()  # type: ignore
 
     # 创建AccountSchema实例而不是使用model_validate
     account = AccountSchema.from_entity(user)

@@ -1,38 +1,24 @@
-import { useState, useEffect } from 'react';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useParams, useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, BarChart, Loader2 } from 'lucide-react';
-import {
-    useSubsidiariesStats,
-    DashboardStats
-} from '@/lib/api/dashboard';
-import { SubsidiarySelector } from "@/components/company/subsidiary-selector";
-import {
-    useCompanyDetail,
-    useSubsidiaries
-} from '@/lib/api/company';
+'use client'
 
-// 统计图表组件导入
-import { EmployeeCount } from '@/components/charts/employee-count';
-import { DepartmentPie } from '@/components/charts/department-pie';
-import { GenderPie } from '@/components/charts/gender-pie';
-import { AgeBar } from '@/components/charts/age-bar';
-import { CandidateStatus } from '@/components/charts/candidate-status';
-import { MonthlyCount } from '@/components/charts/monthly-count';
-import { DepartmentRecruitment } from '@/components/charts/department-recruitment';
-import { EmployeeGrowth } from '@/components/charts/employee-growth';
-import { PositionDistribution } from '@/components/charts/position-distribution';
-import { TenureDistribution } from '@/components/charts/tenure-distribution';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+// UI组件
+import { Card, CardHeader, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Download, RefreshCw } from "lucide-react";
+
+// 自定义组件
+import { SubsidiarySelector } from "../components/subsidiary-selector";
+import { OverviewStats } from "../components/overview-stats";
+import { RecruitmentStats } from "../components/recruitment-stats";
+import { OrganizationStats } from "../components/organization-stats";
+import { BirthdayStats } from "../components/birthday-stats";
+
+// API 和 Store
+import { useCompanyDetail, useSubsidiaries } from "@/lib/api/company";
+import { useSubsidiariesStats } from "@/lib/api/dashboard";
 
 export default function GroupDashboardPage() {
     const params = useParams();
@@ -43,16 +29,19 @@ export default function GroupDashboardPage() {
     const parentIdNum = Number(params.parentId);
 
     // 获取父公司详情和子公司列表
-    const { data: parentCompany, isLoading: isLoadingParent } = useCompanyDetail(parentIdNum);
-    const { data: subsidiaries, isLoading: isLoadingSubsidiaries } = useSubsidiaries(parentIdNum);
+    const { data: parentCompany, isLoading: isLoadingParent, error: parentError } = useCompanyDetail(parentIdNum);
+    const { data: subsidiaries, isLoading: isLoadingSubsidiaries, error: subsidiariesError } = useSubsidiaries(parentIdNum);
 
     // 获取聚合数据
-    const { data: stats, isLoading: isLoadingStats } = useSubsidiariesStats(parentIdNum, selectedSubsidiaries);
+    const { data: stats, isLoading: isLoadingStats, mutate: refetchStats, error: statsError } = useSubsidiariesStats(
+        parentIdNum,
+        selectedSubsidiaries
+    );
 
     // 初始化默认选中所有子公司
     useEffect(() => {
         if (subsidiaries && subsidiaries.length > 0 && selectedSubsidiaries.length === 0) {
-            const allIds = subsidiaries.map(sub => sub.id);
+            const allIds = subsidiaries.map((sub: { id: number }) => sub.id);
             // 添加父公司ID
             setSelectedSubsidiaries([parentIdNum, ...allIds]);
         }
@@ -68,165 +57,127 @@ export default function GroupDashboardPage() {
         navigate(`/company/${parentIdNum}`);
     };
 
-    return (
-        <div className="p-6 space-y-4">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="mb-2"
-                        onClick={handleBack}
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        返回公司
+    // 刷新数据
+    const handleRefresh = () => {
+        try {
+            refetchStats();
+        } catch (error) {
+            console.error("刷新数据失败:", error);
+        }
+    };
+
+    // 导出数据
+    const handleExport = () => {
+        // 实现导出功能...
+        alert("导出功能将在后续版本实现");
+    };
+
+    // 加载状态
+    const isLoading = isLoadingParent || isLoadingSubsidiaries || isLoadingStats;
+
+    // 错误处理
+    const hasError = parentError || subsidiariesError || statsError;
+    if (hasError) {
+        return (
+            <div className="p-4">
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={handleBack}>
+                        <ArrowLeft className="h-4 w-4" />
                     </Button>
-                    <h2 className="text-3xl font-bold tracking-tight">
-                        {isLoadingParent ? (
-                            <Skeleton className="h-9 w-64" />
-                        ) : (
-                            `${parentCompany?.name || '公司'} 集团仪表盘`
-                        )}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        查看所有子公司的汇总数据和整体运营状况
-                    </p>
+                    <h1 className="text-xl font-bold">数据加载错误</h1>
+                </div>
+                <Card className="mt-4">
+                    <CardHeader>
+                        <CardDescription className="text-destructive">
+                            加载数据时发生错误，请尝试刷新页面或稍后再试
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-4 space-y-4">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={handleBack}>
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <h1 className="text-xl font-bold">
+                        {parentCompany?.name || '加载中...'} - 集团数据看板
+                    </h1>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* 子公司选择器 */}
+                    {parentCompany && subsidiaries && (
+                        <SubsidiarySelector
+                            parentCompany={{ id: parentIdNum, name: parentCompany.name }}
+                            subsidiaries={subsidiaries.map((sub: { id: number, name: string }) => ({ id: sub.id, name: sub.name }))}
+                            selectedIds={selectedSubsidiaries}
+                            onChange={handleSubsidiaryChange}
+                            className="w-[300px]"
+                        />
+                    )}
+
+                    <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isLoading}>
+                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={handleExport}>
+                        <Download className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>子公司选择</CardTitle>
                     <CardDescription>
-                        选择要在仪表盘中显示的公司数据
+                        {selectedSubsidiaries.length === 0
+                            ? "未选择任何公司"
+                            : `数据统计范围：已选择 ${selectedSubsidiaries.length} 家公司${selectedSubsidiaries.includes(parentIdNum) ? " (含母公司)" : ""}`}
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <SubsidiarySelector
-                        parentId={parentIdNum}
-                        selectedIds={selectedSubsidiaries}
-                        onChange={handleSubsidiaryChange}
-                        includeParent={true}
-                    />
-                </CardContent>
             </Card>
 
             <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="overview" className="flex items-center gap-2">
-                        <BarChart className="h-4 w-4" />
-                        <span>全局视图</span>
-                    </TabsTrigger>
+                <TabsList className="grid grid-cols-4 max-w-[600px]">
+                    <TabsTrigger value="overview">员工概览</TabsTrigger>
+                    <TabsTrigger value="recruitment">招聘情况</TabsTrigger>
+                    <TabsTrigger value="organization">组织发展</TabsTrigger>
+                    <TabsTrigger value="birthday">员工生日</TabsTrigger>
                 </TabsList>
+
                 <TabsContent value="overview" className="space-y-4">
-                    {isLoadingStats ? (
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {Array.from({ length: 9 }).map((_, index) => (
-                                <Card key={index}>
-                                    <CardHeader className="pb-2">
-                                        <Skeleton className="h-5 w-1/2" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Skeleton className="h-[180px] w-full" />
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : stats ? (
-                        <>
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>员工总数</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <EmployeeCount data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>部门分布</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <DepartmentPie data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>性别比例</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <GenderPie data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>年龄分布</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <AgeBar data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>候选人状态</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <CandidateStatus data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>月度面试</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <MonthlyCount
-                                            count={stats.monthlyInterviews}
-                                            label="面试"
-                                        />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>部门招聘 Top 5</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <DepartmentRecruitment data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>员工增长趋势</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <EmployeeGrowth data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>职位分布</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <PositionDistribution data={stats} />
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle>任职时长分布</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <TenureDistribution data={stats} />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </>
-                    ) : (
-                        <Card>
-                            <CardContent className="pt-6 text-center">
-                                <p className="text-muted-foreground">无法加载仪表盘数据</p>
-                            </CardContent>
-                        </Card>
+                    {stats && <OverviewStats data={stats} compact={true} />}
+                </TabsContent>
+
+                <TabsContent value="recruitment" className="space-y-4">
+                    {stats && (
+                        <RecruitmentStats
+                            candidateStatusDistribution={stats.candidateStatusDistribution || []}
+                            monthlyInterviews={stats.monthlyInterviews || 0}
+                            conversionRate={stats.conversionRate || 0}
+                            compact={true}
+                        />
                     )}
+                </TabsContent>
+
+                <TabsContent value="organization" className="space-y-4">
+                    {stats && (
+                        <OrganizationStats
+                            employeeGrowthTrend={stats.employeeGrowthTrend || []}
+                            departmentGrowthTrend={stats.departmentGrowthTrend || []}
+                            positionDistribution={stats.positionDistribution || []}
+                            tenureDistribution={stats.tenureDistribution || []}
+                        />
+                    )}
+                </TabsContent>
+
+                <TabsContent value="birthday" className="space-y-4">
+                    {selectedSubsidiaries.map(companyId => (
+                        <BirthdayStats key={companyId} companyId={companyId} />
+                    ))}
                 </TabsContent>
             </Tabs>
         </div>

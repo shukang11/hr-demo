@@ -45,7 +45,7 @@ def get_dashboard_stats(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建看板服务实例
-        service = DashboardService(session=db.session, account=user)
+        service = DashboardService(session=db.session, account=user)  # type: ignore
 
         # 获取看板统计数据
         stats = service.get_dashboard_stats(company_id, start_time, end_time)
@@ -102,7 +102,7 @@ def get_employee_overview(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建看板服务实例
-        service = DashboardService(session=db.session, account=user)
+        service = DashboardService(session=db.session, account=user)  # type: ignore
 
         # 获取员工概览数据
         overview = service.get_employee_overview(company_id, start_time, end_time)
@@ -159,7 +159,7 @@ def get_recruitment_stats(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建看板服务实例
-        service = DashboardService(session=db.session, account=user)
+        service = DashboardService(session=db.session, account=user)  # type: ignore
 
         # 获取招聘统计数据
         stats = service.get_recruitment_stats(company_id, start_time, end_time)
@@ -216,7 +216,7 @@ def get_organization_stats(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建看板服务实例
-        service = DashboardService(session=db.session, account=user)
+        service = DashboardService(session=db.session, account=user)  # type: ignore
 
         # 获取组织发展统计数据
         stats = service.get_organization_stats(company_id, start_time, end_time)
@@ -275,7 +275,7 @@ def get_birthday_employees(company_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建看板服务实例
-        service = DashboardService(session=db.session, account=user)
+        service = DashboardService(session=db.session, account=user)  # type: ignore
 
         # 获取过生日员工列表
         employees = service.get_birthday_employees(company_id, start_time, end_time)
@@ -366,7 +366,7 @@ def get_subsidiaries_stats(parent_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建看板服务实例
-        service = DashboardService(session=db.session, account=user)
+        service = DashboardService(session=db.session, account=user)  # type: ignore
 
         # 获取子公司聚合统计数据
         stats = service.get_subsidiaries_stats(

@@ -68,7 +68,7 @@ def create_json_schema() -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 验证请求数据
         schema_data = JsonSchemaCreate.model_validate(request.json)
@@ -153,7 +153,7 @@ def update_json_schema(schema_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 验证请求数据
         schema_data = JsonSchemaUpdate.model_validate(request.json)
@@ -210,7 +210,7 @@ def delete_json_schema(schema_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 删除JSON Schema
         success = service.delete_json_schema(schema_id)
@@ -266,7 +266,7 @@ def clone_json_schema() -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 验证请求数据
         clone_data = JsonSchemaClone.model_validate(request.json)
@@ -357,7 +357,7 @@ def list_json_schemas(entity_type: str) -> Response:
             )
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 获取数据库表结构信息
         try:
@@ -445,7 +445,7 @@ def get_json_schema(schema_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 获取JSON Schema
         schema = service.query_schema_by_id(schema_id)
@@ -505,7 +505,7 @@ def create_json_value() -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 验证请求数据
         value_data = JsonValueCreate.model_validate(request.json)
@@ -578,7 +578,7 @@ def update_json_value(value_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 验证请求数据
         value_data = JsonValueUpdate.model_validate(request.json)
@@ -641,7 +641,7 @@ def delete_json_value(value_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 删除JSON值
         success = service.delete_json_value(value_id)
@@ -696,7 +696,7 @@ def get_entity_values(entity_type: str, entity_id: int) -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 获取查询参数
         schema_id_str = request.args.get("schema_id")
@@ -774,10 +774,10 @@ def search_by_custom_field() -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 获取请求数据
-        data = request.json
+        data: dict = request.json  # type: ignore
         entity_type = data.get("entity_type")
         company_id = data.get("company_id")
         conditions = data.get("conditions", [])
@@ -875,10 +875,10 @@ def migrate_schema() -> Response:
         user = current_user._get_current_object()
 
         # 创建自定义字段服务实例
-        service = CustomFieldService(session=db.session, account=user)
+        service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
         # 获取请求数据
-        data = request.json
+        data: dict = request.json  # type: ignore
         old_schema_id = data.get("old_schema_id")
         new_schema_id = data.get("new_schema_id")
         migration_map = data.get("migration_map", {})

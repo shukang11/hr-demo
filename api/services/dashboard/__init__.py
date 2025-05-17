@@ -15,6 +15,11 @@ from ._schema import (
     BirthdayEmployee,
 )
 from .manager import DashboardService
+from .base_manager import BaseDashboardManager
+from .employee_manager import EmployeeStatsManager
+from .recruitment_manager import RecruitmentStatsManager
+from .organization_manager import OrganizationStatsManager
+from .aggregation_manager import CompanyAggregationManager
 
 __all__ = [
     "DepartmentDistribution",
@@ -32,4 +37,9 @@ __all__ = [
     "DashboardStats",
     "BirthdayEmployee",
     "DashboardService",
+    "BaseDashboardManager",
+    "EmployeeStatsManager",
+    "RecruitmentStatsManager",
+    "OrganizationStatsManager",
+    "CompanyAggregationManager",
 ]

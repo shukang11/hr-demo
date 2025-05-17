@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -49,6 +49,18 @@ export function PositionForm({ position, open, onClose }: PositionFormProps) {
       remark: position?.remark || "",
     },
   })
+
+  // 当 position 或 open 状态变化时，重置表单的值
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        id: position?.id,
+        name: position?.name || "",
+        company_id: currentCompany?.id || 0,
+        remark: position?.remark || "",
+      })
+    }
+  }, [position, open, currentCompany?.id, form])
 
   const onSubmit = useCallback(async (data: InsertPosition) => {
     try {
@@ -113,4 +125,4 @@ export function PositionForm({ position, open, onClose }: PositionFormProps) {
       </DialogContent>
     </Dialog>
   )
-} 
+}

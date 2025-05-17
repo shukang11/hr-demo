@@ -1,15 +1,32 @@
+'use client'
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useBirthdayEmployees } from "@/lib/api/dashboard"
-import { getMonthRange } from "@/lib/utils"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { BirthdayEmployee, useBirthdayEmployees } from "@/lib/api/dashboard"
+import { CalendarDays, Gift } from "lucide-react"
 
 interface BirthdayStatsProps {
   companyId: number
+  compact?: boolean
 }
 
-export function BirthdayStats({ companyId }: BirthdayStatsProps) {
+// 获取月份的时间范围
+function getMonthRange(date: Date) {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+
+  const startDate = new Date(year, month, 1)
+  const endDate = new Date(year, month + 1, 0)
+
+  return {
+    startTime: startDate.getTime(),
+    endTime: endDate.getTime()
+  }
+}
+
+export function BirthdayStats({ companyId, compact = false }: BirthdayStatsProps) {
   // 获取当前月份和下个月的时间范围
   const currentMonth = new Date()
   const nextMonth = new Date()
@@ -47,78 +64,121 @@ export function BirthdayStats({ companyId }: BirthdayStatsProps) {
     return name.charAt(0).toUpperCase()
   }
 
+  // 计算两个日期之间的天数
+  const getDaysUntilBirthday = (birthdayTimestamp: number) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const birthday = new Date(birthdayTimestamp)
+    const birthdayThisYear = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate())
+
+    if (birthdayThisYear < today) {
+      // 如果今年的生日已经过了，计算到明年的生日
+      birthdayThisYear.setFullYear(today.getFullYear() + 1)
+    }
+
+    const diffTime = Math.abs(birthdayThisYear.getTime() - today.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    return diffDays
+  }
+
+  // 显示员工生日信息
+  const renderBirthdayPeople = (people: BirthdayEmployee[] | null | undefined, isLoading: boolean) => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-40">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      )
+    }
+
+    if (!people || people.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+          <Gift className="h-12 w-12 mb-2 opacity-20" />
+          <p>本月暂无员工生日</p>
+        </div>
+      )
+    }
+
+    const sortedPeople = [...people].sort((a, b) => {
+      const dateA = new Date(a.birthdate)
+      const dateB = new Date(b.birthdate)
+      return dateA.getDate() - dateB.getDate()
+    })
+
+    return (
+      <div className={`space-y-4 ${compact ? 'max-h-[240px] overflow-y-auto pr-2' : ''}`}>
+        {sortedPeople.map((person) => (
+          <div key={person.id} className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                {person.name ? (
+                  <img src={person.name} alt={person.name} />
+                ) : (
+                  <AvatarFallback>{getNameInitial(person.name)}</AvatarFallback>
+                )}
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">{person.name}</p>
+                <p className="text-xs text-muted-foreground">{person.department}</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <Badge variant="outline" className="flex items-center gap-1">
+                <CalendarDays className="h-3 w-3" />
+                {formatBirthday(person.birthdate)}
+              </Badge>
+              {getDaysUntilBirthday(person.birthdate) === 0 ? (
+                <span className="text-xs text-red-500 font-medium">今天</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  还有 {getDaysUntilBirthday(person.birthdate)} 天
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <Card className="col-span-1">
+    <Card className={compact ? "col-span-full" : "col-span-1"}>
       <CardHeader>
-        <CardTitle>员工生日</CardTitle>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Gift className="h-5 w-5" />
+          员工生日
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="current">
           <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="current">
-              本月 ({currentMonthBirthdays?.length || 0})
+              {currentMonthName}
+              {currentMonthBirthdays && currentMonthBirthdays.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {currentMonthBirthdays.length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="next">
-              下月 ({nextMonthBirthdays?.length || 0})
+              {nextMonthName}
+              {nextMonthBirthdays && nextMonthBirthdays.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {nextMonthBirthdays.length}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="current">
-            <ScrollArea className="h-[280px] pr-4">
-              {isCurrentLoading ? (
-                <div className="flex justify-center items-center h-full">加载中...</div>
-              ) : currentMonthBirthdays && currentMonthBirthdays.length > 0 ? (
-                <div className="space-y-4">
-                  {currentMonthBirthdays.map((employee) => (
-                    <div key={employee.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback>{getNameInitial(employee.name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between">
-                          <span className="font-medium">{employee.name}</span>
-                          <span className="text-sm text-muted-foreground">{formatBirthday(employee.birthdate)}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">{employee.department} · {employee.position}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex justify-center items-center h-full text-muted-foreground">
-                  本月无员工生日
-                </div>
-              )}
-            </ScrollArea>
+            {renderBirthdayPeople(currentMonthBirthdays, isCurrentLoading)}
           </TabsContent>
 
           <TabsContent value="next">
-            <ScrollArea className="h-[280px] pr-4">
-              {isNextLoading ? (
-                <div className="flex justify-center items-center h-full">加载中...</div>
-              ) : nextMonthBirthdays && nextMonthBirthdays.length > 0 ? (
-                <div className="space-y-4">
-                  {nextMonthBirthdays.map((employee) => (
-                    <div key={employee.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback>{getNameInitial(employee.name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between">
-                          <span className="font-medium">{employee.name}</span>
-                          <span className="text-sm text-muted-foreground">{formatBirthday(employee.birthdate)}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">{employee.department} · {employee.position}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex justify-center items-center h-full text-muted-foreground">
-                  下月无员工生日
-                </div>
-              )}
-            </ScrollArea>
+            {renderBirthdayPeople(nextMonthBirthdays, isNextLoading)}
           </TabsContent>
         </Tabs>
       </CardContent>
