@@ -6,14 +6,9 @@ from datetime import datetime, timedelta
 import random
 
 if TYPE_CHECKING:
-    from flask import Flask
     from libs.models import (
         AccountInDB,
         CompanyInDB,
-        DepartmentInDB,
-        PositionInDB,
-        EmployeeInDB,
-        AccountCompanyInDB,
     )
 
 
@@ -23,26 +18,8 @@ def command():
     click.echo("正在初始化开发环境数据...")
     try:
         from extensions.ext_database import db
-        from libs.helper import get_sha256
-        from services.account import AccountService
-        from services.account._schema import AccountCreate
-        from services.company import CompanyService, CompanyCreate
-        from services.position import PositionService, PositionCreate
-        from services.candidate import (
-            CandidateService,
-            CandidateCreate,
-            CandidateStatus,
-        )
-        from libs.models import (
-            AccountInDB,
-            CompanyInDB,
-            DepartmentInDB,
-            PositionInDB,
-            EmployeeInDB,
-            AccountCompanyRole,
-        )
 
-        session: Session = db.session
+        session: Session = db.session  # type: ignore
 
         # 1. 创建管理员账户
         click.echo("创建管理员账户...")
@@ -151,8 +128,6 @@ def create_sample_companies(
             name=name,
             description=description,
             parent_id=None,  # 主公司没有父公司
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         session.add(company)
         session.flush()  # 获取生成的ID
@@ -189,8 +164,6 @@ def create_sample_companies(
             name=name,
             description=description,
             parent_id=parent_company.id,  # 设置父公司ID
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         session.add(subsidiary)
         session.flush()  # 获取生成的ID

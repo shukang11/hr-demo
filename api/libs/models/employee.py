@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
-from datetime import date
-from sqlalchemy.orm import Mapped
+from datetime import date, datetime
+from sqlalchemy.orm import Mapped, MappedColumn
 from sqlalchemy import Column, Integer, SMALLINT, String, ForeignKey, Date, JSON
 from extensions.ext_database import db
 from .base import BaseModel
@@ -33,48 +33,48 @@ class EmployeeInDB(BaseModel):
 
     __tablename__ = "employee"  # 表名
 
-    company_id: Mapped[int] = Column(
+    company_id: Mapped[int] = MappedColumn(
         Integer,
         ForeignKey("company.id"),
         nullable=False,  # 不允许为空，员工必须属于某个公司
         comment="所属公司ID",
     )
-    name: Mapped[str] = Column(
+    name: Mapped[str] = MappedColumn(
         String(255),
         nullable=False,  # 不允许为空，员工必须有姓名
         comment="员工姓名",
     )
-    email: Mapped[Optional[str]] = Column(
+    email: Mapped[Optional[str]] = MappedColumn(
         String(255),
         nullable=True,  # 允许为空，邮箱是可选的
         comment="电子邮箱地址",
     )
-    phone: Mapped[Optional[str]] = Column(
+    phone: Mapped[Optional[str]] = MappedColumn(
         String(20),
         nullable=True,  # 允许为空，电话是可选的
         comment="联系电话",
     )
-    birthdate: Mapped[Optional[date]] = Column(
+    birthdate: Mapped[Optional[date]] = MappedColumn(
         Date,
         nullable=True,  # 允许为空，出生日期是可选的
         comment="出生日期",
     )
-    address: Mapped[Optional[str]] = Column(
+    address: Mapped[Optional[str]] = MappedColumn(
         String(255),
         nullable=True,  # 允许为空，地址是可选的
         comment="居住地址",
     )
-    gender: Mapped[Optional[int]] = Column(
+    gender: Mapped[Optional[int]] = MappedColumn(
         SMALLINT,
         nullable=True,  # 允许为空，性别是可选的
         comment="性别，0-未知，1-男，2-女",
     )
-    extra_value: Mapped[Optional[dict]] = Column(
+    extra_value: Mapped[Optional[dict]] = MappedColumn(
         JSON,
         nullable=True,  # 允许为空，附加数据是可选的
         comment="附加JSON格式数据",
     )
-    extra_schema_id: Mapped[Optional[int]] = Column(
+    extra_schema_id: Mapped[Optional[int]] = MappedColumn(
         Integer,
         ForeignKey("json_schemas.id"),
         nullable=True,  # 允许为空，可以没有关联的JSON Schema
@@ -85,16 +85,16 @@ class EmployeeInDB(BaseModel):
     extra_schema: Mapped["JsonSchemaInDB"] = db.relationship(
         "JsonSchemaInDB",
         foreign_keys=[extra_schema_id],  # 指定外键
-    )
+    )  # type: ignore
     positions: Mapped[list["EmployeePositionInDB"]] = db.relationship(
         "EmployeePositionInDB",
         back_populates="employee",  # 与EmployeePositionInDB中的employee属性相对应
         overlaps="members",  # 添加这个参数
-    )
+    )  # type: ignore
     led_departments: Mapped[list["DepartmentInDB"]] = db.relationship(
         "DepartmentInDB",
         back_populates="leader",  # 与DepartmentInDB中的leader属性相对应
-    )
+    )  # type: ignore
 
     # 添加缺失的多对多关系定义
     companies: Mapped[list["CompanyInDB"]] = db.relationship(
@@ -102,4 +102,31 @@ class EmployeeInDB(BaseModel):
         secondary="employee_position",  # 指定中间表
         back_populates="members",  # 与CompanyInDB.members对应
         overlaps="positions",  # 添加这个参数
-    )
+    )  # type: ignore
+
+    def __init__(
+        self,
+        name: str,
+        company_id: int,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        birthdate: Optional[date] = None,
+        address: Optional[str] = None,
+        gender: Optional[int] = None,
+        extra_value: Optional[dict] = None,
+        extra_schema_id: Optional[int] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
+    ) -> None:
+        super().__init__()
+        self.name = name
+        self.company_id = company_id
+        self.email = email
+        self.phone = phone
+        self.birthdate = birthdate
+        self.address = address
+        self.gender = gender
+        self.extra_value = extra_value
+        self.extra_schema_id = extra_schema_id
+        self.created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()

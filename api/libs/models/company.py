@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Optional, List
+from datetime import datetime
 from extensions.ext_database import db
 from .base import BaseModel
 from sqlalchemy.orm import Mapped, MappedColumn
@@ -129,6 +130,8 @@ class CompanyInDB(BaseModel):
         parent_id: Optional[int] = None,
         extra_schema_id: Optional[int] = None,
         extra_value: Optional[dict] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ) -> None:
         """初始化公司信息模型
 
@@ -145,3 +148,5 @@ class CompanyInDB(BaseModel):
         self.parent_id = parent_id
         self.extra_value = extra_value
         self.extra_schema_id = extra_schema_id
+        self.created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()

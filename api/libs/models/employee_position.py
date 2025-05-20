@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
-from datetime import date  # 添加日期导入
-from sqlalchemy import Column, Integer, String, ForeignKey, Date
-from sqlalchemy.orm import Mapped
+from datetime import date, datetime  # 添加日期导入
+from sqlalchemy import Integer, String, ForeignKey, Date
+from sqlalchemy.orm import Mapped, MappedColumn
 from extensions.ext_database import db
 from .base import BaseModel
 
@@ -33,26 +33,30 @@ class EmployeePositionInDB(BaseModel):
 
     __tablename__ = "employee_position"
 
-    employee_id: Mapped[int] = Column(
+    employee_id: Mapped[int] = MappedColumn(
         Integer, ForeignKey("employee.id"), nullable=False, comment="员工ID"
     )
-    company_id: Mapped[int] = Column(
+    company_id: Mapped[int] = MappedColumn(
         Integer, ForeignKey("company.id"), nullable=False, comment="公司ID"
     )
-    department_id: Mapped[int] = Column(
+    department_id: Mapped[int] = MappedColumn(
         Integer, ForeignKey("department.id"), nullable=False, comment="部门ID"
     )
-    position_id: Mapped[int] = Column(
+    position_id: Mapped[int] = MappedColumn(
         Integer, ForeignKey("position.id"), nullable=False, comment="职位ID"
     )
 
     # 入职时间
-    start_date: Mapped[Optional[date]] = Column(Date, nullable=True, comment="入职时间")
+    start_date: Mapped[Optional[date]] = MappedColumn(
+        Date, nullable=True, comment="入职时间"
+    )
 
     # 离职时间
-    end_date: Mapped[Optional[date]] = Column(Date, nullable=True, comment="离职时间")
+    end_date: Mapped[Optional[date]] = MappedColumn(
+        Date, nullable=True, comment="离职时间"
+    )
 
-    remark: Mapped[Optional[str]] = Column(
+    remark: Mapped[Optional[str]] = MappedColumn(
         String(255), nullable=True, comment="备注信息"
     )
 
@@ -61,17 +65,40 @@ class EmployeePositionInDB(BaseModel):
         "EmployeeInDB",
         back_populates="positions",
         overlaps="companies,members",  # 添加这个参数
-    )
+    )  # type: ignore
 
     company: Mapped["CompanyInDB"] = db.relationship(
         "CompanyInDB",
         overlaps="companies,members",  # 添加这个参数
-    )
+    )  # type: ignore
 
     department: Mapped["DepartmentInDB"] = db.relationship(
         "DepartmentInDB", back_populates="employee_positions"
-    )
+    )  # type: ignore
 
     position: Mapped["PositionInDB"] = db.relationship(
         "PositionInDB", back_populates="employee_positions"
-    )
+    )  # type: ignore
+
+    def __init__(
+        self,
+        employee_id: int,
+        company_id: int,
+        department_id: int,
+        position_id: int,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        remark: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
+    ) -> None:
+        super().__init__()
+        self.employee_id = employee_id
+        self.company_id = company_id
+        self.department_id = department_id
+        self.position_id = position_id
+        self.start_date = start_date
+        self.end_date = end_date
+        self.remark = remark
+        self.created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()

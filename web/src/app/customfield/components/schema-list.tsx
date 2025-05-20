@@ -110,12 +110,11 @@ export function SchemaList({
 
     // 获取Schema列表
     const { data, error, isLoading, mutate } = useSchemaList(
-        entityType === "all" ? "General" : entityType,
+        entityType,
         pageParams,
         // 公司拥有者模式：强制使用当前公司ID
-        !isAdmin && activeTab === "company" ? currentCompanyId : undefined,
-        // 包括系统模板
-        true
+        currentCompanyId,
+        true // 总是包含系统预设
     );
 
     // 检查特定的错误类型

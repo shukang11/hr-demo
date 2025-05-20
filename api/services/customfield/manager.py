@@ -337,7 +337,7 @@ class CustomFieldService:
                 query = query.filter(
                     or_(
                         JsonSchemaInDB.company_id == company_id,
-                        JsonSchemaInDB.is_system == True,
+                        JsonSchemaInDB.is_system,
                     )
                 )
             else:
@@ -351,7 +351,7 @@ class CustomFieldService:
                     query = query.filter(
                         or_(
                             JsonSchemaInDB.company_id.in_(company_ids),
-                            JsonSchemaInDB.is_system == True,
+                            JsonSchemaInDB.is_system,
                         )
                     )
                 else:
@@ -652,7 +652,7 @@ class CustomFieldService:
                 JsonValueInDB.entity_type == entity_type,
                 or_(
                     JsonSchemaInDB.company_id == company_id,
-                    JsonSchemaInDB.is_system == True,
+                    JsonSchemaInDB.is_system,
                 ),
             )
         )

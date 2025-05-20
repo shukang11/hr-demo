@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Optional
+from datetime import datetime
 from extensions.ext_database import db
 from .base import BaseModel
 from sqlalchemy.orm import Mapped
@@ -43,8 +44,23 @@ class PositionInDB(BaseModel):
     company: Mapped["CompanyInDB"] = db.relationship(
         "CompanyInDB",
         back_populates="positions",  # 与CompanyInDB中的positions属性相对应
-    )
+    )  # type: ignore
     employee_positions: Mapped[list["EmployeePositionInDB"]] = db.relationship(
         "EmployeePositionInDB",
         back_populates="position",  # 与EmployeePositionInDB中的position属性相对应
-    )
+    )  # type: ignore
+
+    def __init__(
+        self,
+        name: str,
+        company_id: int,
+        remark: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
+    ) -> None:
+        super().__init__()
+        self.name = name
+        self.company_id = company_id
+        self.remark = remark
+        self.created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()

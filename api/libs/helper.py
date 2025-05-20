@@ -99,7 +99,7 @@ def getmd5(code: str) -> Optional[str]:
     return None
 
 
-def get_sha256(code: str) -> Optional[str]:
+def get_sha256(code: str) -> str:
     """return sha256 value of incoming code
 
     get sha256 from code
@@ -110,10 +110,10 @@ def get_sha256(code: str) -> Optional[str]:
     Return:
         return sha256 value of code
     """
-    if code:
-        sha256string = hashlib.sha256(code.encode("utf-8"))
-        return sha256string.hexdigest()
-    return None
+    if not code:
+        raise ValueError("code is None or empty")
+    sha256string = hashlib.sha256(code.encode("utf-8"))
+    return sha256string.hexdigest()
 
 
 def get_uuid_str() -> str:
