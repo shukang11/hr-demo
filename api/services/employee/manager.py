@@ -200,8 +200,9 @@ class EmployeeService:
             .where(EmployeeInDB.id == employee_id)
         )
 
-        # 执行查询
-        employee = self.session.execute(stmt).scalar_one_or_none()
+        # 执行查询 - 使用unique()方法去除结果中可能存在的重复
+        result = self.session.execute(stmt)
+        employee = result.unique().scalar_one_or_none()
 
         # 检查权限
         if employee and not self._permission.can_view_company(employee.company_id):

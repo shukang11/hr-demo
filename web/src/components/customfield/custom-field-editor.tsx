@@ -3,7 +3,6 @@
  * 
  * 结合Schema选择和动态表单，提供完整的自定义字段编辑体验。
  */
-import { useState, useEffect } from 'react';
 import { JsonSchemaSchema, useSchema } from '@/lib/api/customfield';
 import { SchemaSelector } from './schema-selector';
 import { DynamicForm } from './dynamic-form';
@@ -142,15 +141,21 @@ export function CustomFieldEditor({
                             {schema.remark && <CardDescription>{schema.remark}</CardDescription>}
                         </CardHeader>
                         <CardContent>
-                            <DynamicForm
-                                schema={schema.schema as any}
-                                uiSchema={schema.ui_schema || undefined}
-                                formData={formData}
-                                onChange={handleFormChange}
-                                disabled={disabled}
-                                readonly={readonly}
-                                showSubmitButton={false}
-                            />
+                            {schema.schema_value ? (
+                                <DynamicForm
+                                    schema={schema.schema_value as any}
+                                    uiSchema={schema.ui_schema || undefined}
+                                    formData={formData}
+                                    onChange={handleFormChange}
+                                    disabled={disabled}
+                                    readonly={readonly}
+                                    showSubmitButton={false}
+                                />
+                            ) : (
+                                <div className="text-amber-500">
+                                    自定义字段模板格式有误，请联系管理员检查模板配置
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 ) : null

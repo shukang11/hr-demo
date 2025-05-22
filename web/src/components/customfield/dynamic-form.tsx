@@ -4,7 +4,7 @@
  * 基于JSON Schema和UI Schema动态生成表单，使用React JSON Schema Form库。
  * 支持所有JSON Schema类型，能够处理复杂的嵌套结构和验证规则。
  */
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { RJSFSchema } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import Form from '@rjsf/shadcn';
@@ -96,8 +96,8 @@ export function DynamicForm({
     };
 
     // 处理变更事件
-    const handleChange = (data: { formData: Record<string, any> }) => {
-        onChange?.(data);
+    const handleChange = (data: any, id?: string) => {
+        onChange?.({ formData: data.formData || {} });
     };
 
     // 处理错误事件

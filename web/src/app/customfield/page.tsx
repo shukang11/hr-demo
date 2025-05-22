@@ -24,10 +24,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useCompanyStore } from "@/hooks/use-company-store";
 
 export default function CustomFieldPage() {
     // 获取当前用户信息
     const { user } = useAuth();
+    const { currentCompany } = useCompanyStore();
 
     // 编辑器状态
     const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -49,10 +51,10 @@ export default function CustomFieldPage() {
 
     // 初始化时，设置当前公司ID
     useEffect(() => {
-        if (user && user.company_id) {
-            setCurrentCompanyId(user.company_id);
+        if (currentCompany?.id) {
+            setCurrentCompanyId(currentCompany.id);
         }
-    }, [user]);
+    }, [currentCompany]);
 
     // 处理创建新Schema
     const handleCreateSchema = (entityType: string) => {

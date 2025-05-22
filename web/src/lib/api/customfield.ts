@@ -184,8 +184,12 @@ export async function getSchemaList(
     searchParams.company_id = companyId.toString();
   }
 
+  var URLString = `${API_PREFIX}/schema/list/${entityType}`;
+  if (entityType == "all") {
+    URLString = `${API_PREFIX}/schema/list_all`;
+  }
   const response = await serverAPI
-    .get(`${API_PREFIX}/schema/list/${entityType}`, {
+    .get(URLString, {
       searchParams,
     })
     .json<ApiResponse<PageResult<JsonSchemaSchema>>>();
@@ -204,12 +208,17 @@ export async function getSchemaList(
  * @throws Schema不存在或无权限时抛出错误
  */
 export async function getSchemaById(id: number): Promise<JsonSchemaSchema> {
-  const response = await serverAPI
-    .get(`${API_PREFIX}/schema/get/${id}`)
-    .json<ApiResponse<JsonSchemaSchema>>();
+  try {
+    const response = await serverAPI
+      .get(`${API_PREFIX}/schema/get/${id}`)
+      .json<ApiResponse<JsonSchemaSchema>>();
 
-  if (!response.data) throw new Error("No data returned");
-  return response.data;
+    if (!response.data) throw new Error("No data returned");
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to get schema with ID ${id}:`, error);
+    throw error;
+  }
 }
 
 /**

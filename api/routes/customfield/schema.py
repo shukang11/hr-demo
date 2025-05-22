@@ -349,40 +349,6 @@ def list_json_schemas(entity_type: str) -> Response:
         # 创建自定义字段服务实例
         service = CustomFieldService(session=db.session, account=user)  # type: ignore
 
-        # 处理特殊的 "all" 类型
-        if entity_type == "all":
-            # 查询所有类型的Schema
-            schemas = []
-            for schema_type in SchemaEntityType:
-                type_schemas, _ = service.get_schemas_by_entity_type(
-                    schema_type,
-                    company_id=company_id,
-                    page=1,  # 先获取所有数据
-                    limit=1000,  # 使用较大的限制
-                    include_system=include_system,
-                )
-                schemas.extend(type_schemas)
-
-            # 统计总数
-            total_count = len(schemas)
-
-            # 手动处理分页
-            start_idx = (page - 1) * limit
-            end_idx = min(start_idx + limit, total_count)
-            paginated_schemas = schemas[start_idx:end_idx]
-
-            # 计算总页数
-            total_page = (total_count + limit - 1) // limit
-
-            # 返回合并后的结果
-            pagination = PageResponse(
-                total_page=total_page,
-                cur_page=page,
-                page_size=limit,
-                data=paginated_schemas,
-            )
-            return make_api_response(ResponseSchema[PageResponse](data=pagination))
-
         # 验证实体类型
         try:
             schema_entity_type = SchemaEntityType(entity_type)

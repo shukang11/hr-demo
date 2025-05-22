@@ -342,3 +342,80 @@ def validate_value_against_schema(schema, value):
    - 为关键操作增加确认对话框，避免误操作
 
 _更新日期: 2025年5月10日_
+
+## 10. 实体自定义字段实现
+
+### 10.1 员工自定义字段功能 (2025年5月21日)
+
+在上述技术架构的基础上，我们完成了对员工(Employee)实体的自定义字段支持，包括以下功能：
+
+#### 10.1.1 员工表单集成
+
+在员工表单（创建/编辑）中集成了`CustomFieldEditor`组件，实现了：
+- 自定义字段Schema选择器
+- 根据选择的Schema动态渲染表单字段
+- 表单验证与错误提示
+- 保存时将自定义字段数据(`extra_value`)和Schema ID(`extra_schema_id`)一并存储
+
+```tsx
+// 在employee-form.tsx中添加的核心代码
+const [customFieldSchemaId, setCustomFieldSchemaId] = useState<number | null>(null);
+const [customFieldValue, setCustomFieldValue] = useState<Record<string, any> | null>(null);
+
+// 表单中添加CustomFieldEditor组件
+<CustomFieldEditor
+  entityType="employee"
+  companyId={companyId}
+  schemaId={customFieldSchemaId}
+  formData={customFieldValue || undefined}
+  onSchemaChange={(id) => setCustomFieldSchemaId(id)}
+  onFormDataChange={(data) => setCustomFieldValue(data)}
+  disabled={false}
+/>
+
+// 提交时包含自定义字段数据
+await createOrUpdateEmployee({
+  // ...其他员工数据
+  extra_value: customFieldValue || null,
+  extra_schema_id: customFieldSchemaId || null,
+});
+```
+
+#### 10.1.2 员工列表展示
+
+在员工列表中展示自定义字段信息：
+- 新增"扩展信息"列，显示自定义字段的概要信息
+- 使用徽章(Badge)组件标识有自定义字段数据的员工
+- 添加工具提示(Tooltip)，悬停时显示更详细的自定义字段数据
+
+#### 10.1.3 员工详情页面
+
+创建了完整的员工详情页，支持查看员工所有信息，包括：
+- 基本信息卡片
+- 自定义字段数据卡片（只读模式）
+- 职位历史记录选项卡
+- 附件文档选项卡（预留）
+
+结构如下：
+```
+/employee/[id]/
+├── page.tsx               # 入口页面组件
+├── client.tsx             # 客户端详情组件
+└── components/
+    └── position-history.tsx  # 职位历史组件
+```
+
+### 10.1.4 技术实现要点
+
+1. **路由兼容性**
+   - 确保客户端组件使用React Router而非Next.js的路由API，保持项目一致性
+
+2. **数据获取模式**
+   - 使用SWR库实现高效的数据获取和缓存策略
+   - 添加加载状态和错误处理，提升用户体验
+
+3. **自定义字段渲染**
+   - 在只读模式下渲染自定义字段，保证数据格式一致性
+   - 根据Schema定义的UI配置调整展示效果
+
+_更新日期: 2025年5月21日_

@@ -12,12 +12,12 @@ if TYPE_CHECKING:
 class SchemaEntityType(str, enum.Enum):
     """定义Schema适用的实体类型"""
 
-    EMPLOYEE = "Employee"  # 员工
-    CANDIDATE = "Candidate"  # 候选人
-    COMPANY = "Company"  # 公司
-    DEPARTMENT = "Department"  # 部门
-    POSITION = "Position"  # 职位
-    GENERAL = "General"  # 通用
+    EMPLOYEE = "employee"  # 员工
+    CANDIDATE = "candidate"  # 候选人
+    COMPANY = "company"  # 公司
+    DEPARTMENT = "department"  # 部门
+    POSITION = "position"  # 职位
+    GENERAL = "general"  # 通用
 
 
 class JsonSchemaInDB(BaseModel):

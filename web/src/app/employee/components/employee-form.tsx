@@ -25,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SelectCandidateDialog } from "./select-candidate-dialog"
 import { useState, useEffect } from "react"
 import { dateToTimestamp } from "@/lib/utils"
+import { CustomFieldEditor } from "@/components/customfield"
+import { Separator } from "@/components/ui/separator"
 
 const formSchema = z.object({
   name: z.string().min(1, "请输入姓名"),
@@ -52,6 +54,8 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
   const { data: employee } = useEmployee(id)
   const [showCandidateDialog, setShowCandidateDialog] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null)
+  const [customFieldSchemaId, setCustomFieldSchemaId] = useState<number | null>(null)
+  const [customFieldValue, setCustomFieldValue] = useState<Record<string, any> | null>(null)
 
   const { data: departmentData } = useDepartments(companyId, {
     page: 1,
@@ -94,6 +98,8 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         gender: "Unknown",
       })
       setSelectedCandidate(null)
+      setCustomFieldSchemaId(null)
+      setCustomFieldValue(null)
     }
   }, [open, form])
 
@@ -111,6 +117,15 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         address: data?.address || "",
         gender: data?.gender || "Unknown",
       })
+
+      // 设置自定义字段信息
+      if (data?.extra_schema_id) {
+        setCustomFieldSchemaId(data.extra_schema_id);
+      }
+
+      if (data?.extra_value) {
+        setCustomFieldValue(data.extra_value);
+      }
     }
   }, [employee, initialData, form, open, id])
 
@@ -129,8 +144,8 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         address: values.address || null,
         gender: values.gender,
         candidate_id: selectedCandidate?.id || null,
-        extra_value: null,
-        extra_schema_id: null,
+        extra_value: customFieldValue || null,
+        extra_schema_id: customFieldSchemaId || null,
       })
       toast({
         description: `员工${id ? "更新" : "创建"}成功`,
@@ -268,8 +283,8 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                     <FormItem>
                       <FormLabel>出生日期</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
+                        <Input
+                          type="date"
                           {...field}
                           value={value ? new Date(value).toISOString().split('T')[0] : ""}
                           onChange={(e) => {
@@ -290,8 +305,8 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                     <FormItem>
                       <FormLabel>入职日期</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
+                        <Input
+                          type="date"
                           {...field}
                           value={value ? new Date(value).toISOString().split('T')[0] : ""}
                           onChange={(e) => {
@@ -372,6 +387,22 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                 />
               </div>
 
+              <Separator className="my-4" />
+
+              {/* 自定义字段编辑器 */}
+              <div>
+                <h3 className="text-md font-medium mb-2">自定义字段</h3>
+                <CustomFieldEditor
+                  entityType="employee"
+                  companyId={companyId}
+                  schemaId={customFieldSchemaId}
+                  formData={customFieldValue || undefined}
+                  onSchemaChange={(id) => setCustomFieldSchemaId(id)}
+                  onFormDataChange={(data) => setCustomFieldValue(data)}
+                  disabled={false}
+                />
+              </div>
+
               <div className="flex justify-end">
                 <Button type="submit">
                   {id ? "更新" : "创建"}
@@ -389,4 +420,4 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
       />
     </>
   )
-} 
+}
