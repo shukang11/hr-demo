@@ -21,10 +21,9 @@ interface EmployeeRowProps {
   employee: Employee
   onEdit: (employee: Employee) => void
   onDelete: (id: number) => void
-  onManagePositions: (employee: Employee) => void
 }
 
-function EmployeeRow({ employee, onEdit, onDelete, onManagePositions }: EmployeeRowProps) {
+function EmployeeRow({ employee, onEdit, onDelete }: EmployeeRowProps) {
   const { data: positions } = useEmployeePositions(employee.id)
   const currentPosition = positions?.[0]
   const { data: department } = useDepartment(currentPosition?.department_id)
@@ -98,13 +97,6 @@ function EmployeeRow({ employee, onEdit, onDelete, onManagePositions }: Employee
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onManagePositions(employee)}
-        >
-          管理职位
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
           onClick={() => onEdit(employee)}
         >
           编辑
@@ -169,11 +161,6 @@ export function EmployeeList() {
   const handleEdit = (employee: Employee) => {
     setEditingEmployee(employee)
     setIsFormOpen(true)
-  }
-
-  const handleManagePositions = (employee: Employee) => {
-    setManagingEmployee(employee)
-    setIsPositionManagerOpen(true)
   }
 
   const handleFormClose = (open: boolean) => {
@@ -249,7 +236,6 @@ export function EmployeeList() {
                   employee={employee}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  onManagePositions={handleManagePositions}
                 />
               ))
             )}

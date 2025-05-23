@@ -48,7 +48,6 @@ export const serverAPI = ky.create({
       (request) => {
         // 添加认证令牌到请求头
         const token = getToken();
-        console.log(`接口: ${request.url} 添加认证信息: ${token}`);
         if (token) {
           request.headers.set("Authorization", `Bearer ${token}`);
         }

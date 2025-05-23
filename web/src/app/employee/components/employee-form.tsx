@@ -28,6 +28,7 @@ import { dateToTimestamp } from "@/lib/utils"
 import { CustomFieldEditor } from "@/components/customfield"
 import { Separator } from "@/components/ui/separator"
 import { useEmployeePositions } from "@/lib/api/employee"
+import { useSchemaList } from "@/lib/api/customfield"
 
 const formSchema = z.object({
   name: z.string().min(1, "请输入姓名"),
@@ -53,11 +54,19 @@ interface Props {
 export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, initialData }: Props) {
   const { toast } = useToast()
   const { data: employee } = useEmployee(id)
-  const { data: employeePositions } = useEmployeePositions(id, open && !!id)
+  const { data: employeePositions } = useEmployeePositions(id)
   const [showCandidateDialog, setShowCandidateDialog] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null)
   const [customFieldSchemaId, setCustomFieldSchemaId] = useState<number | null>(null)
   const [customFieldValue, setCustomFieldValue] = useState<Record<string, any> | null>(null)
+
+  // 获取该公司"员工"类型的自定义字段模板列表
+  const { data: employeeSchemas = { items: [] } } = useSchemaList(
+    "employee", // 使用小写，与后端API保持一致
+    { page: 1, limit: 100 },
+    companyId,
+    true // 包含系统预设
+  )
 
   const { data: departmentData } = useDepartments(companyId, {
     page: 1,
@@ -68,7 +77,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
     page: 1,
     limit: 100,
   })
-
+  console.log(`employeeSchemas: ${JSON.stringify(employeeSchemas)}`)
   console.log(`employee: ${JSON.stringify(employee)}`)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -144,6 +153,28 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
       }
     }
   }, [employee, initialData, form, open, id, employeePositions])
+
+  useEffect(() => {
+    if (open) {
+      // 新建员工时，自动选择第一个可用的自定义字段模板
+      if (!id && !customFieldSchemaId && employeeSchemas.items.length > 0) {
+        const firstAvailableSchema = employeeSchemas.items[0];
+        if (firstAvailableSchema) {
+          console.log("自动选择自定义字段模板:", firstAvailableSchema.name);
+          setCustomFieldSchemaId(firstAvailableSchema.id);
+        }
+      }
+
+      // 编辑员工时，如果没有指定自定义字段模板，但有可用模板时，也自动选择
+      if (id && !customFieldSchemaId && employee?.extra_schema_id === null && employeeSchemas.items.length > 0) {
+        const firstAvailableSchema = employeeSchemas.items[0];
+        if (firstAvailableSchema) {
+          console.log("编辑时自动选择自定义字段模板:", firstAvailableSchema.name);
+          setCustomFieldSchemaId(firstAvailableSchema.id);
+        }
+      }
+    }
+  }, [open, id, customFieldSchemaId, employee, employeeSchemas]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -416,6 +447,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                   onSchemaChange={(id) => setCustomFieldSchemaId(id)}
                   onFormDataChange={(data) => setCustomFieldValue(data)}
                   disabled={false}
+                  hideSchemaSelector={true}
                 />
               </div>
 
