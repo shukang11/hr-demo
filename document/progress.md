@@ -178,7 +178,7 @@ def validate_value_against_schema(schema, value):
 
 | 端点                                            | 方法 | 描述                             |
 | ----------------------------------------------- | ---- | -------------------------------- |
-| `/customfield/schema/create`                    | POST | 创建新的JSON Schema              |
+|                                                 |
 | `/customfield/schema/update/<int:schema_id>`    | POST | 更新现有Schema                   |
 | `/customfield/schema/delete/<int:schema_id>`    | POST | 删除Schema（前提是没有关联数据） |
 | `/customfield/schema/clone`                     | POST | 克隆Schema到另一个公司           |
@@ -405,7 +405,7 @@ await createOrUpdateEmployee({
     └── position-history.tsx  # 职位历史组件
 ```
 
-### 10.1.4 技术实现要点
+#### 10.1.4 技术实现要点
 
 1. **路由兼容性**
    - 确保客户端组件使用React Router而非Next.js的路由API，保持项目一致性
@@ -419,3 +419,287 @@ await createOrUpdateEmployee({
    - 根据Schema定义的UI配置调整展示效果
 
 _更新日期: 2025年5月21日_
+
+### 10.2 员工模板自动选择功能 (2025年5月22日)
+
+为了进一步优化用户体验，我们在员工表单中实现了自定义字段模板的自动选择功能：
+
+#### 10.2.1 功能概述
+
+- 员工创建/编辑表单中自动选择员工类型的第一个可用模板
+- 隐藏手动模板选择器，简化表单操作流程
+- 保留编辑现有员工时的原有模板和数据
+
+#### 10.2.2 实现细节
+
+1. **自动选择逻辑**
+   - 在表单打开时自动查询员工类型的模板列表
+   - 选择第一个可用的模板应用于新员工
+   - 编辑现有员工时保留原有模板设置
+
+2. **组件增强**
+   - 增强`CustomFieldEditor`组件，添加`hideSchemaSelector`选项
+   - 修改员工表单，隐藏模板选择器，使用自动选择的模板
+   - 保留模板切换能力，但默认隐藏以简化界面
+
+#### 10.2.3 实现代码
+
+```tsx
+// 自动选择员工模板的辅助hook
+function useFirstEmployeeSchema(companyId?: number) {
+  const { data } = useSchemaList(
+    "employee", 
+    { page: 1, limit: 10 },
+    companyId,
+    true
+  );
+  return { firstSchemaId: data?.items?.[0]?.id || null };
+}
+
+// 在表单打开时自动选择模板
+useEffect(() => {
+  if (open && !id && firstSchemaId && !customFieldSchemaId) {
+    setCustomFieldSchemaId(firstSchemaId);
+  }
+}, [open, id, firstSchemaId, customFieldSchemaId]);
+
+// 隐藏模板选择器
+<CustomFieldEditor
+  entityType="employee"
+  companyId={companyId}
+  schemaId={customFieldSchemaId}
+  formData={customFieldValue || undefined}
+  onSchemaChange={(id) => setCustomFieldSchemaId(id)}
+  onFormDataChange={(data) => setCustomFieldValue(data)}
+  hideSchemaSelector={true}
+/>
+```
+
+_更新日期: 2025年5月22日_
+
+### 10.3 员工信息编辑功能改进 (2025年5月23日)
+
+#### 10.3.1 问题描述
+用户在编辑员工信息时发现以下问题：
+- 员工表单中存在单一的部门和职位选择，与多职位管理功能冲突。
+- 编辑已有员工时，自定义字段的值未能正确加载到表单中。
+
+#### 10.3.2 解决方案
+1.  **员工表单 (`employee-form.tsx`) 调整**:
+    *   移除员工表单中的 `department_id` 和 `position_id` 字段及其相关逻辑。员工的部门和职位信息通过 `EmployeePositionManager` 组件进行管理，该组件支持为员工关联多个职位，每个职位均包含部门信息。
+    *   修复自定义字段加载逻辑：确保在编辑员工时，从 `employee` 或 `initialData` 对象中的 `extra_value` 属性正确加载自定义字段的值到 `customFieldValue` 状态，并传递给 `CustomFieldEditor` 组件。
+
+2.  **员工职位管理 (`EmployeePositionManager.tsx`)**:
+    *   该组件已支持多职位管理，无需修改。
+
+#### 10.3.3 预期效果
+- 员工表单不再包含单一的部门和职位选择，避免与多职位管理功能混淆。
+- 编辑员工时，已填写的自定义字段能够正确显示在表单中。
+
+_更新日期: 2025年5月23日_
+
+## 5. 实现挑战与解决方案
+
+### 5.1 数据验证与类型安全
+
+在自定义字段功能的初始实现中，由于涉及动态的JSON Schema和多种数据类型，导致数据验证和类型安全成为挑战。特别是在处理复杂嵌套结构和数组时，如何确保数据符合预期的Schema定义，成为一个关键问题。
+
+#### 解决方案
+
+我们引入了`jsonschema`库对数据进行严格的JSON Schema验证。同时，在Pydantic模型中使用`Field`和`validator`装饰器，确保字段的类型和约束得到正确应用。
+
+### 5.2 性能优化
+
+在多对多关系的实现中，由于一个实体可能关联多个自定义字段，初期查询性能未达预期，尤其是在数据量较大时，查询速度明显下降。
+
+#### 解决方案
+
+通过在`JsonValueInDB`表的`entity_type`和`entity_id`字段上创建组合索引，显著提升了查询性能。同时，优化了API层的查询逻辑，减少不必要的数据库访问。
+
+### 5.3 版本控制复杂性
+
+Schema的版本控制引入了额外的复杂性，尤其是在处理Schema演变和数据迁移时，如何确保不同版本之间的兼容性成为挑战。
+
+#### 解决方案
+
+通过在Schema中引入`version`和`parent_schema_id`字段，实现对Schema版本的管理。同时，提供了Schema克隆和迁移的API，方便管理员进行Schema的版本升级和数据迁移。
+
+### 5.4 历史数据兼容性处理
+
+#### 问题描述
+
+在实现员工自定义字段功能后，发现历史数据（即在功能实现前创建的员工记录）没有关联的 `extra_schema_id`，导致这些员工的详情无法正确显示自定义字段编辑组件。
+
+#### 解决方案
+
+为了解决这个问题，我们采用了双管齐下的方法：
+
+1. **前端自动适配**：
+   在员工表单组件 (`employee-form.tsx`) 中，当加载已存在的员工数据时，如果该员工没有关联 `extra_schema_id`，系统会自动选择当前公司下第一个可用的员工自定义字段模板。这样可以确保在编辑老数据时，自定义字段功能依然可用。
+   ```tsx
+   // 员工表单组件中的代码片段
+   useEffect(() => {
+     if (open && (employee || initialData) && id) {
+       const data = initialData || employee
+       // ...其他表单数据重置代码...
+
+       // 设置自定义字段信息
+       if (data?.extra_schema_id) {
+         setCustomFieldSchemaId(data.extra_schema_id);
+       } else if (firstSchemaId) {
+         // 如果员工没有关联的模板，自动选择第一个可用的模板
+         // 这样处理之前创建的员工记录
+         setCustomFieldSchemaId(firstSchemaId);
+         console.log(`为已有员工自动选择模板: ${firstSchemaId}`);
+       }
+
+       if (data?.extra_value) {
+         setCustomFieldValue(data.extra_value);
+       }
+     }
+     // ...其他逻辑...
+   }, [employee, initialData, form, open, id, firstSchemaId, customFieldSchemaId])
+   ```
+
+2. **批量数据迁移工具**：
+   为了从数据库层面解决历史数据问题，我们创建了一个 Flask CLI 命令 `update_employee_schemas`。该命令位于 `api/commands/update_employee_schemas.py`。
+
+   ```python
+   # api/commands/update_employee_schemas.py
+   import click
+   from sqlalchemy import select, update
+   from app import db # 假设您的 Flask app 和 SQLAlchemy 实例可以通过 app 模块导入
+   from libs.models import EmployeeInDB, JsonSchemaInDB
+   from libs.models.json_schema import SchemaEntityType
+
+   @click.command()
+   @click.option('--company-id', type=int, help='需要更新的公司ID。如果不提供，将更新所有公司')
+   @click.option('--dry-run', is_flag=True, help='仅显示将要更新的记录数，不实际更新')
+   @click.option('--force', is_flag=True, help='强制更新已有 extra_schema_id 的记录')
+   def update_employee_schemas(company_id, dry_run, force):
+       """为没有 extra_schema_id 的员工记录添加默认的模板ID"""
+       click.echo('正在查询需要更新的员工记录...')
+       
+       # 获取所有的员工模板(按公司分组)
+       schema_query = select(JsonSchemaInDB).where(
+           JsonSchemaInDB.entity_type == SchemaEntityType.EMPLOYEE
+       )
+       
+       if company_id:
+           schema_query = schema_query.where(JsonSchemaInDB.company_id == company_id)
+       
+       schemas = db.session.execute(schema_query).scalars().all()
+       
+       schema_by_company = {}
+       for schema in schemas:
+           company = schema.company_id
+           if company not in schema_by_company:
+               schema_by_company[company] = []
+           schema_by_company[company].append(schema)
+       
+       total_to_update = 0
+       updates_by_company = {}
+       
+       for comp_id, company_schemas in schema_by_company.items():
+           if not company_schemas:
+               click.echo(f'公司 ID {comp_id} 没有可用的员工模板，跳过')
+               continue
+           
+           default_schema = company_schemas[0] # 使用第一个模板作为默认模板
+           
+           employee_query = select(EmployeeInDB).where(
+               EmployeeInDB.company_id == comp_id
+           )
+           
+           if not force:
+               employee_query = employee_query.where(
+                   EmployeeInDB.extra_schema_id == None
+               )
+           
+           employees = db.session.execute(employee_query).scalars().all()
+           
+           updates_by_company[comp_id] = {
+               'schema_id': default_schema.id,
+               'employees': employees
+           }
+           total_to_update += len(employees)
+       
+       click.echo(f'总共找到 {total_to_update} 条员工记录需要更新')
+       for comp_id, data in updates_by_company.items():
+           click.echo(f'公司 ID {comp_id}: {len(data["employees"])} 条记录将使用模板 ID {data["schema_id"]}')
+       
+       if dry_run:
+           click.echo('这是一次预演，没有实际更新任何数据')
+           return
+       
+       if not click.confirm('是否继续更新?'):
+           click.echo('操作已取消')
+           return
+       
+       for comp_id, data in updates_by_company.items():
+           schema_id_to_assign = data['schema_id']
+           employees_to_update = data['employees']
+           
+           if not employees_to_update:
+               continue
+           
+           employee_ids = [e.id for e in employees_to_update]
+           
+           update_stmt = update(EmployeeInDB).where(
+               EmployeeInDB.id.in_(employee_ids)
+           ).values(
+               extra_schema_id=schema_id_to_assign
+           )
+           
+           db.session.execute(update_stmt)
+           click.echo(f'已更新公司 ID {comp_id} 的 {len(employees_to_update)} 条员工记录')
+       
+       db.session.commit()
+       click.echo('所有更新已完成')
+   ```
+
+   该工具已在 `api/commands/__init__.py` 中注册，可以通过 Flask CLI 调用。
+
+   ```python
+   # api/commands/__init__.py
+   # ... 其他导入 ...
+   def register_commands(app: "Flask") -> None:
+       from . import init_dev_data, upgrade_db, update_employee_schemas # 确保导入
+       app.cli.add_command(upgrade_db.command)
+       app.cli.add_command(init_dev_data.command)
+       app.cli.add_command(update_employee_schemas.update_employee_schemas) # 注册命令
+   ```
+
+#### 使用方式
+
+管理员可以在项目API的根目录下，通过终端运行以下命令来更新历史数据：
+
+```bash
+# 预演：查看将要更新的记录，不实际执行数据库操作
+flask update-employee-schemas --dry-run
+
+# 更新指定公司 (例如公司ID为1) 的员工记录
+flask update-employee-schemas --company-id=1
+
+# 强制更新指定公司 (例如公司ID为1) 的员工记录，包括那些已有模板ID的记录
+flask update-employee-schemas --company-id=1 --force
+
+# 更新所有公司的员工记录 (仅更新没有模板ID的记录)
+flask update-employee-schemas
+```
+
+#### 实现效果
+
+通过前端的自动适配和后端的批量迁移工具，我们确保了：
+- **用户体验的连续性**：所有员工（无论新旧）在前端编辑时都能无缝使用自定义字段功能。
+- **数据完整性**：通过批量工具，可以为历史数据补充必要的 `extra_schema_id`，确保数据的一致性。
+- **灵活性和可控性**：管理员可以通过命令行工具灵活地管理历史数据的迁移，并可以选择预演模式来避免误操作。
+
+## 变更记录
+
+- [x] 修复 `employee-form.tsx` 中的自定义字段回显问题。
+- [x] 移除 `employee-form.tsx` 中冗余的 `department_id` 和 `position_id` 字段。
+- [x] 添加 `timestampToDateObject` 工具函数并在 `employee-form.tsx` 中使用。
+- [x] 为 `employee-form.tsx` 中的回调和状态添加类型注解。
+- [x] 创建 `candidate-search-dialog.tsx` 组件用于从候选人列表导入员工信息。
+- [x] 在 `employee-form.tsx` 中将 `DatePicker` 组件替换为 `Calendar` 组件，并修复相关类型错误。

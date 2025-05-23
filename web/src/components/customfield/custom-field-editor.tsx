@@ -59,6 +59,12 @@ export interface CustomFieldEditorProps {
      * 是否只读模式，默认为false
      */
     readonly?: boolean;
+
+    /**
+     * 是否隐藏Schema选择器，默认为false
+     * 当设置为true时，将只显示表单内容，不显示Schema选择器
+     */
+    hideSchemaSelector?: boolean;
 }
 
 /**
@@ -89,6 +95,7 @@ export function CustomFieldEditor({
     onCreateNewSchema,
     disabled = false,
     readonly = false,
+    hideSchemaSelector = false,
 }: CustomFieldEditorProps) {
     // 从API获取Schema详情
     const { data: schema, error, isLoading } = useSchema(schemaId ?? undefined);
@@ -101,7 +108,7 @@ export function CustomFieldEditor({
     return (
         <div className="custom-field-editor space-y-4">
             {/* Schema选择器 */}
-            {!readonly && (
+            {!readonly && !hideSchemaSelector && (
                 <SchemaSelector
                     entityType={entityType}
                     value={schemaId ?? null}

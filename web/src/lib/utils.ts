@@ -104,6 +104,18 @@ export function getCrossYearRange(
 }
 
 /**
+ * 将时间戳转换为 Date 对象
+ * @param timestamp 时间戳（毫秒）
+ * @returns Date 对象或 null
+ */
+export function timestampToDateObject(
+  timestamp: number | null | undefined
+): Date | null {
+  if (timestamp === null || typeof timestamp === "undefined") return null;
+  return new Date(timestamp);
+}
+
+/**
  * 计算字符串的 SHA-256 哈希值
  * @param content 需要哈希的内容
  * @returns 十六进制的 SHA-256 哈希字符串

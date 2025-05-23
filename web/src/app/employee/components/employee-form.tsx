@@ -27,6 +27,7 @@ import { useState, useEffect } from "react"
 import { dateToTimestamp } from "@/lib/utils"
 import { CustomFieldEditor } from "@/components/customfield"
 import { Separator } from "@/components/ui/separator"
+import { useEmployeePositions } from "@/lib/api/employee"
 
 const formSchema = z.object({
   name: z.string().min(1, "请输入姓名"),
@@ -52,6 +53,7 @@ interface Props {
 export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, initialData }: Props) {
   const { toast } = useToast()
   const { data: employee } = useEmployee(id)
+  const { data: employeePositions } = useEmployeePositions(id, open && !!id)
   const [showCandidateDialog, setShowCandidateDialog] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null)
   const [customFieldSchemaId, setCustomFieldSchemaId] = useState<number | null>(null)
@@ -118,6 +120,20 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         gender: data?.gender || "Unknown",
       })
 
+      // Populate position from employeePositions if not already set by employee data
+      if (employeePositions && employeePositions.length > 0) {
+        const firstPosition = employeePositions[0]
+        if (firstPosition) {
+          // Only set if not already set by initialData or employee to avoid overriding explicit initial values
+          if (form.getValues("department_id") === null && firstPosition.department_id) {
+            form.setValue("department_id", firstPosition.department_id)
+          }
+          if (form.getValues("position_id") === null && firstPosition.position_id) {
+            form.setValue("position_id", firstPosition.position_id)
+          }
+        }
+      }
+
       // 设置自定义字段信息
       if (data?.extra_schema_id) {
         setCustomFieldSchemaId(data.extra_schema_id);
@@ -127,7 +143,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         setCustomFieldValue(data.extra_value);
       }
     }
-  }, [employee, initialData, form, open, id])
+  }, [employee, initialData, form, open, id, employeePositions])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
