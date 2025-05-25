@@ -448,6 +448,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                   onFormDataChange={(data) => setCustomFieldValue(data)}
                   disabled={false}
                   hideSchemaSelector={true}
+                  showSubmitButton={false}
                 />
               </div>
 

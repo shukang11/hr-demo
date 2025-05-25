@@ -21,10 +21,15 @@ dependencies = [
     "email-validator>=2.2.0",
     "jsonschema>=4.23.0",
     "python-dateutil>=2.9.0.post0",
+    "pywebview[pyside6]>=5.4",
+    "waitress>=3.0.2",
+    "pyinstaller>=6.13.0",
+    "requests>=2.32.3",
 ]
 
 [dependency-groups]
 dev = ["pytest-mock>=3.14.0", "pytest>=8.3.4", "yapf>=0.43.0"]
+desktop = ["pywebview[pyside6]>=5.4", "pyinstaller>=6.3.0", "waitress>=2.1.2"]
 
 [tool.pytest.ini_options]
 pythonpath = "."

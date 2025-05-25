@@ -1,0 +1,6 @@
+# Desktop Application Dependencies
+# These dependencies are used for building the desktop version of HR-Demo
+
+pywebview>=4.4.1
+pyinstaller>=6.3.0  
+waitress>=2.1.2

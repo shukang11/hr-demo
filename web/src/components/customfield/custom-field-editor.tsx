@@ -65,6 +65,11 @@ export interface CustomFieldEditorProps {
      * 当设置为true时，将只显示表单内容，不显示Schema选择器
      */
     hideSchemaSelector?: boolean;
+
+    /**
+     * 是否显示提交按钮，默认为false
+     */
+    showSubmitButton?: boolean;
 }
 
 /**
@@ -96,6 +101,7 @@ export function CustomFieldEditor({
     disabled = false,
     readonly = false,
     hideSchemaSelector = false,
+    showSubmitButton = false,
 }: CustomFieldEditorProps) {
     // 从API获取Schema详情
     const { data: schema, error, isLoading } = useSchema(schemaId ?? undefined);
@@ -156,7 +162,7 @@ export function CustomFieldEditor({
                                     onChange={handleFormChange}
                                     disabled={disabled}
                                     readonly={readonly}
-                                    showSubmitButton={false}
+                                    showSubmitButton={showSubmitButton}
                                 />
                             ) : (
                                 <div className="text-amber-500">
