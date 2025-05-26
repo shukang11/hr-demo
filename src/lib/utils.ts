@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -10,9 +10,11 @@ export function cn(...inputs: ClassValue[]) {
  * @param date 日期字符串或 Date 对象
  * @returns 时间戳或 null
  */
-export function dateToTimestamp(date: string | Date | null | undefined): number | null {
+export function dateToTimestamp(
+  date: string | Date | null | undefined
+): number | null {
   if (!date) return null;
-  const d = typeof date === 'string' ? new Date(date) : date;
+  const d = typeof date === "string" ? new Date(date) : date;
   return d.getTime();
 }
 
@@ -21,10 +23,12 @@ export function dateToTimestamp(date: string | Date | null | undefined): number 
  * @param timestamp 时间戳（毫秒）
  * @returns 日期字符串 (YYYY-MM-DD)
  */
-export function timestampToDateString(timestamp: number | null | undefined): string {
-  if (!timestamp) return '';
+export function timestampToDateString(
+  timestamp: number | null | undefined
+): string {
+  if (!timestamp) return "";
   const date = new Date(timestamp);
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 /**
@@ -32,14 +36,17 @@ export function timestampToDateString(timestamp: number | null | undefined): str
  * @param date 日期对象，默认为当前日期
  * @returns 月份的起止时间戳
  */
-export function getMonthRange(date: Date = new Date()): { startTime: number; endTime: number } {
-  const year = date.getFullYear()
-  const month = date.getMonth()
-  
-  const startTime = new Date(year, month, 1).getTime()
-  const endTime = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime()
-  
-  return { startTime, endTime }
+export function getMonthRange(date: Date = new Date()): {
+  startTime: number;
+  endTime: number;
+} {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const startTime = new Date(year, month, 1).getTime();
+  const endTime = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
+
+  return { startTime, endTime };
 }
 
 /**
@@ -47,15 +54,18 @@ export function getMonthRange(date: Date = new Date()): { startTime: number; end
  * @param date 日期对象，默认为当前日期
  * @returns 当天的起止时间戳
  */
-export function getDateRange(date: Date = new Date()): { startTime: number; endTime: number } {
-  const year = date.getFullYear()
-  const month = date.getMonth()
-  const day = date.getDate()
-  
-  const startTime = new Date(year, month, day).getTime()
-  const endTime = new Date(year, month, day, 23, 59, 59, 999).getTime()
-  
-  return { startTime, endTime }
+export function getDateRange(date: Date = new Date()): {
+  startTime: number;
+  endTime: number;
+} {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  const startTime = new Date(year, month, day).getTime();
+  const endTime = new Date(year, month, day, 23, 59, 59, 999).getTime();
+
+  return { startTime, endTime };
 }
 
 /**
@@ -74,13 +84,60 @@ export function getCrossYearRange(
   endDay: number,
   baseDate: Date = new Date()
 ): { startTime: number; endTime: number } {
-  const year = baseDate.getFullYear()
-  
+  const year = baseDate.getFullYear();
+
   // 如果结束月份小于开始月份，说明跨年了，结束年份需要加1
-  const endYear = endMonth < startMonth ? year + 1 : year
-  
-  const startTime = new Date(year, startMonth - 1, startDay).getTime()
-  const endTime = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999).getTime()
-  
-  return { startTime, endTime }
+  const endYear = endMonth < startMonth ? year + 1 : year;
+
+  const startTime = new Date(year, startMonth - 1, startDay).getTime();
+  const endTime = new Date(
+    endYear,
+    endMonth - 1,
+    endDay,
+    23,
+    59,
+    59,
+    999
+  ).getTime();
+
+  return { startTime, endTime };
+}
+
+/**
+ * 将时间戳转换为 Date 对象
+ * @param timestamp 时间戳（毫秒）
+ * @returns Date 对象或 null
+ */
+export function timestampToDateObject(
+  timestamp: number | null | undefined
+): Date | null {
+  if (timestamp === null || typeof timestamp === "undefined") return null;
+  return new Date(timestamp);
+}
+
+/**
+ * 计算字符串的 SHA-256 哈希值
+ * @param content 需要哈希的内容
+ * @returns 十六进制的 SHA-256 哈希字符串
+ */
+export async function get_sha256(content: string): Promise<string> {
+  try {
+    // 将字符串转换为 UTF-8 编码的 Uint8Array
+    const encoder = new TextEncoder();
+    const data = encoder.encode(content);
+
+    // 使用 Web Crypto API 计算 SHA-256 哈希值
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+    // 将 ArrayBuffer 转换为十六进制字符串
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    return hashHex;
+  } catch (error) {
+    console.error("SHA-256 计算失败:", error);
+    throw new Error("SHA-256 计算失败");
+  }
 }

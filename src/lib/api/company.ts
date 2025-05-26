@@ -5,15 +5,29 @@ import useSWR from "swr";
 export interface Company {
   id: number;
   name: string;
+  parent_id?: number | null;
+  description?: string;
   extra_value?: any;
   extra_schema_id?: number;
   created_at?: string | null;
   updated_at?: string | null;
 }
 
+export interface SubsidiaryInfo {
+  id: number;
+  name: string;
+}
+
+export interface CompanyDetail extends Company {
+  parent_company?: Company;
+  subsidiaries: SubsidiaryInfo[];
+}
+
 export interface InsertCompany {
   id?: number;
   name: string;
+  parent_id?: number | null;
+  description?: string;
   extra_value?: any;
   extra_schema_id?: number;
 }
@@ -28,7 +42,7 @@ export async function createOrUpdateCompany(
   data: InsertCompany
 ): Promise<Company> {
   const response = await serverAPI
-    .post(`${API_PREFIX}/insert`, {
+    .post(`${API_PREFIX}/insert/`, {
       json: data,
     })
     .json<ApiResponse<Company>>();
@@ -45,7 +59,7 @@ export async function getCompanyList(
 ): Promise<PageResult<Company>> {
   console.log("getCompanyList", params);
   const response = await serverAPI
-    .get(`${API_PREFIX}/list`, {
+    .get(`${API_PREFIX}/list/`, {
       searchParams: {
         page: params.page.toString(),
         limit: params.limit.toString(),
@@ -66,7 +80,7 @@ export async function searchCompanies(
   params: PageParams
 ): Promise<PageResult<Company>> {
   const response = await serverAPI
-    .get(`${API_PREFIX}/search`, {
+    .get(`${API_PREFIX}/search/`, {
       searchParams: {
         name,
         page: params.page.toString(),
@@ -128,6 +142,50 @@ export function useCompanySearch(
 }
 
 /**
+ * 获取公司详细信息（包含子公司）
+ * @param id 公司ID
+ */
+export async function getCompanyDetail(
+  id: number
+): Promise<CompanyDetail | null> {
+  const response = await serverAPI
+    .get(`${API_PREFIX}/${id}/detail`)
+    .json<ApiResponse<CompanyDetail | null>>();
+  if (!response.data) throw new Error("No data returned");
+  return response.data;
+}
+
+/**
+ * 获取子公司列表
+ * @param parentId 父公司ID
+ */
+export async function getSubsidiaries(parentId: number): Promise<Company[]> {
+  const response = await serverAPI
+    .get(`${API_PREFIX}/${parentId}/subsidiaries`)
+    .json<ApiResponse<Company[]>>();
+  if (!response.data) throw new Error("No data returned");
+  return response.data;
+}
+
+/**
+ * 添加子公司
+ * @param parentId 父公司ID
+ * @param data 子公司数据
+ */
+export async function addSubsidiary(
+  parentId: number,
+  data: InsertCompany
+): Promise<Company> {
+  const response = await serverAPI
+    .post(`${API_PREFIX}/${parentId}/subsidiary`, {
+      json: data,
+    })
+    .json<ApiResponse<Company>>();
+  if (!response.data) throw new Error("No data returned");
+  return response.data;
+}
+
+/**
  * 使用 SWR 获取公司详情
  * @param id 公司ID
  */
@@ -135,5 +193,68 @@ export function useCompany(id: number | undefined) {
   return useSWR(id ? ["company", id] : null, async () => {
     if (!id) return null;
     return await getCompanyById(id);
+  });
+}
+
+/**
+ * 使用 SWR 获取公司详细信息（包含子公司）
+ * @param id 公司ID
+ */
+export function useCompanyDetail(id: number | undefined) {
+  return useSWR(id ? ["company", "detail", id] : null, async () => {
+    if (!id) return null;
+    return await getCompanyDetail(id);
+  });
+}
+
+/**
+ * 使用 SWR 获取子公司列表
+ * @param parentId 父公司ID
+ */
+export function useSubsidiaries(parentId: number | undefined) {
+  return useSWR(
+    parentId ? ["company", "subsidiaries", parentId] : null,
+    async () => {
+      if (!parentId) return [];
+      return await getSubsidiaries(parentId);
+    }
+  );
+}
+
+/**
+ * 使用子公司选择器专用的子公司列表Hook
+ * @param parentId 父公司ID
+ */
+export function useCompanySubsidiaries(parentId: number | undefined) {
+  return useSWR(
+    parentId ? ["company", "subsidiaries-info", parentId] : null,
+    async () => {
+      if (!parentId) return [];
+      const subs = await getSubsidiaries(parentId);
+      return subs.map((sub) => ({
+        id: sub.id,
+        name: sub.name,
+      }));
+    }
+  );
+}
+
+/**
+ * 获取公司名称
+ * @param id 公司ID
+ */
+export async function getCompanyName(id: number): Promise<string> {
+  const company = await getCompanyById(id);
+  return company?.name || `未知公司 (ID: ${id})`;
+}
+
+/**
+ * 使用 SWR 获取公司名称
+ * @param id 公司ID
+ */
+export function useCompanyName(id: number | undefined) {
+  return useSWR(id ? ["company", "name", id] : null, async () => {
+    if (!id) return null;
+    return await getCompanyName(id);
   });
 }

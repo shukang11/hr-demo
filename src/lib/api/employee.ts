@@ -45,7 +45,7 @@ export interface EmployeePosition {
   department_id: number;
   position_id: number;
   remark?: string | null;
-  entry_at?: number | null;
+  start_date?: number | null;
 }
 
 export interface InsertEmployeePosition {

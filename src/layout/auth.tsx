@@ -1,17 +1,18 @@
-import { Outlet } from "react-router-dom"
+import React from "react"
 
-export default function AuthLayout() {
+interface AuthLayoutProps {
+  children: React.ReactNode
+}
+
+export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-[480px] bg-white shadow-lg rounded-xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">HR 管理系统</h1>
-          <p className="mt-2 text-gray-600">请登录或注册以继续</p>
-        </div>
-        <div className="w-full">
-          <Outlet />
-        </div>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/50 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md bg-card shadow-lg rounded-xl border overflow-hidden">
+        {children}
+      </div>
+      <div className="mt-8 text-center text-muted-foreground text-xs">
+        © {new Date().getFullYear()} HR管理系统 | 安全登录
       </div>
     </div>
   )
-} 
+}
