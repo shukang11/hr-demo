@@ -136,4 +136,16 @@
 - 实现子公司数据统计和分析功能
 - 考虑实现文档中提到的"未来扩展方向"，如字段索引、统计功能等
 
+## 桌面应用分发策略
+
+- **当前状态:** 脚本实现中。
+- **详情:**
+    - 初期（开发阶段，版本频繁更新）：采用脚本化环境方案。将提供一个 PowerShell 脚本 (`Start-HRDemo.ps1`)，配合用户提供的 Python 3.11.9 发行版（内含 `pip`）。开发者会预先使用 `uv` 从 `api/pyproject.toml` 生成一个 `desktop-requirements.txt` 文件。脚本通过 `pip` 和此 `requirements.txt` 在 Windows 11 上自动创建和维护隔离的 Python 虚拟环境，并启动应用。`uv.exe` 不会分发给最终用户。这种方式便于快速迭代和分发更新。
+    - 后期（项目稳定后）：计划切换到使用 PyInstaller 进行打包，生成单一可执行文件，以提升最终用户的使用便利性。
+- **下一步:**
+    - 用户测试并反馈 `Start-HRDemo.ps1` 脚本。
+    - 根据反馈调整脚本，特别是 Python 发行版内 `python.exe` 和 `pip.exe` 的路径检测逻辑。
+    - 开发者侧确定生成 `desktop-requirements.txt` 的准确 `uv` 命令。
+    - 准备包含 `PythonDist` (Python 3.11.9), `Start-HRDemo.ps1`, `api/desktop-requirements.txt`, `web-dist/` 和应用源代码的测试分发包。
+
 _更新日期: 2025年5月22日_

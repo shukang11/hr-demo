@@ -878,3 +878,13 @@ def wait_for_server(self):
 4. **进一步减小体积**: 优化依赖，减小应用体积
 
 ---
+
+# 进度记录
+
+- **2025-05-27:**
+    - 讨论并确定初期桌面应用分发策略：采用脚本化环境（PowerShell）管理，配合用户提供的 Python 3.11.9 发行版。
+    - PowerShell 脚本 (`Start-HRDemo.ps1`) 将使用 Python 发行版中的 `pip` 和开发者预先通过 `uv` 生成的 `desktop-requirements.txt` 文件来创建和维护隔离环境。`uv.exe` 将不包含在最终分发给用户的包中。
+    - 初步草拟了 `Start-HRDemo.ps1` 脚本的核心逻辑和结构。
+    - 规划了 PowerShell 脚本的核心功能，包括环境创建、依赖同步和应用启动。
+    - 拟定了更新后的最终构建产物清单。
+    - 未来项目稳定后，计划切换到 PyInstaller 打包方案。
