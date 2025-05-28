@@ -59,7 +59,7 @@ class AccountService:
             Optional[AccountInDB]: 找到的账户数据库模型对象 (预加载 token)，如果未找到则返回 None。
         """
         session = self.session
-        
+
         # 修复查询语句，使用单次连接和正确的条件
         stmt = (
             select(AccountInDB)
@@ -151,7 +151,7 @@ class AccountService:
             account.token.token = new_token_value
             account.token.updated_at = datetime.now()  # 更新令牌更新时间
         else:
-            token = AccountTokenInDB(account=account, token=new_token_value)
+            token = AccountTokenInDB(account_id=account.id, token=new_token_value)
             self.session.add(token)
         # flush 会在 process_login 结束时或更高层级处理
         # self.session.flush()

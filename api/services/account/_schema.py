@@ -26,7 +26,9 @@ class AccountBase(BaseModel):
 
     username: str = Field(..., description="用户名，对应 AccountInDB.username")
     email: EmailStr = Field(..., description="电子邮箱，对应 AccountInDB.email")
-    phone: Optional[str] = Field(None, description="手机号码，对应 AccountInDB.phone")
+    phone: Optional[str] = Field(
+        default=None, description="手机号码，对应 AccountInDB.phone"
+    )
     gender: Gender = Field(
         ...,
         default_factory=lambda: Gender.UNKNOWN,
@@ -77,7 +79,7 @@ class AccountSchema(AccountBase):
     @classmethod
     def from_entity(cls, entity: "AccountInDB") -> "AccountSchema":
         """从数据库实体转换为响应模型"""
-        return cls(
+        return AccountSchema(
             id=entity.id,
             username=entity.username,
             email=entity.email,
@@ -93,9 +95,11 @@ class LoginRequest(BaseModel):
     允许使用用户名或邮箱进行登录。
     """
 
-    username: Optional[str] = Field(None, description="用户名，与邮箱至少提供一个")
+    username: Optional[str] = Field(
+        default=None, description="用户名，与邮箱至少提供一个"
+    )
     email: Optional[EmailStr] = Field(
-        None, description="电子邮箱，与用户名至少提供一个"
+        default=None, description="电子邮箱，与用户名至少提供一个"
     )
     password_hashed: str = Field(
         ...,
@@ -121,6 +125,4 @@ class LoginResponse(BaseModel):
     """
 
     token: str = Field(..., description="用户认证令牌，对应 AccountTokenInDB.token")
-    user: AccountSchema = Field(
-        ..., description="用户信息，包含用户的基本属性和ID"
-    )
+    user: AccountSchema = Field(..., description="用户信息，包含用户的基本属性和ID")

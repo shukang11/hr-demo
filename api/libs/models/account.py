@@ -192,3 +192,14 @@ class AccountTokenInDB(BaseModel):
     account: Mapped["AccountInDB"] = db.relationship(
         "AccountInDB", back_populates="token"
     )
+
+    def __init__(self, account_id: int, token: str) -> None:
+        """初始化账户令牌对象
+
+        Args:
+            account_id (int): 关联的账户 ID，必须存在于 `accounts` 表中。
+            token (str): API 访问令牌字符串，唯一且不为空。
+        """
+        super().__init__()
+        self.account_id = account_id
+        self.token = token
