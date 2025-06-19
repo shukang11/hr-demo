@@ -6,7 +6,7 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // Replace the sample below with your own migration scripts
+        // 分别添加两个列，因为SQLite不支持在一个ALTER语句中添加多个列
         manager
             .alter_table(
                 Table::alter()
@@ -20,6 +20,7 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+
         manager
             .alter_table(
                 Table::alter()

@@ -760,6 +760,9 @@ mod tests {
         };
 
         let result = service.insert(params).await;
+        if let Err(ref e) = result {
+            println!("员工创建失败: {:?}", e);
+        }
         assert!(result.is_ok());
     }
 

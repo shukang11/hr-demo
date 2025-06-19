@@ -20,3 +20,8 @@ argon2 = "0.5.3"
 migration = { path = "../../migration" }
 tokio = { version = "1", features = ["full", "test-util", "macros"] }
 pretty_assertions = "1.4"
+sea-orm = { workspace = true, features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+] }
