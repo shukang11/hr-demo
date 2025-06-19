@@ -2,13 +2,14 @@ use chrono::naive::serde::ts_milliseconds_option::serialize as to_milli_tsopt;
 use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Copy, Clone, Default, Debug, DeriveEntity)]
 pub struct Entity;
 
 impl EntityName for Entity {
     fn table_name(&self) -> &str {
-        "department"
+        "json_values"
     }
     fn schema_name(&self) -> Option<&str> {
         None
@@ -19,10 +20,10 @@ impl EntityName for Entity {
 pub struct Model {
     #[serde(skip)]
     pub id: i32, // 主键
-    pub parent_id: Option<i32>, // 父部门ID
-    pub company_id: i32,        // 公司ID
-    pub name: String,           // 部门名称
-    pub leader_id: Option<i32>, // 部门负责人ID
+    pub schema_id: i32,         // 关联的JSON Schema ID
+    pub entity_id: i32,         // 关联的实体ID
+    pub entity_type: String,    // 关联的实体类型
+    pub value: Value,           // 实际存储的JSON数据
     pub remark: Option<String>, // 备注
     #[serde(skip)]
     #[serde(serialize_with = "to_milli_tsopt")]
@@ -35,10 +36,10 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
-    ParentId,
-    CompanyId,
-    Name,
-    LeaderId,
+    SchemaId,
+    EntityId,
+    EntityType,
+    Value,
     Remark,
     CreatedAt,
     UpdatedAt,
@@ -61,11 +62,11 @@ impl ColumnTrait for Column {
     fn def(&self) -> ColumnDef {
         match self {
             Self::Id => ColumnType::Integer.def(),
-            Self::ParentId => ColumnType::Integer.def().nullable(),
-            Self::CompanyId => ColumnType::Integer.def(),
-            Self::Name => ColumnType::String(StringLen::N(64)).def(),
-            Self::LeaderId => ColumnType::Integer.def().nullable(),
-            Self::Remark => ColumnType::String(StringLen::N(255)).def().nullable(),
+            Self::SchemaId => ColumnType::Integer.def(),
+            Self::EntityId => ColumnType::Integer.def(),
+            Self::EntityType => ColumnType::String(StringLen::N(50)).def(),
+            Self::Value => ColumnType::Json.def(),
+            Self::Remark => ColumnType::String(StringLen::N(255)).def().null(),
             Self::CreatedAt => ColumnType::DateTime
                 .def()
                 .default(Expr::current_timestamp()),
@@ -78,44 +79,17 @@ impl ColumnTrait for Column {
 
 #[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    Company,
-    EmployeePosition,
-    Parent,
-    Children,
+    JsonSchema,
 }
 
 impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
         match self {
-            Self::Company => Entity::belongs_to(super::company::Entity)
-                .from(Column::CompanyId)
-                .to(super::company::Column::Id)
+            Self::JsonSchema => Entity::belongs_to(super::json_schema::Entity)
+                .from(Column::SchemaId)
+                .to(super::json_schema::Column::Id)
                 .into(),
-            Self::EmployeePosition => Entity::has_many(super::employee_position::Entity).into(),
-            Self::Parent => Entity::belongs_to(Entity)
-                .from(Column::ParentId)
-                .to(Column::Id)
-                .into(),
-            Self::Children => Entity::has_many(Entity).into(),
         }
-    }
-}
-
-impl Related<super::company::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Company.def()
-    }
-}
-
-impl Related<super::employee_position::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::EmployeePosition.def()
-    }
-}
-
-impl Related<Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Parent.def()
     }
 }
 

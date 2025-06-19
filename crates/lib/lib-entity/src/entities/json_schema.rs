@@ -21,22 +21,22 @@ impl EntityName for Entity {
 #[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Deserialize, Serialize)]
 pub struct Model {
     #[serde(skip)]
-    pub id: i32,                      // 主键
-    pub name: String,                 // schema名称
-    pub schema: Value,                // JSON Schema
-    pub company_id: Option<i32>,      // 公司ID
-    pub entity_type: String,          // Schema适用的实体类型
-    pub is_system: bool,              // 是否为系统预设Schema
-    pub version: i32,                 // Schema版本号
+    pub id: i32, // 主键
+    pub name: String,                  // schema名称
+    pub schema: Value,                 // JSON Schema
+    pub entity_type: String,           // Schema适用的实体类型
+    pub is_system: bool,               // 是否为系统预设Schema
+    pub version: i32,                  // Schema版本号
     pub parent_schema_id: Option<i32>, // 父Schema ID，用于版本管理
-    pub ui_schema: Option<Value>,     // UI展示相关的配置
-    pub remark: Option<String>,       // 备注
+    pub company_id: Option<i32>,       // 所属公司 ID，可选
+    pub remark: Option<String>,        // 备注
+    pub ui_schema: Option<Value>,      // UI展示相关的配置
     #[serde(skip)]
     #[serde(serialize_with = "to_milli_tsopt")]
-    pub created_at: NaiveDateTime,    // 创建时间
+    pub created_at: NaiveDateTime, // 创建时间
     #[serde(skip)]
     #[serde(serialize_with = "to_milli_tsopt")]
-    pub updated_at: NaiveDateTime,    // 更新时间
+    pub updated_at: NaiveDateTime, // 更新时间
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
@@ -44,13 +44,13 @@ pub enum Column {
     Id,
     Name,
     Schema,
-    CompanyId,
     EntityType,
     IsSystem,
     Version,
     ParentSchemaId,
-    UiSchema,
+    CompanyId,
     Remark,
+    UiSchema,
     CreatedAt,
     UpdatedAt,
 }
@@ -74,13 +74,15 @@ impl ColumnTrait for Column {
             Self::Id => ColumnType::Integer.def(),
             Self::Name => ColumnType::String(StringLen::N(255)).def(),
             Self::Schema => ColumnType::Json.def(),
-            Self::CompanyId => ColumnType::Integer.def().null(),
-            Self::EntityType => ColumnType::String(StringLen::N(50)).def(),
-            Self::IsSystem => ColumnType::Boolean.def(),
-            Self::Version => ColumnType::Integer.def(),
+            Self::EntityType => ColumnType::String(StringLen::N(50))
+                .def()
+                .default("general"),
+            Self::IsSystem => ColumnType::Boolean.def().default(false),
+            Self::Version => ColumnType::Integer.def().default(1),
             Self::ParentSchemaId => ColumnType::Integer.def().null(),
-            Self::UiSchema => ColumnType::Json.def().null(),
+            Self::CompanyId => ColumnType::Integer.def().null(),
             Self::Remark => ColumnType::String(StringLen::N(255)).def().null(),
+            Self::UiSchema => ColumnType::Json.def().null(),
             Self::CreatedAt => ColumnType::DateTime
                 .def()
                 .default(Expr::current_timestamp()),
@@ -112,4 +114,4 @@ impl RelationTrait for Relation {
     }
 }
 
-impl ActiveModelBehavior for ActiveModel {} 
+impl ActiveModelBehavior for ActiveModel {}

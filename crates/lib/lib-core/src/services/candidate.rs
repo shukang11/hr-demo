@@ -1,7 +1,12 @@
-use sea_orm::*;
 use chrono::NaiveDateTime;
-use lib_entity::{candidate, entities::candidate::{Entity as Candidate, CandidateStatus}};
-use lib_schema::models::candidate::{Candidate as SchemaCandidate, UpdateCandidateStatus, InsertCandidate};
+use lib_entity::{
+    candidate,
+    entities::candidate::{CandidateStatus, Entity as Candidate},
+};
+use lib_schema::models::candidate::{
+    Candidate as SchemaCandidate, InsertCandidate, UpdateCandidateStatus,
+};
+use sea_orm::*;
 
 #[derive(Clone)]
 pub struct CandidateService {
@@ -22,8 +27,8 @@ impl CandidateService {
         email: &Option<String>,
         interview_date: &Option<NaiveDateTime>,
     ) -> Result<bool, DbErr> {
-        use sea_orm::QueryFilter;
         use chrono::Timelike;
+        use sea_orm::QueryFilter;
 
         let interview_date = interview_date.unwrap_or_else(|| chrono::Utc::now().naive_utc());
         let start_of_day = interview_date
@@ -48,9 +53,7 @@ impl CandidateService {
         let mut query = Candidate::find()
             .filter(candidate::Column::CompanyId.eq(company_id))
             .filter(candidate::Column::Name.eq(name))
-            .filter(
-                candidate::Column::InterviewDate.between(start_of_day, end_of_day)
-            );
+            .filter(candidate::Column::InterviewDate.between(start_of_day, end_of_day));
 
         // 如果提供了手机号，加入手机号匹配条件
         if let Some(phone) = phone {
@@ -67,18 +70,18 @@ impl CandidateService {
     }
 
     /// 创建候选人
-    pub async fn create(
-        &self,
-        params: InsertCandidate,
-    ) -> Result<SchemaCandidate, DbErr> {
+    pub async fn create(&self, params: InsertCandidate) -> Result<SchemaCandidate, DbErr> {
         // 检查是否存在重复候选人
-        if self.check_duplicate(
-            params.company_id,
-            &params.name,
-            &params.phone,
-            &params.email,
-            &params.interview_date
-        ).await? {
+        if self
+            .check_duplicate(
+                params.company_id,
+                &params.name,
+                &params.phone,
+                &params.email,
+                &params.interview_date,
+            )
+            .await?
+        {
             return Err(DbErr::Custom("同一天内已存在相同姓名的候选人".to_string()));
         }
 
@@ -89,7 +92,9 @@ impl CandidateService {
             email: Set(params.email),
             position_id: Set(params.position_id),
             department_id: Set(params.department_id),
-            interview_date: Set(params.interview_date.unwrap_or_else(|| chrono::Utc::now().naive_utc())),
+            interview_date: Set(params
+                .interview_date
+                .unwrap_or_else(|| chrono::Utc::now().naive_utc())),
             status: Set(CandidateStatus::Pending),
             interviewer_id: Set(params.interviewer_id),
             evaluation: Set(None),
@@ -130,7 +135,7 @@ impl CandidateService {
             .order_by_desc(candidate::Column::CreatedAt)
             .all(&self.db)
             .await?;
-        
+
         Ok(results.into_iter().map(|model| model.into()).collect())
     }
 
@@ -144,4 +149,4 @@ impl CandidateService {
     pub async fn delete(&self, id: i32) -> Result<DeleteResult, DbErr> {
         Candidate::delete_by_id(id).exec(&self.db).await
     }
-} 
+}

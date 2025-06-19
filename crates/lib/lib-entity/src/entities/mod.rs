@@ -1,6 +1,3 @@
-pub mod account;
-pub mod account_company;
-pub mod account_token;
 pub mod candidate;
 pub mod company;
 pub mod department;

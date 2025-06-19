@@ -1,7 +1,21 @@
 import ky from "ky";
 
-// API基础配置
-const API_BASE_URL = "http://localhost:5001/api/"; // 调整为后端实际运行的端口 5001
+// API基础配置 - 根据环境动态设置
+const getApiBaseUrl = () => {
+  // 检查是否在桌面应用环境中
+  if (
+    window.location.protocol === "file:" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "localhost"
+  ) {
+    // 桌面应用或本地开发环境
+    return `${window.location.protocol}//${window.location.hostname}:${window.location.port}/api/`;
+  }
+  // 生产环境或其他环境
+  return "http://localhost:5001/api/";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const TOKEN_KEY = "hr_auth_token";
 
 // API响应接口
