@@ -1,7 +1,8 @@
 import ky from "ky";
 
 // API基础配置
-const API_BASE_URL = "http://localhost:5001/api/"; // 调整为后端实际运行的端口 5001
+// 使用相对URL，自动适配当前页面的协议和主机
+const API_BASE_URL = "/api/";
 const TOKEN_KEY = "hr_auth_token";
 
 // API响应接口

@@ -58,11 +58,22 @@ class DesktopApp:
 
     def _setup_logging(self):
         """配置桌面应用日志"""
+        # 确保日志目录存在
+        DesktopConfig.ensure_directories()
+
+        # 配置日志到文件和控制台
+        log_file = DesktopConfig.LOGS_DIR / "desktop_app.log"
+
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            handlers=[
+                logging.FileHandler(log_file, encoding="utf-8"),
+                logging.StreamHandler(sys.stdout),
+            ],
         )
         self.logger = logging.getLogger(__name__)
+        self.logger.info(f"日志系统初始化完成，日志文件：{log_file}")
 
     def start_flask_server(self):
         """在后台线程启动 Flask 服务器"""
@@ -91,7 +102,7 @@ class DesktopApp:
         while attempt < max_attempts:
             try:
                 response = requests.get(
-                    f"http://{DesktopConfig.SERVER_HOST}:{DesktopConfig.SERVER_PORT}/api/health",
+                    f"http://{DesktopConfig.SERVER_HOST}:{DesktopConfig.SERVER_PORT}/health/ping",
                     timeout=1,
                 )
                 if response.status_code == 200:
@@ -146,6 +157,9 @@ class DesktopApp:
                     except Exception as e:
                         self.logger.error(f"Failed to inject JWT: {e}")
 
+            # 尝试不同的 webview 引擎
+            self.logger.info("正在尝试创建 PyWebView 窗口...")
+
             self.window = webview.create_window(
                 title=DesktopConfig.APP_NAME,
                 url=f"http://{DesktopConfig.SERVER_HOST}:{DesktopConfig.SERVER_PORT}",
@@ -161,14 +175,36 @@ class DesktopApp:
             )
 
             self.logger.info("Starting PyWebView event loop...")
+
+            # 使用不同的参数启动 webview
             webview.start(
-                debug=getattr(DesktopConfig, "DEBUG", False), func=on_window_loaded
+                debug=getattr(DesktopConfig, "DEBUG", True),  # 临时启用调试
+                func=on_window_loaded,
+                http_server=False,  # 我们有自己的 Flask 服务器
+                gui="edgechromium",  # 优先使用 Edge WebView2
             )
 
         except Exception as e:
             self.logger.error(f"PyWebView 窗口创建或启动失败: {e}")  # 完善日志
             self.logger.error(traceback.format_exc())  # 记录完整堆栈
-            sys.exit(1)  # 确保异常时退出
+
+            # 尝试备用方案
+            self.logger.info("尝试使用备用 webview 引擎...")
+            try:
+                webview.start(
+                    debug=True,
+                    func=on_window_loaded,
+                    http_server=False,
+                    gui="cef",  # 使用 CEF 作为备用
+                )
+            except Exception as e2:
+                self.logger.error(f"备用 webview 引擎也失败: {e2}")
+                # 最后尝试系统默认
+                try:
+                    webview.start(debug=True, func=on_window_loaded, http_server=False)
+                except Exception as e3:
+                    self.logger.error(f"所有 webview 引擎都失败: {e3}")
+                    sys.exit(1)  # 确保异常时退出
 
         self.logger.info("Application closed.")  # 添加日志
 

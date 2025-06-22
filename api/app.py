@@ -137,7 +137,14 @@ def create_app(
         desktop_db_path = data_path / "hr_desktop.db"
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{desktop_db_path}"
 
-        # 桌面模式不需要CORS
+        # 桌面模式也需要CORS配置，因为浏览器仍会进行跨域检查
+        CORS(
+            app,
+            origins=["http://localhost:5001", "http://127.0.0.1:5001"],
+            allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+            methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            supports_credentials=True,
+        )
         app.logger.info("桌面模式启动")
     else:
         # Web模式CORS配置
