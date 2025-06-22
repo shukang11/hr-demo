@@ -24,7 +24,7 @@ import { usePositions } from "@/lib/api/position"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SelectCandidateDialog } from "./select-candidate-dialog"
 import { useState, useEffect } from "react"
-import { dateToTimestamp } from "@/lib/utils"
+import { dateToTimestamp, dateToInputValue, inputValueToTimestamp } from "@/lib/utils"
 import { CustomFieldEditor } from "@/components/customfield"
 import { Separator } from "@/components/ui/separator"
 import { useEmployeePositions } from "@/lib/api/employee"
@@ -104,7 +104,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         department_id: null,
         position_id: null,
         entry_date: dateToTimestamp(new Date()),
-        birthdate: dateToTimestamp(null),
+        birthdate: null,
         address: "",
         gender: "Unknown",
       })
@@ -124,7 +124,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
         department_id: data?.department_id || null,
         position_id: data?.position_id || null,
         entry_date: dateToTimestamp(new Date()),
-        birthdate: data?.birthdate || dateToTimestamp(null),
+        birthdate: data?.birthdate ? dateToTimestamp(new Date(data.birthdate)) : null,
         address: data?.address || "",
         gender: data?.gender || "Unknown",
       })
@@ -333,10 +333,10 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                         <Input
                           type="date"
                           {...field}
-                          value={value ? new Date(value).toISOString().split('T')[0] : ""}
+                          value={dateToInputValue(value)}
                           onChange={(e) => {
-                            const date = e.target.value ? dateToTimestamp(new Date(e.target.value)) : null
-                            onChange(date)
+                            const timestamp = inputValueToTimestamp(e.target.value)
+                            onChange(timestamp)
                           }}
                         />
                       </FormControl>
@@ -355,10 +355,10 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                         <Input
                           type="date"
                           {...field}
-                          value={value ? new Date(value).toISOString().split('T')[0] : ""}
+                          value={dateToInputValue(value)}
                           onChange={(e) => {
-                            const date = e.target.value ? dateToTimestamp(new Date(e.target.value)) : null
-                            onChange(date)
+                            const timestamp = inputValueToTimestamp(e.target.value)
+                            onChange(timestamp)
                           }}
                         />
                       </FormControl>
@@ -389,7 +389,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>所属部门</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value?.toString() || undefined}>
+                      <Select onValueChange={field.onChange} value={field.value?.toString() || ""}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="请选择部门" />
@@ -414,7 +414,7 @@ export function EmployeeForm({ id, open, onOpenChange, onSuccess, companyId, ini
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>职位</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value?.toString() || undefined}>
+                      <Select onValueChange={field.onChange} value={field.value?.toString() || ""}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="请选择职位" />

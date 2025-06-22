@@ -15,18 +15,30 @@ from waitress import serve  # 新增导入
 
 # 添加 API 路径到 Python 路径
 # 这行必须在尝试从 api 包导入任何内容之前
-api_path = Path(__file__).parent.parent / "api"
+if getattr(sys, "frozen", False):
+    # 打包环境：API代码已经被打包到可执行文件中
+    # 但我们仍需要确保配置路径正确
+    from config import DesktopConfig
+
+    api_path = DesktopConfig.API_DIR
+else:
+    # 开发环境：使用相对路径
+    api_path = Path(__file__).parent.parent / "api"
+
 if str(api_path) not in sys.path:
     sys.path.insert(0, str(api_path))
 
 # --- 项目相关导入 ---
 # 尝试将这些导入放在 sys.path 修改之后
 from app import create_app  # type: ignore # noqa: E402
-from api.libs.models.account import AccountInDB  # noqa: E402
-from api.extensions.ext_database import db  # db 是 SQLAlchemy 实例   # noqa: E402
-from api.services.account import AccountService  # noqa: E402
-from api.services.account._schema import AccountCreate, LoginRequest  # noqa: E402
-from api.libs.helper import get_sha256  # noqa: E402
+
+# 延迟导入模型，避免在 Flask 应用创建前初始化数据库模型
+# from api.libs.models.account import AccountInDB  # noqa: E402
+from extensions.ext_database import db  # db 是 SQLAlchemy 实例   # noqa: E402
+
+# from api.services.account import AccountService  # noqa: E402
+# from api.services.account._schema import AccountCreate, LoginRequest  # noqa: E402
+from libs.helper import get_sha256  # noqa: E402
 
 from config import DesktopConfig  # noqa: E402
 
@@ -116,6 +128,24 @@ class DesktopApp:
 
         try:
             self.logger.info("Creating PyWebView window...")
+
+            # 创建窗口加载完成后的回调函数
+            def on_window_loaded():
+                if jwt_token_for_frontend:
+                    self.logger.info(
+                        "Window loaded, injecting JWT into frontend localStorage..."
+                    )
+                    try:
+                        js_code = f"""
+                            localStorage.setItem('jwt_token', '{jwt_token_for_frontend}');
+                            localStorage.setItem('username', '{DEFAULT_USERNAME}');
+                            console.log('JWT Token injected successfully');
+                        """
+                        self.window.evaluate_js(js_code)
+                        self.logger.info("JWT injection completed")
+                    except Exception as e:
+                        self.logger.error(f"Failed to inject JWT: {e}")
+
             self.window = webview.create_window(
                 title=DesktopConfig.APP_NAME,
                 url=f"http://{DesktopConfig.SERVER_HOST}:{DesktopConfig.SERVER_PORT}",
@@ -130,16 +160,10 @@ class DesktopApp:
                 on_top=False,
             )
 
-            if jwt_token_for_frontend and self.window:
-                self.logger.info("Injecting JWT into frontend localStorage...")
-                js_code = f"""
-                    localStorage.setItem('jwt_token', '{jwt_token_for_frontend}');
-                    localStorage.setItem('username', '{DEFAULT_USERNAME}');
-                """
-                self.window.evaluate_js(js_code)
-
-            self.logger.info("Starting PyWebView event loop.")
-            webview.start(debug=getattr(DesktopConfig, "DEBUG", False))
+            self.logger.info("Starting PyWebView event loop...")
+            webview.start(
+                debug=getattr(DesktopConfig, "DEBUG", False), func=on_window_loaded
+            )
 
         except Exception as e:
             self.logger.error(f"PyWebView 窗口创建或启动失败: {e}")  # 完善日志
@@ -158,6 +182,11 @@ class DesktopApp:
             return None
         try:
             with self.flask_app.app_context():
+                # 在 Flask 应用上下文中导入模型，避免重复定义表
+                from libs.models.account import AccountInDB  # noqa: E402
+                from services.account import AccountService  # noqa: E402
+                from services.account._schema import AccountCreate, LoginRequest  # noqa: E402
+
                 self.logger.info("Checking for existing users in the database...")
                 if db.session.query(AccountInDB.id).first() is None:
                     self.logger.info(

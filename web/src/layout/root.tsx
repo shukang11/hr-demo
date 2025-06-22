@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom"
-import { AppLayout } from "./app"
+import { AppLayout, AppLayoutProps } from "./app"
 
 // 路由面包屑映射
 const BREADCRUMB_MAP: Record<string, string> = {
@@ -13,11 +13,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
 }
 
 export default function RootLayout() {
-  const location = useLocation()
-  const path = location.pathname.split("/")[1] || "dashboard"
-  const breadcrumbs = [
-    { label: "首页", href: "/" },
-    { label: BREADCRUMB_MAP[path] || path },
+  const breadcrumbs: AppLayoutProps["breadcrumbs"] = [
   ]
 
   return (

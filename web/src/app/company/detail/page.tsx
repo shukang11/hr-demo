@@ -98,24 +98,22 @@ export default function CompanyDetailPage() {
                     </TabsList>
                     <TabsContent value="info" className="mt-4">
                         <div className="bg-card rounded-md shadow p-6 dark:border border-border">
-                            <h2 className="text-2xl font-semibold mb-4">{companyDetail.name}</h2>
-
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
-                                    <h3 className="text-sm font-medium text-muted-foreground">公司ID</h3>
-                                    <p>{companyDetail.id}</p>
+                                    <h3 className="text-sm font-medium text-muted-foreground mb-2">公司描述</h3>
+                                    <p className="text-sm leading-relaxed">{companyDetail.description || '暂无描述'}</p>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-medium text-muted-foreground">创建时间</h3>
-                                    <p>{companyDetail.created_at ? new Date(companyDetail.created_at).toLocaleString() : '---'}</p>
+                                    <h3 className="text-sm font-medium text-muted-foreground mb-2">父公司</h3>
+                                    <p className="text-sm">{companyDetail.parent_company ? companyDetail.parent_company.name : '无（为集团主公司）'}</p>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-medium text-muted-foreground">公司描述</h3>
-                                    <p>{companyDetail.description || '暂无描述'}</p>
+                                    <h3 className="text-sm font-medium text-muted-foreground mb-2">创建时间</h3>
+                                    <p className="text-sm">{companyDetail.created_at ? new Date(companyDetail.created_at).toLocaleString('zh-CN') : '---'}</p>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-medium text-muted-foreground">父公司</h3>
-                                    <p>{companyDetail.parent_company ? companyDetail.parent_company.name : '无（为主公司）'}</p>
+                                    <h3 className="text-sm font-medium text-muted-foreground mb-2">子公司数量</h3>
+                                    <p className="text-sm">{companyDetail.subsidiaries?.length || 0} 家</p>
                                 </div>
                             </div>
 

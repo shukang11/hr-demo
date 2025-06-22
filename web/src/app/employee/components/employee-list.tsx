@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,16 @@ import { timestampToDateString } from "@/lib/utils"
 import { useSchema } from "@/lib/api/customfield"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface EmployeeRowProps {
   employee: Employee
@@ -125,20 +135,81 @@ export function EmployeeList() {
 
   const companyId = currentCompany?.id || 0;
 
-  const [pageParams,] = useState<PageParams>({
+  const [pagination, setPagination] = useState<PageParams>({
     page: 1,
-    limit: 10000,
+    limit: 10,
   })
 
-  const { data, error, mutate } = useSWR(
-    ['employees', companyId, pageParams, debouncedSearchTerm],
+  const { data: employeeData, error, mutate } = useSWR(
+    ['employees', companyId, pagination, debouncedSearchTerm],
     () => debouncedSearchTerm
-      ? searchEmployees(companyId, debouncedSearchTerm, pageParams)
-      : getEmployeeList(companyId, pageParams)
+      ? searchEmployees(companyId, debouncedSearchTerm, pagination)
+      : getEmployeeList(companyId, pagination)
   )
+
+  const employees = employeeData?.items
+  const totalPages = employeeData?.total_pages
+  const isLoading = !employeeData && !error
 
   if (!currentCompany?.id) {
     return <div className="text-center text-muted-foreground">请先选择公司</div>
+  }
+
+  const handleSearch = useCallback((value: string) => {
+    setSearchTerm(value)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [])
+
+  const handlePageChange = useCallback((newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }))
+  }, [])
+
+  // 生成分页页码数组
+  const generatePageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+
+    if (!totalPages || totalPages <= maxVisiblePages) {
+      // 如果总页数较少，显示所有页码
+      for (let i = 1; i <= (totalPages || 1); i++) {
+        pages.push(i)
+      }
+    } else {
+      // 如果总页数较多，显示省略号
+      const current = pagination.page
+      let start = Math.max(1, current - 2)
+      let end = Math.min(totalPages, current + 2)
+
+      // 调整起始和结束位置
+      if (current <= 3) {
+        end = 5
+      } else if (current >= totalPages - 2) {
+        start = totalPages - 4
+      }
+
+      // 添加第一页
+      if (start > 1) {
+        pages.push(1)
+        if (start > 2) {
+          pages.push('ellipsis-start')
+        }
+      }
+
+      // 添加中间页码
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      // 添加最后一页
+      if (end < totalPages) {
+        if (end < totalPages - 1) {
+          pages.push('ellipsis-end')
+        }
+        pages.push(totalPages)
+      }
+    }
+
+    return pages
   }
 
   const handleDelete = async (id: number) => {
@@ -182,8 +253,6 @@ export function EmployeeList() {
     handleFormClose(false)
   }
 
-  const isLoading = !data && !error
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -191,57 +260,126 @@ export function EmployeeList() {
           <Input
             placeholder="搜索员工..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
           />
         </div>
         <Button onClick={() => setIsFormOpen(true)}>添加员工</Button>
       </div>
 
       <div className="rounded-md border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>姓名</TableHead>
-              <TableHead>性别</TableHead>
-              <TableHead>部门</TableHead>
-              <TableHead>职位</TableHead>
-              <TableHead>入职时间</TableHead>
-              <TableHead>扩展信息</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+        {isLoading ? (
+          <div className="flex justify-center p-8">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  加载中...
-                </TableCell>
+                <TableHead>姓名</TableHead>
+                <TableHead>性别</TableHead>
+                <TableHead>部门</TableHead>
+                <TableHead>职位</TableHead>
+                <TableHead>入职时间</TableHead>
+                <TableHead>扩展信息</TableHead>
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
-            ) : error ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-destructive">
-                  加载失败
-                </TableCell>
-              </TableRow>
-            ) : data?.items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center">
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              data?.items.map((employee: Employee) => (
-                <EmployeeRow
-                  key={employee.id}
-                  employee={employee}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ))
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {error ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-destructive">
+                    加载失败
+                  </TableCell>
+                </TableRow>
+              ) : employees?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    暂无数据
+                  </TableCell>
+                </TableRow>
+              ) : (
+                employees?.map((employee: Employee) => (
+                  <EmployeeRow
+                    key={employee.id}
+                    employee={employee}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
+
+      {/* 分页信息显示 */}
+      {totalPages && totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            显示第 {(pagination.page - 1) * pagination.limit + 1} - {Math.min(pagination.page * pagination.limit, employeeData?.total || 0)} 条，
+            共 {employeeData?.total || 0} 条记录
+          </div>
+        </div>
+      )}
+
+      {totalPages && totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (pagination.page > 1) {
+                    handlePageChange(pagination.page - 1)
+                  }
+                }}
+                className={pagination.page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              >
+                上一页
+              </PaginationPrevious>
+            </PaginationItem>
+
+            {generatePageNumbers().map((pageNumber, index) => {
+              if (pageNumber === 'ellipsis-start' || pageNumber === 'ellipsis-end') {
+                return (
+                  <PaginationItem key={`ellipsis-${index}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                )
+              }
+
+              return (
+                <PaginationItem key={pageNumber}>
+                  <PaginationLink
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handlePageChange(pageNumber as number)
+                    }}
+                    isActive={pagination.page === pageNumber}
+                    className="cursor-pointer"
+                  >
+                    {pageNumber}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            })}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (pagination.page < totalPages) {
+                    handlePageChange(pagination.page + 1)
+                  }
+                }}
+                className={pagination.page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              >
+                下一页
+              </PaginationNext>
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       <EmployeeForm
         open={isFormOpen}

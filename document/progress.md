@@ -1,3 +1,50 @@
+# HR系统技术文档
+
+## 最新进度 (2025年6月21日)
+
+### 桌面应用打包配置优化
+
+**开发进度:** ▇▇▇▇▇ 100%
+
+#### 功能概述
+优化了桌面应用的打包配置，实现了客户端构建时将工作区和数据目录统一到可执行文件同级的 `data` 目录中，而开发环境保持原有目录结构。
+
+#### 主要修改内容
+
+1. **配置文件优化 (`desktop/config.py`)**
+   - 新增环境检测：区分开发环境和打包环境
+   - 打包环境：所有工作目录统一到 `BASE_DIR/data/` 下
+   - 开发环境：保持原有目录结构不变
+   - 新增目录：`LOGS_DIR`、`UPLOADS_DIR` 等工作目录
+
+2. **打包配置优化 (`desktop/hr_desktop.spec`)**
+   - 调整数据文件收集路径，将前端资源打包到 `data/static/`
+   - 将API相关文件打包到 `data/api/` 目录
+   - 添加必要的占位文件确保目录结构完整
+
+3. **Flask应用配置优化 (`api/app.py`)**
+   - 更新桌面模式配置，确保静态文件路径正确
+   - 统一数据目录管理，支持打包和开发两种模式
+
+4. **主程序优化 (`desktop/main.py`)**
+   - 改进API路径检测逻辑，适配打包环境
+   - 确保运行时目录结构正确创建
+
+#### 最终部署结构
+```
+部署目录/
+├── HR-Desktop.exe          # 主执行文件
+├── data/                   # 工作区和数据目录
+│   ├── hr_desktop.db      # 数据库文件
+│   ├── logs/              # 日志目录
+│   ├── uploads/           # 上传文件目录
+│   ├── static/            # 前端静态文件
+│   └── api/               # API配置和数据文件
+└── 其他运行时文件/         # PyInstaller生成的依赖文件
+```
+
+---
+
 # HR系统自定义字段功能技术文档
 
 ## 1. 功能概述
@@ -888,3 +935,224 @@ def wait_for_server(self):
     - 规划了 PowerShell 脚本的核心功能，包括环境创建、依赖同步和应用启动。
     - 拟定了更新后的最终构建产物清单。
     - 未来项目稳定后，计划切换到 PyInstaller 打包方案。
+
+## 7. 桌面应用构建脚本修复 (2025年6月20日)
+
+### 7.1 问题描述
+
+在构建桌面应用时遇到了以下问题：
+1. **批处理文件编码问题**：`build.bat` 脚本中存在编码问题，导致中文字符无法正确显示，`echo` 命令被错误解析
+2. **PowerShell脚本语法错误**：原有 PowerShell 脚本存在字符串终止符缺失和语法错误
+3. **PyInstaller spec文件缺失**：缺少 `hr_desktop.spec` 文件，无法进行应用打包
+
+### 7.2 解决方案
+
+#### 7.2.1 PowerShell脚本重构
+完全重写了 `build.ps1` 脚本，实现了：
+- 正确的UTF-8编码处理
+- 完整的错误处理机制
+- 彩色输出和用户友好的提示信息
+- 支持多种构建参数（`-Clean`, `-SkipFrontend`, `-SkipBackend`, `-Verbose`）
+- 自动依赖检查（Python、Bun、uv）
+- 构建后的自动验证和可选应用启动
+
+#### 7.2.2 PyInstaller配置创建
+创建了完整的 `hr_desktop.spec` 文件，包含：
+- 完整的数据文件收集配置
+- 适当的隐藏导入设置
+- PyWebView和Flask相关依赖
+- 跨平台兼容性配置
+- 优化的排除配置以减小包大小
+
+#### 7.2.3 钩子文件优化
+更新了 `hook-webview.py` 文件，添加了：
+- 完整的PyWebView平台支持
+- Windows特定的.NET依赖
+- 更全面的隐藏导入列表
+
+### 7.3 技术实现
+
+#### PowerShell脚本核心功能
+```powershell
+# 颜色输出函数
+function Write-Success { param([string]$Message); Write-Host "✅ $Message" -ForegroundColor Green }
+function Write-Error { param([string]$Message); Write-Host "❌ $Message" -ForegroundColor Red }
+function Write-Info { param([string]$Message); Write-Host "ℹ️  $Message" -ForegroundColor Cyan }
+
+# 依赖检查
+try {
+    $pythonVersion = python --version 2>&1
+    Write-Success "Python installed: $pythonVersion"
+} catch {
+    Write-Error "Python not installed or not in PATH"
+    exit 1
+}
+
+# 构建流程
+Write-Step "Building frontend application..."
+Set-Location $WEB_DIR
+bun install && bun run build:desktop
+```
+
+#### PyInstaller配置
+```python
+# 数据文件收集
+datas = [
+    (str(web_dist_path), 'static'),
+    (str(api_templates), 'templates'),
+    (str(api_migrations), 'migrations'),
+    (str(api_fixture), 'fixture'),
+]
+
+# 隐藏导入
+hiddenimports = [
+    'webview', 'flask', 'sqlalchemy',
+    'webview.platforms.winforms',
+    'sqlalchemy.dialects.sqlite',
+    # ...更多依赖
+]
+```
+
+### 7.4 构建流程优化
+
+新的构建流程包含以下步骤：
+1. **依赖检查**：验证Python、Bun、uv是否正确安装
+2. **前端构建**：使用Bun构建React前端应用
+3. **后端依赖**：使用uv安装Python依赖
+4. **应用打包**：使用PyInstaller生成可执行文件
+5. **结果验证**：检查输出文件并提供反馈
+
+### 7.5 用户体验改进
+
+- **友好的错误提示**：详细的错误信息和解决建议
+- **进度可视化**：使用表情符号和颜色区分不同状态
+- **交互式操作**：构建完成后询问是否立即运行应用
+- **详细日志**：支持 `-Verbose` 参数查看详细构建信息
+
+### 7.6 实际测试结果
+
+经过修复后的构建脚本运行结果：
+```
+[STEP] Starting HR-Demo Desktop Application Build
+[STEP] Checking dependencies...
+[SUCCESS] Python installed: Python 3.11.7
+[SUCCESS] Bun installed: 1.2.16
+[SUCCESS] uv installed: uv 0.7.12
+[SUCCESS] Dependencies check completed
+[STEP] Building frontend application...
+[SUCCESS] Frontend build completed
+[STEP] Installing backend dependencies...
+[SUCCESS] Backend dependencies installed
+[STEP] Starting application packaging...
+[SUCCESS] Application packaging completed
+[SUCCESS] Application successfully packaged to: HR-Desktop.exe
+```
+
+### 7.7 文档更新
+
+同时更新了相关文档：
+- `BUILD_GUIDE.md`：详细的构建指南和故障排除
+- `USAGE.md`：用户使用说明
+- 项目README：构建流程说明
+
+_更新日期: 2025年6月20日_
+
+## 8. 用户体验优化
+
+### 8.1 公司详情页面优化
+
+**更新时间**: 2025年6月20日
+
+**优化内容**:
+- 移除了公司详情页面中的技术性字段（公司ID）展示
+- 去除了重复的公司名称显示，避免信息冗余
+- 优化了基本信息的布局结构，采用响应式网格布局
+- 增加了子公司数量的展示，提供更有价值的业务信息
+- 改善了日期格式显示，使用本地化格式
+- 优化了父公司状态的文本描述
+
+**技术改进**:
+- 使用 `md:grid-cols-2` 实现响应式布局
+- 采用 `toLocaleString('zh-CN')` 提供中文本地化日期格式
+- 改善了信息层次结构和视觉呈现
+
+**用户体验提升**:
+- 页面信息更加关注业务价值而非技术细节
+- 布局更加清晰和专业
+- 提供了更有意义的统计信息（子公司数量）
+
+_更新日期: 2025年6月20日_
+
+---
+
+## 候选人自定义字段功能实现
+
+### 开发背景
+在员工表单成功实现自定义字段功能后，需要为候选人表单添加相同的功能，以保持系统功能的一致性和完整性。
+
+### 实现方案
+参照员工表单的实现模式，为候选人表单集成自定义字段功能：
+
+1. **后端支持确认**：
+   - 候选人模型已包含 `extra_value` 和 `extra_schema_id` 字段
+   - 自定义字段API已支持 "candidate" 实体类型
+   - 权限控制已覆盖候选人相关操作
+
+2. **前端实现计划**：
+   - 在候选人表单中集成 `CustomFieldEditor` 组件
+   - 实现候选人类型模板的自动选择
+   - 添加候选人列表中的自定义字段展示
+   - 更新候选人详情页面以支持自定义字段显示
+
+### 技术实现要点
+- 保持与员工表单相同的用户体验
+- 使用相同的自动模板选择逻辑
+- 确保候选人转为员工时自定义字段数据的正确迁移
+
+**开发进度**: 📋 计划中 (0%)
+
+---
+
+## UI组件优化 - 员工列表分页和加载器功能
+
+### 开发背景 (2025年6月21日)
+当前员工列表存在以下用户体验问题：
+- 分页设置不合理（limit设为10000条记录）
+- 缺少分页控件，不适合大数据量展示
+- 加载状态显示简陋，仅有文本提示
+
+### 改进方案
+参考项目中职位列表的成功实现，为员工列表添加：
+
+1. **合理的分页配置**：将每页显示数量改为10条记录
+2. **完整的分页控件**：添加上一页/下一页按钮和页面信息显示
+3. **优化的加载状态**：使用项目统一的LoadingSpinner组件
+4. **智能状态管理**：
+   - 分页状态管理和页面切换处理
+   - 搜索时自动重置到第一页
+   - 保持搜索和分页的协调工作
+
+### 技术实现计划
+- 使用useState管理分页状态（类似position-list.tsx）
+- 实现handlePageChange函数处理页面切换
+- 添加页面信息显示（当前页/总页数）
+- 确保响应式设计在不同屏幕尺寸下正常工作
+
+**开发进度**: ✅ 已完成 (100%)
+**技术实现**: 基于React + TypeScript，遵循项目编码规范
+
+### 实现细节
+1. **分页状态管理**: 使用useState管理pagination对象，包含page和limit
+2. **数据获取优化**: 修改SWR查询参数，传入pagination对象到API
+3. **智能分页算法**: 实现generatePageNumbers函数，支持页码省略显示
+4. **响应式UI**: 使用shadcn Pagination组件提供专业的分页界面
+5. **用户体验**: 添加数据范围显示和中文本地化
+
+### 关键代码特性
+- **搜索重置**: 搜索时自动回到第一页
+- **加载状态**: 使用LoadingSpinner替代简单文本
+- **分页控件**: 包含上一页/下一页、页码选择、省略号显示
+- **数据统计**: 显示当前页数据范围和总记录数
+- **交互优化**: 禁用状态的按钮样式和点击事件处理
+
+---

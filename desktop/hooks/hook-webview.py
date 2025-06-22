@@ -13,7 +13,17 @@ hiddenimports = collect_submodules("webview")
 hiddenimports += [
     "webview.platforms",
     "webview.platforms.cocoa",
-    "webview.platforms.qt",
+    "webview.platforms.qt", 
     "webview.platforms.gtk",
     "webview.platforms.winforms",
+    "webview.platforms.cef",
+    "webview.platforms.chromium",
+    "webview.util",
+    "webview.js",
+    "webview.dom",
+    "pythonnet",
+    "clr",
+    "System",
+    "System.Windows.Forms",
+    "System.Drawing",
 ]

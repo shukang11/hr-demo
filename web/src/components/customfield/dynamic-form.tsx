@@ -4,7 +4,6 @@
  * 基于JSON Schema和UI Schema动态生成表单，使用React JSON Schema Form库。
  * 支持所有JSON Schema类型，能够处理复杂的嵌套结构和验证规则。
  */
-import { useMemo } from 'react';
 import { RJSFSchema } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import Form from '@rjsf/shadcn';
@@ -91,12 +90,12 @@ export function DynamicForm({
     onError,
 }: DynamicFormProps) {
     // 处理提交事件
-    const handleSubmit = (data: { formData: Record<string, any> }) => {
-        onSubmit?.(data);
+    const handleSubmit = (data: any) => {
+        onSubmit?.({ formData: data.formData || {} });
     };
 
     // 处理变更事件
-    const handleChange = (data: any, id?: string) => {
+    const handleChange = (data: any) => {
         onChange?.({ formData: data.formData || {} });
     };
 
@@ -105,14 +104,6 @@ export function DynamicForm({
         console.error('Form validation errors:', errors);
         onError?.(errors);
     };
-
-    // 根据是否显示提交按钮，处理表单按钮
-    const customButtons = useMemo(() => {
-        if (!showSubmitButton) {
-            return { submit: <></> };
-        }
-        return undefined;
-    }, [showSubmitButton]);
 
     return (
         <div className={cn('customfield-form', className)}>
@@ -126,8 +117,10 @@ export function DynamicForm({
                 disabled={disabled}
                 readonly={readonly}
                 onError={handleError}
-                customButtons={customButtons}
-            />
+            >
+                {/* 如果不显示提交按钮，则传递空的children来隐藏默认的提交按钮 */}
+                {!showSubmitButton && <></>}
+            </Form>
         </div>
     );
 }

@@ -60,6 +60,8 @@ def create_json_schema() -> Response:
     Returns:
         Response: 包含Schema信息的JSON响应和HTTP状态码
     """
+    # 参数
+    current_app.logger.info(f"开始创建JSON Schema, 请求数据: {request.json}")
     if not current_user:
         return make_api_response(
             ResponseSchema[None].from_error(message="未登录", status=401),

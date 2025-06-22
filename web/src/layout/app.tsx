@@ -16,7 +16,7 @@ import {
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
 
-interface AppLayoutProps {
+export interface AppLayoutProps {
   children: React.ReactNode
   breadcrumbs: {
     label: string
@@ -32,17 +32,17 @@ export function AppLayout({ children, breadcrumbs }: AppLayoutProps) {
       <SidebarProvider defaultOpen={true}>
         <div className="flex min-h-screen w-screen">
           <AppSidebar className="w-64 shrink-0 border-r" />
-          <div className="flex w-full flex-col">
-            <header className="flex h-14 items-center justify-between border-b px-6">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger className="lg:hidden" />
+          <div className="flex w-full flex-col">            <header className="flex h-14 min-w-0 items-center border-b px-6">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
+              <SidebarTrigger className="lg:hidden" />
+              <div className="min-w-0 flex-1">
                 <Breadcrumb>
                   <BreadcrumbList>
                     {breadcrumbs.map((item, index) => (
                       <React.Fragment key={index}>
                         <BreadcrumbItem>
                           {item.href ? (
-                            <BreadcrumbLink 
+                            <BreadcrumbLink
                               href={item.href}
                               className="text-sm font-medium text-muted-foreground hover:text-foreground"
                             >
@@ -60,6 +60,8 @@ export function AppLayout({ children, breadcrumbs }: AppLayoutProps) {
                   </BreadcrumbList>
                 </Breadcrumb>
               </div>
+            </div>
+            <div className="ml-4 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
@@ -70,7 +72,8 @@ export function AppLayout({ children, breadcrumbs }: AppLayoutProps) {
                 <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Toggle theme</span>
               </Button>
-            </header>
+            </div>
+          </header>
             <main className="flex-1 overflow-y-auto">
               <div className="mx-auto h-full w-full max-w-[1600px] p-6">
                 {children}

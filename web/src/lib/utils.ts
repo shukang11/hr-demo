@@ -141,3 +141,39 @@ export async function get_sha256(content: string): Promise<string> {
     throw new Error("SHA-256 计算失败");
   }
 }
+
+/**
+ * 将日期字符串或时间戳转换为日期输入框的值格式 (YYYY-MM-DD)
+ * @param date 日期字符串、时间戳或 Date 对象
+ * @returns 日期字符串 (YYYY-MM-DD) 或空字符串
+ */
+export function dateToInputValue(
+  date: string | number | Date | null | undefined
+): string {
+  if (!date) return "";
+
+  let d: Date;
+  if (typeof date === "string") {
+    d = new Date(date);
+  } else if (typeof date === "number") {
+    d = new Date(date);
+  } else {
+    d = date;
+  }
+
+  if (isNaN(d.getTime())) return "";
+
+  return d.toISOString().split("T")[0];
+}
+
+/**
+ * 将日期输入框的值转换为时间戳
+ * @param inputValue 日期输入框的值 (YYYY-MM-DD)
+ * @returns 时间戳或 null
+ */
+export function inputValueToTimestamp(inputValue: string): number | null {
+  if (!inputValue) return null;
+  const date = new Date(inputValue);
+  if (isNaN(date.getTime())) return null;
+  return date.getTime();
+}

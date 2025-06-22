@@ -8,7 +8,7 @@
 
 import click
 from sqlalchemy import select, update
-from app import db
+from extensions.ext_database import db
 from libs.models import EmployeeInDB, JsonSchemaInDB
 from libs.models.json_schema import SchemaEntityType
 

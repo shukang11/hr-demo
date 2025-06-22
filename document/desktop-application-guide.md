@@ -142,13 +142,68 @@ HR-Demo 桌面应用提供了多种配置选项，可以通过修改 `desktop/co
 | SERVER_HOST | 本地服务器主机 | "127.0.0.1" |
 | SERVER_PORT | 本地服务器端口 | 5000        |
 
-### 3.3 数据配置
+### 3.3 路径和数据配置
+
+HR-Demo 桌面应用在不同环境下使用不同的路径配置策略：
+
+#### 开发环境 vs 打包环境
+
+| 环境类型 | 描述                                  | 路径策略                           |
+| -------- | ------------------------------------- | ---------------------------------- |
+| 开发环境 | 在IDE中运行或使用`python main.py`启动 | 使用项目相对路径，保持原有目录结构 |
+| 打包环境 | 使用PyInstaller打包后的可执行文件     | 统一使用可执行文件同级的`data`目录 |
+
+#### 打包后的目录结构
+
+客户端构建完成后，部署目录结构如下：
+
+```
+部署目录/
+├── HR-Desktop.exe          # 主执行文件
+├── data/                   # 工作区和数据目录
+│   ├── hr_desktop.db      # SQLite数据库文件
+│   ├── logs/              # 应用日志文件
+│   ├── uploads/           # 用户上传文件
+│   ├── static/            # 前端静态资源
+│   └── api/               # API配置和数据文件
+│       ├── configs/       # 配置文件
+│       ├── migrations/    # 数据库迁移文件
+│       └── fixture/       # 初始数据文件
+└── 其他运行时文件/         # PyInstaller生成的依赖
+```
+
+#### 路径配置详情
+
+| 配置项        | 开发环境路径                 | 打包环境路径                  |
+| ------------- | ---------------------------- | ----------------------------- |
+| BASE_DIR      | `desktop/`                   | 可执行文件所在目录            |
+| WORK_DIR      | `desktop/`                   | `BASE_DIR/data/`              |
+| DATABASE_PATH | `desktop/data/hr_desktop.db` | `BASE_DIR/data/hr_desktop.db` |
+| STATIC_DIR    | `desktop/static/`            | `BASE_DIR/data/static/`       |
+| LOGS_DIR      | `desktop/logs/`              | `BASE_DIR/data/logs/`         |
+| UPLOADS_DIR   | `desktop/uploads/`           | `BASE_DIR/data/uploads/`      |
+
+#### 配置验证
+
+可以使用提供的配置验证脚本来检查路径配置：
+
+```bash
+# 在开发环境中测试
+cd desktop
+python test_config.py
+
+# 在打包后测试（将脚本复制到可执行文件目录）
+./test_config.py  # Linux/macOS
+test_config.exe   # Windows（如果单独打包了测试脚本）
+```
+
+### 3.4 数据配置
 
 | 配置项        | 描述           | 默认值                              |
 | ------------- | -------------- | ----------------------------------- |
 | DATABASE_PATH | 本地数据库路径 | BASE_DIR / "data" / "hr_desktop.db" |
 
-### 3.4 修改配置示例
+### 3.5 修改配置示例
 
 要修改应用配置，请编辑 `desktop/config.py` 文件：
 
@@ -165,7 +220,7 @@ SERVER_PORT = 5001
 DATABASE_PATH = Path.home() / "hr_data" / "database.db"
 ```
 
-### 3.5 高级构建配置
+### 3.6 高级构建配置
 
 构建过程可以通过修改 `hr_desktop.spec` 文件进行高级配置：
 

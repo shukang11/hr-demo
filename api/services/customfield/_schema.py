@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional, Union
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, field_serializer
 from datetime import datetime
 
 from libs.models.json_schema import SchemaEntityType
@@ -18,6 +18,14 @@ class JsonSchemaBase(BaseModel):
 
     class Config:
         populate_by_name = True  # 让Pydantic同时支持属性名和别名
+
+    @field_validator("entity_type", mode="before")
+    @classmethod
+    def normalize_entity_type(cls, v):
+        """标准化实体类型，支持大小写转换"""
+        if isinstance(v, str):
+            return v.lower()
+        return v
 
     @field_validator("schema_value")
     def validate_schema_value(cls, v):

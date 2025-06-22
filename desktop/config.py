@@ -2,7 +2,7 @@
 桌面应用配置文件
 """
 
-import os
+import sys
 from pathlib import Path
 
 
@@ -24,15 +24,40 @@ class DesktopConfig:
     WINDOW_MIN_HEIGHT = 600
 
     # 路径配置
-    BASE_DIR = Path(__file__).parent
-    STATIC_DIR = BASE_DIR / "static"
-    API_DIR = BASE_DIR.parent / "api"
+    # 检测是否在 PyInstaller 打包环境中运行
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        # PyInstaller 环境：使用可执行文件所在目录
+        BASE_DIR = Path(sys.executable).parent
+        # 客户端构建时，将工作区统一到 data 目录下
+        WORK_DIR = BASE_DIR / "data"
+        STATIC_DIR = WORK_DIR / "static"
+        API_DIR = WORK_DIR / "api"
+        LOGS_DIR = WORK_DIR / "logs"
+        UPLOADS_DIR = WORK_DIR / "uploads"
+    else:
+        # 开发环境：使用脚本文件所在目录，保持原有结构
+        BASE_DIR = Path(__file__).parent
+        WORK_DIR = BASE_DIR
+        STATIC_DIR = BASE_DIR / "static"
+        API_DIR = BASE_DIR.parent / "api"
+        LOGS_DIR = BASE_DIR / "logs"
+        UPLOADS_DIR = BASE_DIR / "uploads"
 
     # 数据库配置（桌面版使用本地SQLite）
-    DATABASE_PATH = BASE_DIR / "data" / "hr_desktop.db"
+    # 无论开发还是打包环境，数据库都放在 data 目录下
+    if getattr(sys, "frozen", False):
+        DATABASE_PATH = WORK_DIR / "hr_desktop.db"
+    else:
+        DATABASE_PATH = BASE_DIR / "data" / "hr_desktop.db"
 
     @classmethod
     def ensure_directories(cls):
         """确保必要的目录存在"""
-        cls.STATIC_DIR.mkdir(exist_ok=True)
-        cls.DATABASE_PATH.parent.mkdir(exist_ok=True)
+        cls.STATIC_DIR.mkdir(parents=True, exist_ok=True)
+        cls.DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        cls.LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        cls.UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+        # 在打包环境中，创建API目录用于存放配置文件
+        if getattr(sys, "frozen", False):
+            cls.API_DIR.mkdir(parents=True, exist_ok=True)

@@ -14,11 +14,16 @@ class DeploymentConfig(BaseSettings):
 
     DEBUG: bool = Field(
         description="Enable debug mode for additional logging and development features",
-        default=False,
+        default=True,
     )
 
     TESTING: bool = Field(
         description="Enable testing mode for running automated tests", default=False
+    )
+
+    AUTO_MIGRATE_DB: bool = Field(
+        description="Automatically run database migrations on startup in development mode",
+        default=True,
     )
 
     SECRET_KEY: str = Field(
