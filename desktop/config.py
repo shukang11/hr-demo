@@ -28,12 +28,13 @@ class DesktopConfig:
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         # PyInstaller 环境：使用可执行文件所在目录
         BASE_DIR = Path(sys.executable).parent
-        # 客户端构建时，将工作区统一到 data 目录下
+        # 系统资源目录（只读）
+        STATIC_DIR = BASE_DIR / "static"
+        # 用户数据目录（可写）
         WORK_DIR = BASE_DIR / "data"
-        STATIC_DIR = WORK_DIR / "static"
-        API_DIR = WORK_DIR / "api"
         LOGS_DIR = WORK_DIR / "logs"
         UPLOADS_DIR = WORK_DIR / "uploads"
+        API_DIR = WORK_DIR / "api"  # API配置文件存放在用户数据区
     else:
         # 开发环境：使用脚本文件所在目录，保持原有结构
         BASE_DIR = Path(__file__).parent
@@ -53,7 +54,7 @@ class DesktopConfig:
     @classmethod
     def ensure_directories(cls):
         """确保必要的目录存在"""
-        cls.STATIC_DIR.mkdir(parents=True, exist_ok=True)
+        # 用户数据目录
         cls.DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
         cls.LOGS_DIR.mkdir(parents=True, exist_ok=True)
         cls.UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
@@ -61,3 +62,5 @@ class DesktopConfig:
         # 在打包环境中，创建API目录用于存放配置文件
         if getattr(sys, "frozen", False):
             cls.API_DIR.mkdir(parents=True, exist_ok=True)
+
+        # 注意：STATIC_DIR 是系统资源目录，不应该在运行时创建或修改

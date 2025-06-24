@@ -1,4 +1,6 @@
 import os
+import sys
+from pathlib import Path
 from typing import Optional
 
 from flask import Flask
@@ -38,7 +40,7 @@ def auto_migrate_database(app: Flask) -> None:
 
     try:
         import flask_migrate
-        from pathlib import Path
+        # Path 已在顶部导入
 
         # 检查是否存在迁移文件夹
         migrations_path = Path(app.root_path) / "migrations"
@@ -93,41 +95,65 @@ def create_app(
 
     if desktop_mode:
         # 桌面模式特殊配置
-        import sys
-        from pathlib import Path
+        # sys 和 Path 已在顶部导入
 
         # 设置桌面模式标志（必须在初始化扩展之前）
         app.config["DESKTOP_MODE"] = True
 
         # 检测是否在 PyInstaller 打包环境中运行
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-            # PyInstaller 环境：使用可执行文件所在目录下的data目录
+            # PyInstaller 环境：使用可执行文件所在目录
             desktop_path = Path(sys.executable).parent
+            # 系统资源目录（前端静态文件）
+            static_path = desktop_path / "static"
+            # 用户数据目录
             data_path = desktop_path / "data"
-            static_path = data_path / "static"
             print(f"[DEBUG] PyInstaller mode - executable path: {sys.executable}")
             print(f"[DEBUG] PyInstaller mode - desktop_path: {desktop_path}")
+            print(f"[DEBUG] PyInstaller mode - static_path: {static_path}")
             print(f"[DEBUG] PyInstaller mode - data_path: {data_path}")
         else:
             # 开发环境：使用相对路径，保持原有结构
             desktop_path = Path(__file__).parent.parent / "desktop"
-            data_path = desktop_path / "data"
             static_path = desktop_path / "static"
+            data_path = desktop_path / "data"
             print(f"[DEBUG] Development mode - desktop_path: {desktop_path}")
+            print(f"[DEBUG] Development mode - static_path: {static_path}")
+            print(f"[DEBUG] Development mode - data_path: {data_path}")
 
         # 配置静态文件路径
         print(f"[DEBUG] Static path: {static_path}")
+        print(f"[DEBUG] Static path exists: {static_path.exists()}")
+
+        # 检查关键文件是否存在
+        index_html = static_path / "index.html"
+        assets_dir = static_path / "assets"
+        print(f"[DEBUG] index.html exists: {index_html.exists()}")
+        print(f"[DEBUG] assets directory exists: {assets_dir.exists()}")
+
+        if assets_dir.exists():
+            assets_files = list(assets_dir.glob("*"))
+            print(f"[DEBUG] Assets files count: {len(assets_files)}")
+            if len(assets_files) > 0:
+                print(
+                    f"[DEBUG] Sample assets files: {[f.name for f in assets_files[:5]]}"
+                )
+
         app.static_folder = str(static_path)
         app.static_url_path = ""
 
         # 确保数据目录存在
         try:
             data_path.mkdir(parents=True, exist_ok=True)
-            static_path.mkdir(parents=True, exist_ok=True)
             print("[DEBUG] Successfully created/verified data directory")
         except Exception as e:
             print(f"[DEBUG] Failed to create data directory: {e}")
-            # 如果无法创建数据目录，尝试使用临时目录
+
+        # 检查静态文件目录（系统资源，应该已存在）
+        if not static_path.exists():
+            print(f"[DEBUG] Warning: Static directory does not exist: {static_path}")
+        else:
+            print(f"[DEBUG] Static directory found: {static_path}")
             import tempfile
 
             data_path = Path(tempfile.gettempdir()) / "hr_desktop_data"
@@ -195,17 +221,33 @@ def create_app(
         @app.route("/")
         def serve_frontend():
             """服务前端应用"""
-            return app.send_static_file("index.html")
+            try:
+                return app.send_static_file("index.html")
+            except Exception as e:
+                app.logger.error(f"Failed to serve index.html: {e}")
+                return f"Error serving frontend: {e}", 500
 
         @app.route("/<path:path>")
         def serve_static_files(path: str):
             """服务静态文件和SPA路由"""
             try:
-                # 尝试服务静态文件
-                return app.send_static_file(path)
-            except Exception:
-                # 对于SPA路由，返回index.html
-                return app.send_static_file("index.html")
+                # 打印请求的文件路径用于调试
+                app.logger.debug(f"Requesting static file: {path}")
+
+                # 检查文件是否存在
+                static_file_path = Path(app.static_folder) / path
+                if static_file_path.exists():
+                    app.logger.debug(f"Serving existing file: {path}")
+                    return app.send_static_file(path)
+                else:
+                    app.logger.debug(
+                        f"File not found, serving index.html for SPA route: {path}"
+                    )
+                    # 对于SPA路由，返回index.html
+                    return app.send_static_file("index.html")
+            except Exception as e:
+                app.logger.error(f"Error serving static file {path}: {e}")
+                return f"Error serving file {path}: {e}", 404
 
     return app
 

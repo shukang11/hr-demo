@@ -146,7 +146,44 @@ try {
         Write-Warning "Skipping backend dependency installation"
     }
     
-    # 4. Run PyInstaller
+    # 4. Verify frontend resources before packaging
+    Write-Step "Verifying frontend resources..."
+    
+    # Check desktop/static directory
+    $desktopStaticPath = Join-Path $DESKTOP_DIR "static"
+    if (Test-Path $desktopStaticPath) {
+        $indexHtml = Join-Path $desktopStaticPath "index.html"
+        $assetsDir = Join-Path $desktopStaticPath "assets"
+        
+        Write-Info "Checking frontend resources in desktop/static..."
+        Write-Info "  index.html exists: $(Test-Path $indexHtml)"
+        Write-Info "  assets directory exists: $(Test-Path $assetsDir)"
+        
+        if (Test-Path $assetsDir) {
+            $assetsFiles = Get-ChildItem $assetsDir -File
+            Write-Info "  assets files count: $($assetsFiles.Count)"
+            if ($assetsFiles.Count -eq 0) {
+                Write-Warning "Assets directory is empty! This may cause frontend loading issues."
+            } else {
+                Write-Success "Frontend assets verified successfully"
+            }
+        } else {
+            Write-Warning "Assets directory not found! Frontend may not work properly."
+        }
+    } else {
+        Write-Warning "Desktop static directory not found: $desktopStaticPath"
+        
+        # Check web/dist as fallback
+        $webDistPath = Join-Path $WEB_DIR "dist"
+        if (Test-Path $webDistPath) {
+            Write-Info "Using web/dist as fallback: $webDistPath"
+        } else {
+            Write-Error "Neither desktop/static nor web/dist found. Frontend build may have failed."
+            exit 1
+        }
+    }
+
+    # 5. Run PyInstaller
     Write-Step "Starting application packaging..."
     Set-Location $DESKTOP_DIR
     
@@ -195,17 +232,43 @@ try {
     }
       Write-Success "Application packaging completed"
     
-    # 5. Check output (PyInstaller outputs to api/dist, not desktop/dist)
+    # 6. Check output (PyInstaller outputs to api/dist, not desktop/dist)
     $OUTPUT_DIR = Join-Path $API_DIR "dist"
     $EXE_DIR = Join-Path $OUTPUT_DIR "HR-Desktop"
     $EXE_FILE = Join-Path $EXE_DIR "HR-Desktop.exe"
-    
-    if (Test-Path $EXE_FILE) {
+      if (Test-Path $EXE_FILE) {
         $fileSize = (Get-Item $EXE_FILE).Length
         $fileSizeMB = [math]::Round($fileSize / 1MB, 2)
         
         Write-Success "Success! Application packaged to: $EXE_FILE"
         Write-Info "File size: $fileSizeMB MB"
+          # Verify packed resources
+        Write-Step "Verifying packed resources..."
+        $dataDir = Join-Path $EXE_DIR "data"
+        $staticDir = Join-Path $EXE_DIR "static"  # 系统资源目录
+        $assetsDir = Join-Path $staticDir "assets"
+        $indexHtml = Join-Path $staticDir "index.html"
+        
+        Write-Info "Checking packed system resources..."
+        Write-Info "  static directory exists: $(Test-Path $staticDir)"
+        Write-Info "  index.html exists: $(Test-Path $indexHtml)"
+        Write-Info "  assets directory exists: $(Test-Path $assetsDir)"
+        
+        if (Test-Path $assetsDir) {
+            $packedAssetsFiles = Get-ChildItem $assetsDir -File -ErrorAction SilentlyContinue
+            Write-Info "  packed assets files count: $($packedAssetsFiles.Count)"
+            if ($packedAssetsFiles.Count -eq 0) {
+                Write-Warning "Packed assets directory is empty! Frontend may not work properly."
+            } else {
+                Write-Success "Packed frontend resources verified successfully"
+            }
+        } else {
+            Write-Warning "Packed assets directory not found! Frontend may not work properly."
+        }
+        
+        Write-Info "Checking user data directory..."
+        Write-Info "  data directory exists: $(Test-Path $dataDir)"
+        
         Write-Info "Double-click the executable file to launch the application"
         
         # Ask if user wants to run immediately
